@@ -190,7 +190,7 @@ class AIModels:
             dict: Model and performance metrics
         """
         try:
-            X_train, X_test, y_train, y_test, feature_cols = self.prepare_data_for_training(target_horizon)
+            X_train, X_test, y_train, y_test, feature_cols, training_info = self.prepare_data_for_training(target_horizon)
             
             # Default parameters
             rf_params = {
@@ -255,7 +255,7 @@ class AIModels:
             dict: Model and performance metrics
         """
         try:
-            X_train, X_test, y_train, y_test, feature_cols = self.prepare_data_for_training(target_horizon)
+            X_train, X_test, y_train, y_test, feature_cols, training_info = self.prepare_data_for_training(target_horizon)
             
             # Default parameters
             gb_params = {
