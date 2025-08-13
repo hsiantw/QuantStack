@@ -36,6 +36,7 @@ Preferred communication style: Simple, everyday language.
 - **Statistical Arbitrage**: Cointegration analysis and pair trading opportunity identification
 - **Time Series Analysis**: ARIMA modeling, seasonality detection, and stationarity testing
 - **Trading Strategies**: Multiple strategy implementations with comprehensive backtesting capabilities
+- **Advanced Strategy Optimization**: Systematic comparison of 15+ trading strategies with different indicator combinations
 - **Risk Management**: Value at Risk (VaR), Expected Shortfall, and comprehensive risk metrics
 - **Educational Tooltips**: Interactive help system with formulas and definitions for complex financial terms
 

@@ -83,7 +83,7 @@ def main_dashboard():
         if st.button("Launch Time Series Analysis"):
             st.switch_page("pages/time_series_analysis.py")
     
-    col4, col5 = st.columns(2)
+    col4, col5, col6 = st.columns(3)
     
     with col4:
         st.subheader("⚡ Trading Strategies")
@@ -96,6 +96,12 @@ def main_dashboard():
         st.write("AI-powered price prediction and pattern recognition using machine learning models.")
         if st.button("Launch AI Analysis"):
             st.switch_page("pages/ai_analysis.py")
+    
+    with col6:
+        st.subheader("🎯 Strategy Optimizer")
+        st.write("Advanced strategy comparison with multiple indicator combinations to find optimal approaches.")
+        if st.button("Launch Strategy Optimizer"):
+            st.switch_page("pages/strategy_comparison.py")
     
     st.markdown("---")
     
