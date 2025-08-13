@@ -505,10 +505,6 @@ else:
                 "metrics": mr_metrics,
                 "params": params
             }
-        
-    except Exception as e:
-            st.error(f"Error running backtests: {str(e)}")
-            strategy_results = {}
 
 # Performance Analysis for Traditional Backtesting Only
 if analysis_mode == "📊 Traditional Backtesting":
