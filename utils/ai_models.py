@@ -93,7 +93,7 @@ class AIModels:
         delta = data['Close'].diff()
         gain = delta.where(delta > 0, 0).rolling(window=14).mean()
         loss = -delta.where(delta < 0, 0).rolling(window=14).mean()
-        rs = gain / loss
+        rs = gain / np.where(loss != 0, loss, 1e-6)
         data['RSI'] = 100 - (100 / (1 + rs))
         
         # Bollinger Bands
@@ -101,12 +101,13 @@ class AIModels:
         std_20 = data['Close'].rolling(window=20).std()
         data['BB_Upper'] = ma_20 + (2 * std_20)
         data['BB_Lower'] = ma_20 - (2 * std_20)
-        data['BB_Position'] = (data['Close'] - data['BB_Lower']) / (data['BB_Upper'] - data['BB_Lower'])
+        bb_width = data['BB_Upper'] - data['BB_Lower']
+        data['BB_Position'] = (data['Close'] - data['BB_Lower']) / np.where(bb_width != 0, bb_width, 1e-6)
         
         # Volume indicators
         if 'Volume' in data.columns:
             data['Volume_MA_10'] = data['Volume'].rolling(window=10).mean()
-            data['Volume_Ratio'] = data['Volume'] / data['Volume_MA_10']
+            data['Volume_Ratio'] = data['Volume'] / np.where(data['Volume_MA_10'] != 0, data['Volume_MA_10'], 1e-6)
         
         # Lag features
         for lag in range(1, 6):
@@ -326,7 +327,7 @@ class AIModels:
             scaler = model_result['scaler']
             
             # Use the last available data point for prediction
-            feature_cols = self.get_feature_columns()
+            feature_cols = self.get_feature_columns(self.prediction_features)
             last_features = self.data[feature_cols].dropna().iloc[-1:].values
             last_features_scaled = scaler.transform(last_features)
             

@@ -505,8 +505,8 @@ else:
                 "metrics": mr_metrics,
                 "params": params
             }
-            
-        except Exception as e:
+        
+    except Exception as e:
             st.error(f"Error running backtests: {str(e)}")
             strategy_results = {}
 

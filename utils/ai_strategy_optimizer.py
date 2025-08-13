@@ -39,7 +39,8 @@ class AIStrategyOptimizer:
         # Technical indicators
         features['rsi'] = self.calculate_rsi(data['Close'])
         features['bb_upper'], features['bb_lower'] = self.calculate_bollinger_bands(data['Close'])
-        features['bb_position'] = (data['Close'] - features['bb_lower']) / (features['bb_upper'] - features['bb_lower'])
+        bb_width = features['bb_upper'] - features['bb_lower']
+        features['bb_position'] = (data['Close'] - features['bb_lower']) / np.where(bb_width != 0, bb_width, 1e-6)
         
         # MACD
         features['macd'], features['macd_signal'] = self.calculate_macd(data['Close'])
@@ -61,7 +62,7 @@ class AIStrategyOptimizer:
         delta = prices.diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-        rs = gain / loss
+        rs = gain / np.where(loss != 0, loss, 1e-6)
         return 100 - (100 / (1 + rs))
     
     def calculate_bollinger_bands(self, prices, period=20, std_dev=2):
