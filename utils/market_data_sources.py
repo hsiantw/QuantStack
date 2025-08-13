@@ -527,4 +527,3 @@ class MarketDataSources:
         }
         
         return pd.DataFrame(data)
-<truncated - file too long>
