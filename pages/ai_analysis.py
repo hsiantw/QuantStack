@@ -53,7 +53,7 @@ if selected_category:
     if st.sidebar.button(f"Analyze {selected_ticker}"):
         ticker_input = selected_ticker
 
-# Time period selection
+# Time period selection for recent data display
 period_options = {
     "1 Year": "1y",
     "2 Years": "2y",
@@ -62,10 +62,29 @@ period_options = {
 }
 
 selected_period = st.sidebar.selectbox(
-    "Training Data Period",
+    "Recent Data Period (Display)",
     list(period_options.keys()),
     index=2,
-    help="More data generally improves model performance"
+    help="Period for displaying recent price charts and analysis"
+)
+
+# AI Training Data Configuration
+st.sidebar.subheader("🤖 AI Training Configuration")
+
+use_extended_training = st.sidebar.checkbox(
+    "Use Extended Historical Data for Training",
+    value=True,
+    help="Use 10-20 years of historical data for more robust AI model training"
+)
+
+training_years = st.sidebar.slider(
+    "Training Data Period (Years)",
+    min_value=10,
+    max_value=20,
+    value=15,
+    step=1,
+    help="Years of historical data to use for AI training (10-20 recommended)",
+    disabled=not use_extended_training
 )
 
 # Model selection
@@ -168,8 +187,13 @@ with st.spinner(f"Fetching data for {ticker_input}..."):
             st.error("Insufficient data for AI model training. Please select a longer time period or different ticker.")
             st.stop()
         
-        # Initialize AI models
-        ai_models = AIModels(ohlcv_data, ticker_input)
+        # Initialize AI models with extended historical training data
+        ai_models = AIModels(
+            ohlcv_data, 
+            ticker_input, 
+            use_extended_history=use_extended_training,
+            training_years=training_years
+        )
         
         # Get stock info
         stock_info = DataFetcher.get_stock_info(ticker_input)
@@ -230,11 +254,54 @@ with st.expander("View Feature Engineering Details"):
         st.write("- Cross-feature interactions")
     
     # Show actual feature columns
-    feature_cols = ai_models.get_feature_columns()
+    if hasattr(ai_models, 'training_features') and ai_models.training_features is not None:
+        feature_cols = ai_models.get_feature_columns(ai_models.training_features)
+        training_data = ai_models.training_features
+    else:
+        feature_cols = ai_models.get_feature_columns(ai_models.prediction_features)
+        training_data = ai_models.prediction_features
+    
     st.write(f"**Total Features Generated:** {len(feature_cols)}")
     
     if st.checkbox("Show all feature names"):
         st.write(feature_cols)
+
+# Training Data Information
+st.header("📚 Training Data Information")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if use_extended_training and hasattr(ai_models, 'training_data') and ai_models.training_data is not None:
+        st.metric("Training Data Period", f"{training_years} Years")
+        st.metric("Historical Data Points", f"{len(ai_models.training_data):,}")
+    else:
+        st.metric("Training Data Period", selected_period)
+        st.metric("Data Points", f"{len(ohlcv_data):,}")
+
+with col2:
+    if hasattr(ai_models, 'training_features') and ai_models.training_features is not None:
+        data_start = ai_models.training_features.index[0].strftime('%Y-%m-%d')
+        data_end = ai_models.training_features.index[-1].strftime('%Y-%m-%d')
+        st.metric("Data Range", f"{data_start}")
+        st.caption(f"to {data_end}")
+    else:
+        data_start = ohlcv_data.index[0].strftime('%Y-%m-%d')
+        data_end = ohlcv_data.index[-1].strftime('%Y-%m-%d')
+        st.metric("Data Range", f"{data_start}")
+        st.caption(f"to {data_end}")
+
+with col3:
+    st.metric("Extended Training", "✅ Enabled" if use_extended_training else "❌ Disabled")
+    if use_extended_training:
+        st.caption("Using 10-20 year historical data for robust training")
+    else:
+        st.caption("Using recent data only")
+
+if use_extended_training:
+    st.info(f"🎯 **Enhanced AI Training**: Using {training_years} years of historical data for more robust pattern recognition and better predictions.")
+else:
+    st.warning("💡 **Recommendation**: Enable extended historical data training for more accurate AI predictions.")
 
 # Model Training and Results
 st.header("🎯 AI Model Training & Results")

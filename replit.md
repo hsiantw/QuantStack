@@ -31,7 +31,7 @@ Preferred communication style: Simple, everyday language.
 - **Data Validation**: Error handling for invalid tickers and missing data scenarios
 
 ### Core Analytical Modules
-- **AI Models**: Machine learning models for price prediction using Random Forest, Gradient Boosting, and Linear Regression
+- **AI Models**: Machine learning models for price prediction using Random Forest, Gradient Boosting, and Linear Regression with configurable 10-20 year historical training data
 - **Portfolio Optimization**: Modern Portfolio Theory implementation with efficient frontier calculation
 - **Statistical Arbitrage**: Cointegration analysis and pair trading opportunity identification
 - **Time Series Analysis**: ARIMA modeling, seasonality detection, and stationarity testing

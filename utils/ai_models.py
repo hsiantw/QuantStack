@@ -12,98 +12,144 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class AIModels:
-    """AI-powered financial analysis and prediction models"""
+    """AI-powered financial analysis and prediction models with extended historical training data"""
     
-    def __init__(self, price_data, ticker):
+    def __init__(self, price_data, ticker, use_extended_history=True, training_years=15):
         """
-        Initialize with price data
+        Initialize with price data, optionally using extended historical data for training
         
         Args:
-            price_data (pandas.DataFrame): OHLCV data
+            price_data (pandas.DataFrame): Recent OHLCV data for prediction
             ticker (str): Asset ticker
+            use_extended_history (bool): Whether to fetch 10-20 years of historical data for training
+            training_years (int): Number of years of historical data for training (10-20)
         """
         self.data = price_data.copy()
         self.ticker = ticker
         self.scaler = StandardScaler()
+        self.use_extended_history = use_extended_history
+        self.training_years = max(10, min(20, training_years))  # Ensure 10-20 year range
+        self.training_data = None
         
-        # Prepare features
+        # Get extended historical data for training if requested
+        if use_extended_history:
+            self._fetch_training_data()
+        
+        # Prepare features for both training and prediction data
         self._prepare_features()
     
+    def _fetch_training_data(self):
+        """Fetch extended historical data for AI model training"""
+        from utils.data_fetcher import DataFetcher
+        
+        try:
+            st.info(f"Fetching {self.training_years} years of historical data for robust AI training...")
+            self.training_data = DataFetcher.get_historical_data_for_ai(
+                self.ticker, 
+                years_back=self.training_years
+            )
+            
+            if not self.training_data.empty:
+                st.success(f"Successfully loaded {len(self.training_data)} days of historical data "
+                          f"({self.training_data.attrs.get('years_covered', self.training_years)} years) for training")
+            else:
+                st.warning("Could not fetch extended historical data. Using provided data for training.")
+                self.training_data = self.data.copy()
+                
+        except Exception as e:
+            st.warning(f"Error fetching training data: {str(e)}. Using provided data for training.")
+            self.training_data = self.data.copy()
+    
     def _prepare_features(self):
-        """Prepare features for ML models"""
+        """Prepare features for ML models using both training and prediction data"""
+        
+        # Prepare features for training data if available
+        if self.training_data is not None and not self.training_data.empty:
+            self.training_features = self._calculate_features(self.training_data.copy())
+        
+        # Prepare features for prediction data
+        self.prediction_features = self._calculate_features(self.data.copy())
+    
+    def _calculate_features(self, data):
+        """Calculate features for a given dataset"""
         
         # Price-based features
-        self.data['Returns'] = self.data['Close'].pct_change()
-        self.data['Log_Returns'] = np.log(self.data['Close'] / self.data['Close'].shift(1))
-        self.data['High_Low_Ratio'] = self.data['High'] / self.data['Low']
-        self.data['Close_Open_Ratio'] = self.data['Close'] / self.data['Open']
+        data['Returns'] = data['Close'].pct_change()
+        data['Log_Returns'] = np.log(data['Close'] / data['Close'].shift(1))
+        data['High_Low_Ratio'] = data['High'] / data['Low']
+        data['Close_Open_Ratio'] = data['Close'] / data['Open']
         
         # Technical indicators
         # Moving averages
         for window in [5, 10, 20, 50]:
-            self.data[f'MA_{window}'] = self.data['Close'].rolling(window=window).mean()
-            self.data[f'MA_Ratio_{window}'] = self.data['Close'] / self.data[f'MA_{window}']
+            data[f'MA_{window}'] = data['Close'].rolling(window=window).mean()
+            data[f'MA_Ratio_{window}'] = data['Close'] / data[f'MA_{window}']
         
         # Volatility
         for window in [5, 10, 20]:
-            self.data[f'Volatility_{window}'] = self.data['Returns'].rolling(window=window).std()
+            data[f'Volatility_{window}'] = data['Returns'].rolling(window=window).std()
         
         # RSI
-        delta = self.data['Close'].diff()
+        delta = data['Close'].diff()
         gain = delta.where(delta > 0, 0).rolling(window=14).mean()
         loss = -delta.where(delta < 0, 0).rolling(window=14).mean()
         rs = gain / loss
-        self.data['RSI'] = 100 - (100 / (1 + rs))
+        data['RSI'] = 100 - (100 / (1 + rs))
         
         # Bollinger Bands
-        ma_20 = self.data['Close'].rolling(window=20).mean()
-        std_20 = self.data['Close'].rolling(window=20).std()
-        self.data['BB_Upper'] = ma_20 + (2 * std_20)
-        self.data['BB_Lower'] = ma_20 - (2 * std_20)
-        self.data['BB_Position'] = (self.data['Close'] - self.data['BB_Lower']) / (self.data['BB_Upper'] - self.data['BB_Lower'])
+        ma_20 = data['Close'].rolling(window=20).mean()
+        std_20 = data['Close'].rolling(window=20).std()
+        data['BB_Upper'] = ma_20 + (2 * std_20)
+        data['BB_Lower'] = ma_20 - (2 * std_20)
+        data['BB_Position'] = (data['Close'] - data['BB_Lower']) / (data['BB_Upper'] - data['BB_Lower'])
         
         # Volume indicators
-        if 'Volume' in self.data.columns:
-            self.data['Volume_MA_10'] = self.data['Volume'].rolling(window=10).mean()
-            self.data['Volume_Ratio'] = self.data['Volume'] / self.data['Volume_MA_10']
+        if 'Volume' in data.columns:
+            data['Volume_MA_10'] = data['Volume'].rolling(window=10).mean()
+            data['Volume_Ratio'] = data['Volume'] / data['Volume_MA_10']
         
         # Lag features
         for lag in range(1, 6):
-            self.data[f'Return_Lag_{lag}'] = self.data['Returns'].shift(lag)
-            self.data[f'Price_Lag_{lag}'] = self.data['Close'].shift(lag)
+            data[f'Return_Lag_{lag}'] = data['Returns'].shift(lag)
+            data[f'Price_Lag_{lag}'] = data['Close'].shift(lag)
         
         # Future returns (targets)
         for horizon in [1, 5, 10]:
-            self.data[f'Future_Return_{horizon}'] = self.data['Returns'].shift(-horizon)
-            self.data[f'Future_Price_{horizon}'] = self.data['Close'].shift(-horizon)
-    
-    def get_feature_columns(self):
-        """Get list of feature columns"""
-        excluded_cols = ['Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close'] + \
-                       [col for col in self.data.columns if col.startswith('Future_')]
+            data[f'Future_Return_{horizon}'] = data['Returns'].shift(-horizon)
+            data[f'Future_Price_{horizon}'] = data['Close'].shift(-horizon)
         
-        feature_cols = [col for col in self.data.columns if col not in excluded_cols]
+        return data
+    
+    def get_feature_columns(self, data):
+        """Get list of feature columns from given dataset"""
+        excluded_cols = ['Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close'] + \
+                       [col for col in data.columns if col.startswith('Future_')]
+        
+        feature_cols = [col for col in data.columns if col not in excluded_cols]
         return feature_cols
     
     def prepare_data_for_training(self, target_horizon=1, test_size=0.2):
         """
-        Prepare data for training ML models
+        Prepare data for training ML models using extended historical data
         
         Args:
             target_horizon (int): Prediction horizon in days
             test_size (float): Test set size
         
         Returns:
-            tuple: (X_train, X_test, y_train, y_test, feature_names)
+            tuple: (X_train, X_test, y_train, y_test, feature_names, training_info)
         """
+        # Use training data if available, otherwise fall back to prediction data
+        training_data = self.training_features if hasattr(self, 'training_features') and self.training_features is not None else self.prediction_features
+        
         target_col = f'Future_Return_{target_horizon}'
-        feature_cols = self.get_feature_columns()
+        feature_cols = self.get_feature_columns(training_data)
         
         # Remove rows with NaN values
-        clean_data = self.data[feature_cols + [target_col]].dropna()
+        clean_data = training_data[feature_cols + [target_col]].dropna()
         
         if len(clean_data) < 100:
-            raise ValueError("Insufficient data for training. Need at least 100 samples.")
+            raise ValueError(f"Insufficient data for training. Need at least 100 samples, got {len(clean_data)}.")
         
         X = clean_data[feature_cols]
         y = clean_data[target_col]
@@ -120,7 +166,17 @@ class AIModels:
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
         
-        return X_train_scaled, X_test_scaled, y_train.values, y_test.values, feature_cols
+        # Prepare training info
+        training_info = {
+            'total_samples': len(clean_data),
+            'training_samples': len(X_train),
+            'test_samples': len(X_test),
+            'features_count': len(feature_cols),
+            'data_period': f"{training_data.index[0].strftime('%Y-%m-%d')} to {training_data.index[-1].strftime('%Y-%m-%d')}",
+            'years_of_data': (training_data.index[-1] - training_data.index[0]).days / 365.25
+        }
+        
+        return X_train_scaled, X_test_scaled, y_train.values, y_test.values, feature_cols, training_info
     
     def train_random_forest(self, target_horizon=1, **kwargs):
         """

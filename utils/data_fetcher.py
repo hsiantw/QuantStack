@@ -43,6 +43,58 @@ class DataFetcher:
             return pd.DataFrame()
     
     @staticmethod
+    @st.cache_data(ttl=1800)  # Cache for 30 minutes for AI training data
+    def get_historical_data_for_ai(ticker, years_back=15):
+        """
+        Get extended historical data specifically for AI model training
+        Uses 10-20 year historical period for robust training data
+        
+        Args:
+            ticker (str): Ticker symbol
+            years_back (int): Number of years of historical data (default 15, range 10-20)
+        
+        Returns:
+            pandas.DataFrame: Extended historical OHLCV data
+        """
+        try:
+            # Ensure years_back is within the recommended range
+            years_back = max(10, min(20, years_back))
+            
+            # Calculate start date
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=years_back * 365)
+            
+            # Format dates for yfinance
+            start_str = start_date.strftime('%Y-%m-%d')
+            end_str = end_date.strftime('%Y-%m-%d')
+            
+            # Fetch data using date range instead of period for precision
+            stock = yf.Ticker(ticker)
+            data = stock.history(start=start_str, end=end_str, interval="1d")
+            
+            if data.empty:
+                st.warning(f"No historical data available for {ticker} in the requested period")
+                return pd.DataFrame()
+            
+            # Ensure we have sufficient data for AI training
+            min_required_days = years_back * 250  # Approximate trading days
+            if len(data) < min_required_days * 0.7:  # Allow 30% tolerance
+                st.warning(f"Limited historical data for {ticker}: {len(data)} days available, recommended minimum: {int(min_required_days * 0.7)}")
+            
+            # Add metadata about the data period
+            data.attrs['ticker'] = ticker
+            data.attrs['start_date'] = start_str
+            data.attrs['end_date'] = end_str
+            data.attrs['years_covered'] = years_back
+            data.attrs['total_days'] = len(data)
+            
+            return data
+            
+        except Exception as e:
+            st.error(f"Error fetching historical data for AI training: {str(e)}")
+            return pd.DataFrame()
+    
+    @staticmethod
     @st.cache_data(ttl=3600)  # Cache for 1 hour
     def get_stock_info(ticker):
         """
