@@ -103,6 +103,20 @@ def main_dashboard():
         if st.button("Launch Strategy Optimizer"):
             st.switch_page("pages/strategy_comparison.py")
     
+    # Additional features row
+    col7, col8 = st.columns(2)
+    
+    with col7:
+        st.subheader("📰 Market Information Sources")
+        st.write("Comprehensive guide to critical data sources including SEC filings, economic indicators, and Fed data.")
+        if st.button("Launch Information Sources Guide"):
+            st.switch_page("pages/market_information_sources.py")
+    
+    with col8:
+        st.subheader("💡 Educational Resources")
+        st.write("Learn about financial concepts, formulas, and market analysis techniques with interactive tooltips.")
+        st.info("Educational tooltips are available throughout all platform pages")
+    
     st.markdown("---")
     
     # Quick analysis section
