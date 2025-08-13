@@ -225,6 +225,9 @@ with st.spinner(f"Fetching data for {ticker_input}..."):
         # Get stock info for context
         stock_info = DataFetcher.get_stock_info(ticker_input)
         
+        # Initialize strategy results dictionary
+        strategy_results = {}
+        
     except Exception as e:
         st.error(f"Error fetching data: {str(e)}")
         st.stop()
@@ -415,8 +418,6 @@ if analysis_mode == "🤖 AI Strategy Optimization":
 else:
     # Traditional Backtesting Mode
     st.header("📊 Traditional Strategy Backtesting")
-    
-    strategy_results = {}
     
     # Run backtests for selected strategies
     with st.spinner("Running strategy backtests..."):
