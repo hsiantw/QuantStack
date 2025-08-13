@@ -37,7 +37,8 @@ analysis_mode = st.sidebar.radio(
 if analysis_mode == "Sector Analysis":
     # Sector-based analysis
     sectors = {
-        "Technology": ["AAPL", "MSFT", "GOOGL", "NVDA", "META", "TSLA", "NFLX", "ADBE"],
+        "Broad Market ETFs": ["SPY", "QQQ", "IWM", "VTI", "EFA", "EEM", "TLT", "GLD"],
+        "Technology": ["QQQ", "AAPL", "MSFT", "GOOGL", "NVDA", "META", "TSLA", "NFLX", "ADBE"],
         "Banking": ["JPM", "BAC", "WFC", "C", "GS", "MS", "USB", "PNC"],
         "Healthcare": ["JNJ", "PFE", "UNH", "ABBV", "MRK", "TMO", "ABT", "LLY"],
         "Energy": ["XOM", "CVX", "COP", "EOG", "SLB", "PSX", "VLO", "MPC"],
@@ -53,16 +54,17 @@ if analysis_mode == "Sector Analysis":
 
 elif analysis_mode == "Custom Pair":
     # Custom pair selection
-    asset1 = st.sidebar.text_input("Asset 1 (e.g., AAPL)", value="AAPL").upper()
-    asset2 = st.sidebar.text_input("Asset 2 (e.g., MSFT)", value="MSFT").upper()
+    asset1 = st.sidebar.text_input("Asset 1 (e.g., SPY)", value="SPY").upper()
+    asset2 = st.sidebar.text_input("Asset 2 (e.g., QQQ)", value="QQQ").upper()
     selected_assets = [asset1, asset2] if asset1 and asset2 else []
 
 else:  # Multi-Asset Screening
     # Multi-asset screening
-    default_assets = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "JPM", "BAC", "JNJ", "PFE"]
+    default_assets = ["SPY", "QQQ", "IWM", "VTI", "EFA", "EEM"]
+    other_assets = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "JPM", "BAC", "JNJ", "PFE", "NVDA", "HD", "PG", "KO", "XOM", "CVX", "UNH", "V", "MA", "DIS"]
     selected_assets = st.sidebar.multiselect(
         "Select assets for screening",
-        default_assets + ["NVDA", "HD", "PG", "KO", "XOM", "CVX", "UNH", "V", "MA", "DIS"],
+        default_assets + other_assets,
         default=default_assets
     )
 

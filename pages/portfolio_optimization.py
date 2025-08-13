@@ -28,11 +28,12 @@ st.markdown("Modern Portfolio Theory implementation with efficient frontier calc
 st.sidebar.header("Portfolio Configuration")
 
 # Stock selection
-default_tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "JPM", "JNJ", "V"]
+default_tickers = ["SPY", "QQQ", "IWM", "VTI", "EFA"]
+other_tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "JPM", "JNJ", "V", "EEM", "TLT", "GLD", "BND"]
 selected_tickers = st.sidebar.multiselect(
     "Select stocks for portfolio",
-    options=default_tickers + ["SPY", "QQQ", "IWM", "EFA", "EEM", "TLT", "GLD", "VTI", "BND"],
-    default=default_tickers[:5],
+    options=default_tickers + other_tickers,
+    default=default_tickers,
     help="Choose 3-15 stocks for optimal diversification"
 )
 

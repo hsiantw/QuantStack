@@ -30,7 +30,7 @@ st.sidebar.header("AI Analysis Configuration")
 # Asset selection
 ticker_input = st.sidebar.text_input(
     "Enter Stock Ticker",
-    value="AAPL",
+    value="SPY",
     help="Enter a valid stock ticker symbol"
 ).upper()
 

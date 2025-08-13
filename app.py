@@ -122,7 +122,7 @@ def main_dashboard():
     # Quick analysis section
     st.header("⚡ Quick Analysis")
     
-    ticker = st.text_input("Enter a stock ticker for quick analysis:", value="AAPL").upper()
+    ticker = st.text_input("Enter a stock ticker for quick analysis:", value="SPY").upper()
     
     if ticker:
         try:
