@@ -13,6 +13,7 @@ from utils.data_fetcher import DataFetcher
 from utils.trading_strategies import TradingStrategies
 from utils.backtesting import BacktestingEngine
 from utils.tooltips import get_tooltip_help
+from utils.ai_strategy_optimizer import AIStrategyOptimizer
 
 # Page configuration
 st.set_page_config(
@@ -67,20 +68,40 @@ selected_period = st.sidebar.selectbox(
     index=2
 )
 
-# Strategy selection
-st.sidebar.subheader("Strategy Selection")
+# Analysis Mode Selection
+st.sidebar.subheader("Analysis Mode")
 
-strategies_to_test = st.sidebar.multiselect(
-    "Select strategies to backtest",
-    [
-        "Moving Average Crossover",
-        "RSI Mean Reversion", 
-        "Bollinger Bands",
-        "Momentum Strategy",
-        "Mean Reversion"
-    ],
-    default=["Moving Average Crossover", "RSI Mean Reversion"]
+analysis_mode = st.sidebar.radio(
+    "Choose Analysis Mode",
+    ["🤖 AI Strategy Optimization", "📊 Traditional Backtesting"],
+    help="AI mode optimizes strategies to minimize drawdown while maximizing returns"
 )
+
+if analysis_mode == "📊 Traditional Backtesting":
+    strategies_to_test = st.sidebar.multiselect(
+        "Select strategies to backtest",
+        [
+            "Moving Average Crossover",
+            "RSI Mean Reversion", 
+            "Bollinger Bands",
+            "Momentum Strategy",
+            "Mean Reversion"
+        ],
+        default=["Moving Average Crossover", "RSI Mean Reversion"]
+    )
+else:
+    st.sidebar.markdown("🤖 **AI will optimize strategies automatically**")
+    target_metric = st.sidebar.selectbox(
+        "Optimization Target",
+        ["calmar_ratio", "sharpe_ratio", "total_return"],
+        help="Calmar ratio balances returns vs drawdown"
+    )
+    
+    max_drawdown_target = st.sidebar.slider(
+        "Maximum Acceptable Drawdown (%)",
+        5, 30, 15, 1,
+        help="AI will try to keep drawdown below this level"
+    ) / 100
 
 # Backtesting parameters
 with st.sidebar.expander("Backtesting Parameters"):
@@ -108,17 +129,17 @@ with st.sidebar.expander("Backtesting Parameters"):
         step=0.01
     ) / 100
 
-# Strategy-specific parameters
+# Strategy-specific parameters (only for traditional backtesting)
 strategy_params = {}
 
-if "Moving Average Crossover" in strategies_to_test:
+if analysis_mode == "📊 Traditional Backtesting" and "Moving Average Crossover" in strategies_to_test:
     with st.sidebar.expander("Moving Average Parameters"):
         strategy_params["MA"] = {
             "short_window": st.slider("Short MA Window", 5, 50, 20),
             "long_window": st.slider("Long MA Window", 20, 200, 50)
         }
 
-if "RSI Mean Reversion" in strategies_to_test:
+if analysis_mode == "📊 Traditional Backtesting" and "RSI Mean Reversion" in strategies_to_test:
     with st.sidebar.expander("RSI Parameters"):
         strategy_params["RSI"] = {
             "rsi_window": st.slider("RSI Window", 5, 30, 14),
@@ -126,21 +147,21 @@ if "RSI Mean Reversion" in strategies_to_test:
             "overbought": st.slider("Overbought Level", 60, 90, 70)
         }
 
-if "Bollinger Bands" in strategies_to_test:
+if analysis_mode == "📊 Traditional Backtesting" and "Bollinger Bands" in strategies_to_test:
     with st.sidebar.expander("Bollinger Bands Parameters"):
         strategy_params["BB"] = {
             "window": st.slider("BB Window", 10, 50, 20),
             "num_std": st.slider("Standard Deviations", 1.0, 3.0, 2.0, 0.1)
         }
 
-if "Momentum Strategy" in strategies_to_test:
+if analysis_mode == "📊 Traditional Backtesting" and "Momentum Strategy" in strategies_to_test:
     with st.sidebar.expander("Momentum Parameters"):
         strategy_params["Momentum"] = {
             "lookback": st.slider("Lookback Period", 5, 30, 10),
             "holding_period": st.slider("Holding Period", 1, 10, 5)
         }
 
-if "Mean Reversion" in strategies_to_test:
+if analysis_mode == "📊 Traditional Backtesting" and "Mean Reversion" in strategies_to_test:
     with st.sidebar.expander("Mean Reversion Parameters"):
         strategy_params["MeanRev"] = {
             "window": st.slider("MR Window", 10, 50, 20),
@@ -151,7 +172,7 @@ if not ticker_input:
     st.warning("Please enter a stock ticker symbol.")
     st.stop()
 
-if not strategies_to_test:
+if analysis_mode == "📊 Traditional Backtesting" and not strategies_to_test:
     st.warning("Please select at least one strategy to backtest.")
     st.stop()
 
@@ -226,13 +247,150 @@ if stock_info:
         volatility = ohlcv_data['Close'].pct_change().std() * np.sqrt(252)
         st.metric("Annualized Volatility", f"{volatility:.2%}")
 
-# Strategy Backtesting
-st.header("🎯 Strategy Backtesting Results")
+# Main Analysis Section
+if analysis_mode == "🤖 AI Strategy Optimization":
+    st.header("🤖 AI Strategy Optimization Results")
+    
+    with st.spinner("Running AI optimization to find best strategies with minimal drawdown..."):
+        try:
+            # Initialize AI optimizer
+            ai_optimizer = AIStrategyOptimizer()
+            
+            # Generate comprehensive recommendations
+            recommendations = ai_optimizer.generate_strategy_recommendations(ohlcv_data)
+            
+            # Display AI optimization results
+            if recommendations:
+                # Top 3 strategies
+                if 'top_strategies' in recommendations:
+                    st.subheader("🏆 Top Optimized Strategies")
+                    
+                    for i, (strategy_name, metrics) in enumerate(recommendations['top_strategies']):
+                        with st.expander(f"#{i+1} {strategy_name} - Calmar Ratio: {metrics.get('calmar_ratio', 0):.3f}"):
+                            col1, col2, col3, col4 = st.columns(4)
+                            
+                            with col1:
+                                st.metric("Total Return", f"{metrics.get('total_return', 0):.2%}")
+                                st.metric("Win Rate", f"{metrics.get('win_rate', 0):.2%}")
+                            
+                            with col2:
+                                st.metric("Sharpe Ratio", f"{metrics.get('sharpe_ratio', 0):.3f}")
+                                st.metric("Profit Factor", f"{metrics.get('profit_factor', 0):.2f}")
+                            
+                            with col3:
+                                st.metric("Max Drawdown", f"{metrics.get('max_drawdown', 0):.2%}")
+                                st.metric("Volatility", f"{metrics.get('volatility', 0):.2%}")
+                            
+                            with col4:
+                                st.metric("Calmar Ratio", f"{metrics.get('calmar_ratio', 0):.3f}")
+                                if 'params' in metrics:
+                                    st.info(f"Parameters: {metrics['params']}")
+                
+                # Moving Average optimization details
+                if 'moving_average' in recommendations and recommendations['moving_average']['best']:
+                    st.subheader("📈 Moving Average Strategy Optimization")
+                    
+                    ma_best = recommendations['moving_average']['best']
+                    st.success(f"**Best MA Strategy:** {ma_best.get('params', 'N/A')}")
+                    
+                    # Create comparison table
+                    ma_results = recommendations['moving_average']['all_results']
+                    if ma_results:
+                        df_ma = pd.DataFrame(ma_results)
+                        df_ma = df_ma.sort_values('calmar_ratio', ascending=False)
+                        
+                        st.dataframe(
+                            df_ma[['params', 'total_return', 'max_drawdown', 'sharpe_ratio', 'calmar_ratio']].round(4),
+                            use_container_width=True
+                        )
+                        
+                        # Highlight the issue with high drawdown
+                        high_drawdown = df_ma[df_ma['max_drawdown'] < -0.20]  # More than 20% drawdown
+                        if not high_drawdown.empty:
+                            st.warning(f"⚠️ {len(high_drawdown)} MA strategies have drawdown > 20%. Consider the risk-adjusted strategy below.")
+                
+                # Risk-adjusted strategy
+                if 'risk_adjusted' in recommendations:
+                    st.subheader("🛡️ AI Risk-Adjusted Strategy")
+                    risk_metrics = recommendations['risk_adjusted']
+                    
+                    st.success("**AI Solution:** Dynamic position sizing with volatility and drawdown filters")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Max Drawdown", f"{risk_metrics.get('max_drawdown', 0):.2%}")
+                    with col2:
+                        st.metric("Calmar Ratio", f"{risk_metrics.get('calmar_ratio', 0):.3f}")
+                    with col3:
+                        st.metric("Total Return", f"{risk_metrics.get('total_return', 0):.2%}")
+                    
+                    st.info("🔬 This strategy uses AI to dynamically adjust position sizes based on volatility and current drawdown, helping minimize downside while preserving upside.")
+                
+                # Ensemble strategy
+                if 'ensemble' in recommendations:
+                    st.subheader("🎯 AI Ensemble Strategy")
+                    ensemble_metrics = recommendations['ensemble']
+                    
+                    st.success("**AI Ensemble:** Combines multiple signals using machine learning")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Total Return", f"{ensemble_metrics.get('total_return', 0):.2%}")
+                    with col2:
+                        st.metric("Max Drawdown", f"{ensemble_metrics.get('max_drawdown', 0):.2%}")
+                    with col3:
+                        st.metric("Sharpe Ratio", f"{ensemble_metrics.get('sharpe_ratio', 0):.3f}")
+                
+                # Feature importance
+                if 'feature_importance' in recommendations and recommendations['feature_importance']:
+                    st.subheader("🧠 AI Feature Importance")
+                    
+                    feature_df = pd.DataFrame([
+                        {'Feature': k, 'Importance': v} 
+                        for k, v in sorted(recommendations['feature_importance'].items(), 
+                                         key=lambda x: x[1], reverse=True)[:10]
+                    ])
+                    
+                    fig = go.Figure(data=go.Bar(
+                        x=feature_df['Importance'],
+                        y=feature_df['Feature'],
+                        orientation='h'
+                    ))
+                    fig.update_layout(
+                        title="Top 10 Most Important Features for Strategy Success",
+                        xaxis_title="Importance Score",
+                        height=400
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                # Strategy recommendations
+                st.subheader("💡 AI Recommendations")
+                
+                if 'moving_average' in recommendations and recommendations['moving_average']['best']:
+                    ma_best = recommendations['moving_average']['best']
+                    if ma_best.get('max_drawdown', 0) < -0.15:  # More than 15% drawdown
+                        st.warning(f"⚠️ Your current MA({ma_best.get('fast_ma', 20)}, {ma_best.get('slow_ma', 50)}) strategy has high drawdown of {ma_best.get('max_drawdown', 0):.1%}")
+                        
+                        st.markdown("**AI Suggestions to minimize downside:**")
+                        st.markdown("1. 🛡️ Use the **Risk-Adjusted Strategy** with dynamic position sizing")
+                        st.markdown("2. 🎯 Combine with **Ensemble Strategy** for better signal quality")
+                        st.markdown("3. 📊 Consider shorter MA periods or add volatility filters")
+                        st.markdown("4. ⏰ Implement position sizing based on market regime")
+                
+            else:
+                st.error("Unable to generate AI recommendations. Please try with different parameters.")
+                
+        except Exception as e:
+            st.error(f"Error running AI optimization: {str(e)}")
 
-strategy_results = {}
-
-# Run backtests for selected strategies
-with st.spinner("Running strategy backtests..."):
+else:
+    # Traditional Backtesting Mode
+    st.header("📊 Traditional Strategy Backtesting")
+    
+    strategy_results = {}
+    
+    # Run backtests for selected strategies
+    with st.spinner("Running strategy backtests..."):
     try:
         # Moving Average Crossover
         if "Moving Average Crossover" in strategies_to_test:
