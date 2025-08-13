@@ -103,6 +103,9 @@ else:
         5, 30, 15, 1,
         help="AI will try to keep drawdown below this level"
     ) / 100
+    
+    # Set empty list for AI mode
+    strategies_to_test = []
 
 # Backtesting parameters
 with st.sidebar.expander("Backtesting Parameters"):
@@ -503,208 +506,213 @@ else:
                 "params": params
             }
             
-    except Exception as e:
-        st.error(f"Error running backtests: {str(e)}")
-        st.stop()
+        except Exception as e:
+            st.error(f"Error running backtests: {str(e)}")
+            strategy_results = {}
 
-# Performance Comparison Table
-st.subheader("📈 Performance Comparison")
+# Performance Analysis for Traditional Backtesting Only
+if analysis_mode == "📊 Traditional Backtesting":
+    st.subheader("📈 Performance Comparison")
 
-# Add tooltips for trading strategy metrics
-with st.expander("💡 Trading Strategy Metrics Explained"):
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown("**Sharpe Ratio:**")
-        st.markdown(get_tooltip_help("sharpe_ratio")[:150] + "...")
-    with col2:
-        st.markdown("**Win Rate:**")
-        st.markdown(get_tooltip_help("win_rate")[:150] + "...")
-    with col3:
-        st.markdown("**Max Drawdown:**")
-        st.markdown(get_tooltip_help("maximum_drawdown")[:150] + "...")
+    # Add tooltips for trading strategy metrics
+    with st.expander("💡 Trading Strategy Metrics Explained"):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("**Sharpe Ratio:**")
+            st.markdown(get_tooltip_help("sharpe_ratio")[:150] + "...")
+        with col2:
+            st.markdown("**Win Rate:**")
+            st.markdown(get_tooltip_help("win_rate")[:150] + "...")
+        with col3:
+            st.markdown("**Max Drawdown:**")
+            st.markdown(get_tooltip_help("maximum_drawdown")[:150] + "...")
 
-if strategy_results:
-    comparison_data = []
-    
-    # Add Buy & Hold baseline
-    buy_hold_return = (ohlcv_data['Close'].iloc[-1] - ohlcv_data['Close'].iloc[0]) / ohlcv_data['Close'].iloc[0]
-    buy_hold_volatility = ohlcv_data['Close'].pct_change().std() * np.sqrt(252)
-    buy_hold_sharpe = (buy_hold_return * 252/len(ohlcv_data) - 0.02) / buy_hold_volatility if buy_hold_volatility != 0 else 0
-    
-    comparison_data.append({
-        "Strategy": "Buy & Hold",
-        "Total Return": f"{buy_hold_return:.2%}",
-        "Annualized Return": f"{buy_hold_return * 252/len(ohlcv_data):.2%}",
-        "Volatility": f"{buy_hold_volatility:.2%}",
-        "Sharpe Ratio": f"{buy_hold_sharpe:.3f}",
-        "Max Drawdown": "N/A",
-        "Win Rate": "N/A",
-        "Total Trades": "1"
-    })
-    
-    # Add strategy results
-    for strategy_name, results in strategy_results.items():
-        metrics = results["metrics"]
+    if strategy_results:
+        comparison_data = []
+        
+        # Add Buy & Hold baseline
+        buy_hold_return = (ohlcv_data['Close'].iloc[-1] - ohlcv_data['Close'].iloc[0]) / ohlcv_data['Close'].iloc[0]
+        buy_hold_volatility = ohlcv_data['Close'].pct_change().std() * np.sqrt(252)
+        buy_hold_sharpe = (buy_hold_return * 252/len(ohlcv_data) - 0.02) / buy_hold_volatility if buy_hold_volatility != 0 else 0
+        
         comparison_data.append({
-            "Strategy": strategy_name,
-            "Total Return": f"{metrics['Total Return']:.2%}",
-            "Annualized Return": f"{metrics['Annualized Return']:.2%}",
-            "Volatility": f"{metrics['Volatility']:.2%}",
-            "Sharpe Ratio": f"{metrics['Sharpe Ratio']:.3f}",
-            "Max Drawdown": f"{metrics['Max Drawdown']:.2%}",
-            "Win Rate": f"{metrics['Win Rate']:.2%}",
-            "Total Trades": f"{metrics['Total Trades']:.0f}"
+            "Strategy": "Buy & Hold",
+            "Total Return": f"{buy_hold_return:.2%}",
+            "Annualized Return": f"{buy_hold_return * 252/len(ohlcv_data):.2%}",
+            "Volatility": f"{buy_hold_volatility:.2%}",
+            "Sharpe Ratio": f"{buy_hold_sharpe:.3f}",
+            "Max Drawdown": "N/A",
+            "Win Rate": "N/A",
+            "Total Trades": "1"
         })
-    
-    comparison_df = pd.DataFrame(comparison_data)
-    st.dataframe(comparison_df, use_container_width=True, hide_index=True)
-    
-    # Highlight best performing strategy
-    if len(strategy_results) > 0:
-        best_strategy = max(strategy_results.keys(), 
-                          key=lambda x: strategy_results[x]["metrics"]["Sharpe Ratio"])
-        st.success(f"🏆 Best performing strategy: **{best_strategy}** (Sharpe Ratio: {strategy_results[best_strategy]['metrics']['Sharpe Ratio']:.3f})")
+        
+        # Add strategy results
+        for strategy_name, results in strategy_results.items():
+            metrics = results["metrics"]
+            comparison_data.append({
+                "Strategy": strategy_name,
+                "Total Return": f"{metrics['Total Return']:.2%}",
+                "Annualized Return": f"{metrics['Annualized Return']:.2%}",
+                "Volatility": f"{metrics['Volatility']:.2%}",
+                "Sharpe Ratio": f"{metrics['Sharpe Ratio']:.3f}",
+                "Max Drawdown": f"{metrics['Max Drawdown']:.2%}",
+                "Win Rate": f"{metrics['Win Rate']:.2%}",
+                "Total Trades": f"{metrics['Total Trades']:.0f}"
+            })
+        
+        comparison_df = pd.DataFrame(comparison_data)
+        st.dataframe(comparison_df, use_container_width=True, hide_index=True)
+        
+        # Highlight best performing strategy
+        if len(strategy_results) > 0:
+            best_strategy = max(strategy_results.keys(), 
+                              key=lambda x: strategy_results[x]["metrics"]["Sharpe Ratio"])
+            st.success(f"🏆 Best performing strategy: **{best_strategy}** (Sharpe Ratio: {strategy_results[best_strategy]['metrics']['Sharpe Ratio']:.3f})")
 
-# Detailed Strategy Analysis
-st.header("📊 Detailed Strategy Analysis")
+    # Detailed Strategy Analysis
+    st.header("📊 Detailed Strategy Analysis")
 
-if strategy_results:
-    selected_strategy = st.selectbox(
-        "Select strategy for detailed analysis",
-        list(strategy_results.keys())
-    )
+    if strategy_results:
+        selected_strategy = st.selectbox(
+            "Select strategy for detailed analysis",
+            list(strategy_results.keys())
+        )
     
-    if selected_strategy:
-        strategy_data = strategy_results[selected_strategy]
-        
-        # Display strategy parameters
-        st.subheader(f"{selected_strategy} - Configuration")
-        params_col1, params_col2 = st.columns(2)
-        
-        with params_col1:
-            st.write("**Strategy Parameters:**")
-            for param, value in strategy_data["params"].items():
-                st.write(f"- {param}: {value}")
-        
-        with params_col2:
-            st.write("**Key Metrics:**")
-            metrics = strategy_data["metrics"]
-            st.write(f"- Total Return: {metrics['Total Return']:.2%}")
-            st.write(f"- Sharpe Ratio: {metrics['Sharpe Ratio']:.3f}")
-            st.write(f"- Max Drawdown: {metrics['Max Drawdown']:.2%}")
-            st.write(f"- Win Rate: {metrics['Win Rate']:.2%}")
-        
-        # Performance visualization
-        try:
-            backtest_plots = backtesting_engine.plot_backtest_results(
-                strategy_data["backtest"], 
-                selected_strategy
-            )
+        if selected_strategy:
+            strategy_data = strategy_results[selected_strategy]
             
-            # Portfolio performance
-            if 'portfolio_value' in backtest_plots:
-                st.plotly_chart(backtest_plots['portfolio_value'], use_container_width=True)
+            # Display strategy parameters
+            st.subheader(f"{selected_strategy} - Configuration")
+            params_col1, params_col2 = st.columns(2)
+            
+            with params_col1:
+                st.write("**Strategy Parameters:**")
+                for param, value in strategy_data["params"].items():
+                    st.write(f"- {param}: {value}")
+            
+            with params_col2:
+                st.write("**Key Metrics:**")
+                metrics = strategy_data["metrics"]
+                st.write(f"- Total Return: {metrics['Total Return']:.2%}")
+                st.write(f"- Sharpe Ratio: {metrics['Sharpe Ratio']:.3f}")
+                st.write(f"- Max Drawdown: {metrics['Max Drawdown']:.2%}")
+                st.write(f"- Win Rate: {metrics['Win Rate']:.2%}")
+            
+            # Performance visualization
+            try:
+                backtest_plots = backtesting_engine.plot_backtest_results(
+                    strategy_data["backtest"], 
+                    selected_strategy
+                )
+                
+                # Portfolio performance
+                if 'portfolio_value' in backtest_plots:
+                    st.plotly_chart(backtest_plots['portfolio_value'], use_container_width=True)
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Drawdown analysis
+                    if 'drawdown' in backtest_plots:
+                        st.plotly_chart(backtest_plots['drawdown'], use_container_width=True)
+                
+                with col2:
+                    # Returns distribution
+                    if 'returns_distribution' in backtest_plots:
+                        st.plotly_chart(backtest_plots['returns_distribution'], use_container_width=True)
+                
+                # Trading signals
+                if 'trades' in backtest_plots:
+                    st.plotly_chart(backtest_plots['trades'], use_container_width=True)
+                
+                # Rolling metrics
+                if 'rolling_metrics' in backtest_plots:
+                    st.plotly_chart(backtest_plots['rolling_metrics'], use_container_width=True)
+                    
+            except Exception as e:
+                st.error(f"Error generating performance plots: {str(e)}")
+
+    # Risk Analysis
+    st.header("⚠️ Risk Analysis")
+
+    if strategy_results:
+        risk_analysis_strategy = st.selectbox(
+            "Select strategy for risk analysis",
+            list(strategy_results.keys()),
+            key="risk_analysis"
+        )
+        
+        if risk_analysis_strategy:
+            strategy_data = strategy_results[risk_analysis_strategy]
+            results_df = strategy_data["backtest"]["results_df"]
+            returns = results_df['Returns'].dropna()
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                var_95 = np.percentile(returns, 5)
+                st.metric("VaR (95%)", f"{var_95:.2%}")
+            
+            with col2:
+                tail_returns = returns[returns <= var_95]
+                es_95 = tail_returns.mean() if len(tail_returns) > 0 else var_95
+                st.metric("Expected Shortfall (95%)", f"{es_95:.2%}")
+            
+            with col3:
+                downside_returns = returns[returns < 0]
+                downside_deviation = downside_returns.std() * np.sqrt(252) if len(downside_returns) > 0 else 0
+                st.metric("Downside Deviation", f"{downside_deviation:.2%}")
+            
+            with col4:
+                calmar_ratio = strategy_data["metrics"]["Calmar Ratio"]
+                st.metric("Calmar Ratio", f"{calmar_ratio:.3f}")
+
+    # Strategy Optimization Suggestions
+    st.header("💡 Optimization Suggestions")
+
+    if strategy_results:
+        st.subheader("Performance Insights")
+        
+        # Analyze best and worst performing strategies
+        if len(strategy_results) > 1:
+            sorted_strategies = sorted(strategy_results.items(), 
+                                     key=lambda x: x[1]["metrics"]["Sharpe Ratio"], 
+                                     reverse=True)
+            
+            best_strategy = sorted_strategies[0]
+            worst_strategy = sorted_strategies[-1]
             
             col1, col2 = st.columns(2)
             
             with col1:
-                # Drawdown analysis
-                if 'drawdown' in backtest_plots:
-                    st.plotly_chart(backtest_plots['drawdown'], use_container_width=True)
+                st.success(f"**Best Strategy: {best_strategy[0]}**")
+                st.write(f"- Sharpe Ratio: {best_strategy[1]['metrics']['Sharpe Ratio']:.3f}")
+                st.write(f"- Total Return: {best_strategy[1]['metrics']['Total Return']:.2%}")
+                st.write(f"- Max Drawdown: {best_strategy[1]['metrics']['Max Drawdown']:.2%}")
+                
+                # Optimization suggestions for best strategy
+                if best_strategy[1]['metrics']['Win Rate'] < 0.5:
+                    st.info("💡 Consider tightening entry criteria to improve win rate")
+                
+                if abs(best_strategy[1]['metrics']['Max Drawdown']) > 0.2:
+                    st.info("💡 Consider adding stop-loss rules to reduce drawdown")
             
             with col2:
-                # Returns distribution
-                if 'returns_distribution' in backtest_plots:
-                    st.plotly_chart(backtest_plots['returns_distribution'], use_container_width=True)
-            
-            # Trading signals
-            if 'trades' in backtest_plots:
-                st.plotly_chart(backtest_plots['trades'], use_container_width=True)
-            
-            # Rolling metrics
-            if 'rolling_metrics' in backtest_plots:
-                st.plotly_chart(backtest_plots['rolling_metrics'], use_container_width=True)
+                st.error(f"**Needs Improvement: {worst_strategy[0]}**")
+                st.write(f"- Sharpe Ratio: {worst_strategy[1]['metrics']['Sharpe Ratio']:.3f}")
+                st.write(f"- Total Return: {worst_strategy[1]['metrics']['Total Return']:.2%}")
+                st.write(f"- Max Drawdown: {worst_strategy[1]['metrics']['Max Drawdown']:.2%}")
                 
-        except Exception as e:
-            st.error(f"Error generating performance plots: {str(e)}")
-
-# Risk Analysis
-st.header("⚠️ Risk Analysis")
-
-if strategy_results:
-    risk_analysis_strategy = st.selectbox(
-        "Select strategy for risk analysis",
-        list(strategy_results.keys()),
-        key="risk_analysis"
-    )
-    
-    if risk_analysis_strategy:
-        strategy_data = strategy_results[risk_analysis_strategy]
-        results_df = strategy_data["backtest"]["results_df"]
-        returns = results_df['Returns'].dropna()
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            var_95 = np.percentile(returns, 5)
-            st.metric("VaR (95%)", f"{var_95:.2%}")
-        
-        with col2:
-            tail_returns = returns[returns <= var_95]
-            es_95 = tail_returns.mean() if len(tail_returns) > 0 else var_95
-            st.metric("Expected Shortfall (95%)", f"{es_95:.2%}")
-        
-        with col3:
-            downside_returns = returns[returns < 0]
-            downside_deviation = downside_returns.std() * np.sqrt(252) if len(downside_returns) > 0 else 0
-            st.metric("Downside Deviation", f"{downside_deviation:.2%}")
-        
-        with col4:
-            calmar_ratio = strategy_data["metrics"]["Calmar Ratio"]
-            st.metric("Calmar Ratio", f"{calmar_ratio:.3f}")
-
-# Strategy Optimization Suggestions
-st.header("💡 Optimization Suggestions")
-
-if strategy_results:
-    st.subheader("Performance Insights")
-    
-    # Analyze best and worst performing strategies
-    if len(strategy_results) > 1:
-        sorted_strategies = sorted(strategy_results.items(), 
-                                 key=lambda x: x[1]["metrics"]["Sharpe Ratio"], 
-                                 reverse=True)
-        
-        best_strategy = sorted_strategies[0]
-        worst_strategy = sorted_strategies[-1]
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.success(f"**Best Strategy: {best_strategy[0]}**")
-            st.write(f"- Sharpe Ratio: {best_strategy[1]['metrics']['Sharpe Ratio']:.3f}")
-            st.write(f"- Total Return: {best_strategy[1]['metrics']['Total Return']:.2%}")
-            st.write(f"- Max Drawdown: {best_strategy[1]['metrics']['Max Drawdown']:.2%}")
-            
-            # Optimization suggestions for best strategy
-            if best_strategy[1]['metrics']['Win Rate'] < 0.5:
-                st.info("💡 Consider tightening entry criteria to improve win rate")
-            
-            if abs(best_strategy[1]['metrics']['Max Drawdown']) > 0.2:
-                st.info("💡 Consider adding stop-loss rules to reduce drawdown")
-        
-        with col2:
-            st.error(f"**Needs Improvement: {worst_strategy[0]}**")
-            st.write(f"- Sharpe Ratio: {worst_strategy[1]['metrics']['Sharpe Ratio']:.3f}")
-            st.write(f"- Total Return: {worst_strategy[1]['metrics']['Total Return']:.2%}")
-            st.write(f"- Max Drawdown: {worst_strategy[1]['metrics']['Max Drawdown']:.2%}")
-            
-            # Suggestions for improvement
-            if worst_strategy[1]['metrics']['Total Trades'] < 10:
-                st.info("💡 Strategy may be too restrictive - consider relaxing entry criteria")
-            
-            if worst_strategy[1]['metrics']['Volatility'] > buy_hold_volatility * 1.5:
-                st.info("💡 High volatility - consider position sizing or risk management")
+                # Suggestions for improvement
+                if worst_strategy[1]['metrics']['Total Trades'] < 10:
+                    st.info("💡 Strategy may be too restrictive - consider relaxing entry criteria")
+                
+                # Need to properly access buy_hold_volatility variable
+                try:
+                    if worst_strategy[1]['metrics']['Volatility'] > 0.3:  # Fixed reference
+                        st.info("💡 High volatility - consider position sizing or risk management")
+                except:
+                    pass
 
 # Export Results
 st.header("📥 Export Results")
