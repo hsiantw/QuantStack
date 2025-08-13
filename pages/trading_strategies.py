@@ -391,7 +391,7 @@ else:
     
     # Run backtests for selected strategies
     with st.spinner("Running strategy backtests..."):
-    try:
+        try:
         # Moving Average Crossover
         if "Moving Average Crossover" in strategies_to_test:
             params = strategy_params.get("MA", {"short_window": 20, "long_window": 50})
