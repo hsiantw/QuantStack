@@ -84,18 +84,25 @@ def main_dashboard():
     # Market overview section
     st.header("🌍 Market Overview")
     
-    # Major indices
+    # Major indices - US and Worldwide
     indices = {
         "S&P 500": "^GSPC",
         "NASDAQ": "^IXIC", 
         "Dow Jones": "^DJI",
-        "VIX": "^VIX"
+        "VIX": "^VIX",
+        "Nikkei 225": "^N225",
+        "Hang Seng": "^HSI",
+        "FTSE 100": "^FTSE",
+        "DAX": "^GDAXI"
     }
     
+    # Display in two rows of 4 columns each
+    st.subheader("🇺🇸 US Markets")
     col1, col2, col3, col4 = st.columns(4)
+    us_indices = list(indices.items())[:4]
     
     try:
-        for i, (name, ticker) in enumerate(indices.items()):
+        for i, (name, ticker) in enumerate(us_indices):
             with [col1, col2, col3, col4][i]:
                 current_price, prev_price, success = get_most_recent_price(ticker)
                 
@@ -107,19 +114,57 @@ def main_dashboard():
                         st.metric(
                             label=name,
                             value=f"{current_price:.2f}",
-                            delta=f"{change_pct:.2f}%" if abs(change_pct) > 0.001 else "0.00%"
+                            delta=f"{change_pct:+.2f}%"
                         )
-                    except Exception as e:
+                    except:
                         st.metric(
                             label=name,
                             value=f"{current_price:.2f}",
                             delta="N/A"
                         )
                 else:
-                    st.metric(label=name, value="Unavailable", delta="N/A")
+                    st.metric(
+                        label=name,
+                        value="N/A",
+                        delta="Data unavailable"
+                    )
+    except Exception as e:
+        st.error(f"Error loading US market data: {str(e)}")
+    
+    st.subheader("🌍 International Markets")  
+    col5, col6, col7, col8 = st.columns(4)
+    intl_indices = list(indices.items())[4:]
+    
+    try:
+        for i, (name, ticker) in enumerate(intl_indices):
+            with [col5, col6, col7, col8][i]:
+                current_price, prev_price, success = get_most_recent_price(ticker)
+                
+                if success and current_price is not None:
+                    try:
+                        change = current_price - prev_price
+                        change_pct = (change / prev_price) * 100 if prev_price != 0 else 0
+                        
+                        st.metric(
+                            label=name,
+                            value=f"{current_price:.2f}",
+                            delta=f"{change_pct:+.2f}%"
+                        )
+                    except:
+                        st.metric(
+                            label=name,
+                            value=f"{current_price:.2f}",
+                            delta="N/A"
+                        )
+                else:
+                    st.metric(
+                        label=name,
+                        value="N/A",
+                        delta="Data unavailable"
+                    )
                     
     except Exception as e:
-        st.error("Unable to fetch market data. Please check your internet connection.")
+        st.error(f"Error loading international market data: {str(e)}")
     
     st.markdown("---")
     

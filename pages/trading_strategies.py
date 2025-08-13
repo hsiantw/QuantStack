@@ -490,22 +490,22 @@ else:
                 "params": params
             }
         
-            # Mean Reversion
-            if "Mean Reversion" in strategies_to_test:
-                params = strategy_params.get("MeanRev", {"window": 20, "threshold": 1.5})
-                mr_data = strategy_engine.mean_reversion_strategy(**params)
-                
-                mr_signals = mr_data['Position'].copy()
-                mr_backtest = backtesting_engine.backtest_signals(ohlcv_data, mr_signals)
-                mr_metrics = backtesting_engine.calculate_performance_metrics(mr_backtest)
-                
-                strategy_results["Mean Reversion"] = {
-                    "data": mr_data,
-                    "backtest": mr_backtest,
-                    "metrics": mr_metrics,
-                    "params": params
-                }
-                
+        # Mean Reversion
+        if "Mean Reversion" in strategies_to_test:
+            params = strategy_params.get("MeanRev", {"window": 20, "threshold": 1.5})
+            mr_data = strategy_engine.mean_reversion_strategy(**params)
+            
+            mr_signals = mr_data['Position'].copy()
+            mr_backtest = backtesting_engine.backtest_signals(ohlcv_data, mr_signals)
+            mr_metrics = backtesting_engine.calculate_performance_metrics(mr_backtest)
+            
+            strategy_results["Mean Reversion"] = {
+                "data": mr_data,
+                "backtest": mr_backtest,
+                "metrics": mr_metrics,
+                "params": params
+            }
+            
         except Exception as e:
             st.error(f"Error running backtests: {str(e)}")
             strategy_results = {}
