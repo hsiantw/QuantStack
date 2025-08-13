@@ -12,6 +12,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.data_fetcher import DataFetcher
 from utils.trading_strategies import TradingStrategies
 from utils.backtesting import BacktestingEngine
+from utils.tooltips import get_tooltip_help
 
 # Page configuration
 st.set_page_config(
@@ -320,6 +321,19 @@ with st.spinner("Running strategy backtests..."):
 
 # Performance Comparison Table
 st.subheader("📈 Performance Comparison")
+
+# Add tooltips for trading strategy metrics
+with st.expander("💡 Trading Strategy Metrics Explained"):
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("**Sharpe Ratio:**")
+        st.markdown(get_tooltip_help("sharpe_ratio")[:150] + "...")
+    with col2:
+        st.markdown("**Win Rate:**")
+        st.markdown(get_tooltip_help("win_rate")[:150] + "...")
+    with col3:
+        st.markdown("**Max Drawdown:**")
+        st.markdown(get_tooltip_help("maximum_drawdown")[:150] + "...")
 
 if strategy_results:
     comparison_data = []

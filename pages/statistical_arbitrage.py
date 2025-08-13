@@ -11,6 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.data_fetcher import DataFetcher
 from utils.statistical_arbitrage import StatisticalArbitrage
+from utils.tooltips import get_tooltip_help
 from utils.backtesting import BacktestingEngine
 
 # Page configuration
@@ -170,6 +171,16 @@ if analysis_mode == "Custom Pair" and len(valid_tickers) == 2:
     asset1, asset2 = valid_tickers[0], valid_tickers[1]
     
     st.header(f"📊 Detailed Pair Analysis: {asset1} vs {asset2}")
+    
+    # Add tooltips for key concepts
+    with st.expander("💡 Key Statistical Arbitrage Concepts"):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Cointegration:**")
+            st.markdown(get_tooltip_help("cointegration")[:200] + "...")
+        with col2:
+            st.markdown("**Z-Score:**")
+            st.markdown(get_tooltip_help("z_score")[:200] + "...")
     
     # Cointegration test
     cointegrated_pairs = stat_arb.find_cointegrated_pairs(cointegration_significance)

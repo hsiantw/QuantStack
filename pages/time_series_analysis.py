@@ -11,6 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.data_fetcher import DataFetcher
 from utils.time_series_analysis import TimeSeriesAnalysis
+from utils.tooltips import get_tooltip_help
 from utils.risk_metrics import RiskMetrics
 
 # Page configuration
@@ -172,6 +173,19 @@ if stock_info:
 
 # Stationarity Analysis
 st.header("📊 Stationarity Analysis")
+
+# Add tooltips for time series concepts
+with st.expander("💡 Time Series Analysis Concepts"):
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("**Stationarity:**")
+        st.markdown(get_tooltip_help("stationarity")[:150] + "...")
+    with col2:
+        st.markdown("**ADF Test:**")
+        st.markdown(get_tooltip_help("augmented_dickey_fuller")[:150] + "...")
+    with col3:
+        st.markdown("**ARIMA Model:**")
+        st.markdown(get_tooltip_help("arima")[:150] + "...")
 
 try:
     stationarity_results = ts_analyzer.stationarity_test()

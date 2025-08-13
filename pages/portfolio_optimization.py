@@ -12,6 +12,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.data_fetcher import DataFetcher
 from utils.portfolio_optimizer import PortfolioOptimizer
 from utils.risk_metrics import RiskMetrics
+from utils.tooltips import get_tooltip_help
 
 # Page configuration
 st.set_page_config(
@@ -201,6 +202,18 @@ if not returns_data.empty:
     # Portfolio comparison table
     st.subheader("Portfolio Comparison")
     
+    # Add helpful tooltips for metrics
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.info("💡 **Sharpe Ratio**: " + get_tooltip_help("sharpe_ratio")[:100] + "...")
+    
+    with col2:
+        st.info("💡 **Value at Risk**: " + get_tooltip_help("value_at_risk")[:100] + "...")
+    
+    with col3:
+        st.info("💡 **Max Drawdown**: " + get_tooltip_help("maximum_drawdown")[:100] + "...")
+    
     comparison_data = []
     for name, results in portfolio_results.items():
         comparison_data.append({
@@ -240,6 +253,10 @@ if not returns_data.empty:
     
     # Efficient Frontier
     st.header("📊 Efficient Frontier Analysis")
+    
+    # Add tooltip for efficient frontier
+    with st.expander("💡 What is the Efficient Frontier?"):
+        st.markdown(get_tooltip_help("efficient_frontier"))
     
     with st.spinner("Generating efficient frontier..."):
         try:

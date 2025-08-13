@@ -12,6 +12,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.data_fetcher import DataFetcher
 from utils.ai_models import AIModels
 from utils.time_series_analysis import TimeSeriesAnalysis
+from utils.tooltips import get_tooltip_help
 
 # Page configuration
 st.set_page_config(
@@ -292,6 +293,19 @@ with st.spinner("Training AI models... This may take a moment."):
 # Model Performance Comparison
 if model_results:
     st.subheader("📈 Model Performance Comparison")
+    
+    # Add tooltips for key ML concepts
+    with st.expander("💡 Machine Learning Metrics Explained"):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("**R-Squared (R²):**")
+            st.markdown(get_tooltip_help("r_squared")[:150] + "...")
+        with col2:
+            st.markdown("**Mean Squared Error:**")
+            st.markdown(get_tooltip_help("mean_squared_error")[:150] + "...")
+        with col3:
+            st.markdown("**Feature Importance:**")
+            st.markdown(get_tooltip_help("feature_importance")[:150] + "...")
     
     # Performance metrics table
     performance_data = []

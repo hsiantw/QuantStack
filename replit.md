@@ -37,12 +37,14 @@ Preferred communication style: Simple, everyday language.
 - **Time Series Analysis**: ARIMA modeling, seasonality detection, and stationarity testing
 - **Trading Strategies**: Multiple strategy implementations with comprehensive backtesting capabilities
 - **Risk Management**: Value at Risk (VaR), Expected Shortfall, and comprehensive risk metrics
+- **Educational Tooltips**: Interactive help system with formulas and definitions for complex financial terms
 
 ### Design Patterns
 - **Utility Classes**: Modular utility classes for specific financial operations
 - **Strategy Pattern**: Implemented for different trading strategies and analysis methods
 - **Factory Pattern**: Used for creating different types of financial models
 - **Observer Pattern**: Implicit through Streamlit's reactive programming model
+- **Educational Design**: Comprehensive tooltip system with formulas and definitions for user education
 
 ## External Dependencies
 
