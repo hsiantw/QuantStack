@@ -8,6 +8,66 @@ from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
+@st.cache_data(ttl=300)  # Cache for 5 minutes
+def get_most_recent_price(ticker, periods=["2d", "5d", "1mo", "3mo"]):
+    """
+    Searches for the most recent available price data across multiple time periods.
+    Returns (current_price, previous_price, success_flag)
+    """
+    for period in periods:
+        try:
+            data = yf.download(ticker, period=period, interval="1d", progress=False)
+            if not data.empty and len(data) >= 1:
+                current_price = data['Close'].iloc[-1]
+                
+                # Try to get previous price for change calculation
+                if len(data) >= 2:
+                    previous_price = data['Close'].iloc[-2]
+                else:
+                    # If only one day, try to get info from ticker object
+                    try:
+                        ticker_obj = yf.Ticker(ticker)
+                        info = ticker_obj.info
+                        if 'previousClose' in info and info['previousClose']:
+                            previous_price = info['previousClose']
+                        else:
+                            previous_price = current_price  # No change calculation possible
+                    except:
+                        previous_price = current_price
+                
+                return float(current_price), float(previous_price), True
+                
+        except Exception as e:
+            continue
+    
+    # If all periods fail, try to get basic info from ticker object
+    try:
+        ticker_obj = yf.Ticker(ticker)
+        info = ticker_obj.info
+        
+        current_price = None
+        previous_price = None
+        
+        # Try different price fields
+        price_fields = ['currentPrice', 'regularMarketPrice', 'lastPrice', 'navPrice']
+        for field in price_fields:
+            if field in info and info[field]:
+                current_price = float(info[field])
+                break
+        
+        if current_price and 'previousClose' in info and info['previousClose']:
+            previous_price = float(info['previousClose'])
+        else:
+            previous_price = current_price
+            
+        if current_price:
+            return current_price, previous_price, True
+            
+    except Exception as e:
+        pass
+    
+    return None, None, False
+
 # Page configuration
 st.set_page_config(
     page_title="Quantitative Finance Platform",
@@ -37,23 +97,26 @@ def main_dashboard():
     try:
         for i, (name, ticker) in enumerate(indices.items()):
             with [col1, col2, col3, col4][i]:
-                try:
-                    data = yf.download(ticker, period="2d", interval="1d", progress=False)
-                    if not data.empty and len(data) >= 2:
-                        current_price = data['Close'].iloc[-1]
-                        prev_price = data['Close'].iloc[-2]
+                current_price, prev_price, success = get_most_recent_price(ticker)
+                
+                if success and current_price is not None:
+                    try:
                         change = current_price - prev_price
-                        change_pct = (change / prev_price) * 100
+                        change_pct = (change / prev_price) * 100 if prev_price != 0 else 0
                         
                         st.metric(
                             label=name,
                             value=f"{current_price:.2f}",
-                            delta=f"{change_pct:.2f}%"
+                            delta=f"{change_pct:.2f}%" if abs(change_pct) > 0.001 else "0.00%"
                         )
-                    else:
-                        st.metric(label=name, value="N/A", delta="N/A")
-                except Exception as e:
-                    st.metric(label=name, value="Error", delta="N/A")
+                    except Exception as e:
+                        st.metric(
+                            label=name,
+                            value=f"{current_price:.2f}",
+                            delta="N/A"
+                        )
+                else:
+                    st.metric(label=name, value="Unavailable", delta="N/A")
                     
     except Exception as e:
         st.error("Unable to fetch market data. Please check your internet connection.")
@@ -126,11 +189,19 @@ def main_dashboard():
     
     if ticker:
         try:
-            stock = yf.Ticker(ticker)
-            info = stock.info
-            hist = yf.download(ticker, period="1y", progress=False)
+            # Try to get historical data for chart, starting with shorter periods if longer fails
+            hist = None
+            periods_to_try = ["1y", "6mo", "3mo", "1mo", "5d"]
             
-            if not hist.empty:
+            for period in periods_to_try:
+                try:
+                    hist = yf.download(ticker, period=period, progress=False)
+                    if not hist.empty:
+                        break
+                except:
+                    continue
+            
+            if hist is not None and not hist.empty:
                 col1, col2 = st.columns([2, 1])
                 
                 with col1:
@@ -145,7 +216,7 @@ def main_dashboard():
                     ))
                     
                     fig.update_layout(
-                        title=f"{ticker} - 1 Year Price Chart",
+                        title=f"{ticker} - Price Chart",
                         xaxis_title="Date",
                         yaxis_title="Price ($)",
                         height=400
@@ -154,25 +225,50 @@ def main_dashboard():
                     st.plotly_chart(fig, use_container_width=True)
                 
                 with col2:
-                    # Key metrics
-                    current_price = hist['Close'].iloc[-1]
-                    year_high = hist['High'].max()
-                    year_low = hist['Low'].min()
-                    avg_volume = hist['Volume'].mean()
+                    # Key metrics using most recent data
+                    current_price, prev_price, price_success = get_most_recent_price(ticker)
                     
-                    st.metric("Current Price", f"${current_price:.2f}")
-                    st.metric("52W High", f"${year_high:.2f}")
-                    st.metric("52W Low", f"${year_low:.2f}")
-                    st.metric("Avg Volume", f"{avg_volume:,.0f}")
+                    if price_success and current_price:
+                        st.metric("Current Price", f"${current_price:.2f}")
+                    else:
+                        st.metric("Current Price", "N/A")
                     
-                    # Calculate simple metrics
-                    returns = hist['Close'].pct_change().dropna()
-                    volatility = returns.std() * np.sqrt(252) * 100
-                    
-                    st.metric("Annualized Volatility", f"{volatility:.2f}%")
+                    # Calculate metrics from available historical data
+                    try:
+                        year_high = hist['High'].max()
+                        year_low = hist['Low'].min()
+                        avg_volume = hist['Volume'].mean()
+                        
+                        st.metric("Period High", f"${year_high:.2f}")
+                        st.metric("Period Low", f"${year_low:.2f}")
+                        st.metric("Avg Volume", f"{avg_volume:,.0f}")
+                        
+                        # Calculate volatility
+                        returns = hist['Close'].pct_change().dropna()
+                        if len(returns) > 1:
+                            volatility = returns.std() * np.sqrt(252) * 100
+                            st.metric("Annualized Volatility", f"{volatility:.2f}%")
+                        else:
+                            st.metric("Annualized Volatility", "N/A")
+                            
+                    except Exception as e:
+                        st.error("Unable to calculate some metrics")
                     
             else:
-                st.error("Unable to fetch data for the specified ticker.")
+                # Try to get basic price info even if historical data fails
+                current_price, prev_price, price_success = get_most_recent_price(ticker)
+                
+                if price_success and current_price:
+                    st.info(f"Limited data available for {ticker}")
+                    st.metric("Current Price", f"${current_price:.2f}")
+                    
+                    change = current_price - prev_price if prev_price else 0
+                    change_pct = (change / prev_price) * 100 if prev_price and prev_price != 0 else 0
+                    
+                    if abs(change_pct) > 0.001:
+                        st.metric("Daily Change", f"{change_pct:.2f}%")
+                else:
+                    st.error("Unable to fetch data for the specified ticker.")
                 
         except Exception as e:
             st.error(f"Error analyzing ticker {ticker}: {str(e)}")
