@@ -14,6 +14,7 @@ from utils.trading_strategies import TradingStrategies
 from utils.backtesting import BacktestingEngine
 from utils.tooltips import get_tooltip_help
 from utils.ai_strategy_optimizer import AIStrategyOptimizer
+from utils.pinescript_generator import PineScriptGenerator
 
 # Page configuration
 st.set_page_config(
@@ -286,6 +287,31 @@ if analysis_mode == "🤖 AI Strategy Optimization":
                                 if 'params' in metrics:
                                     st.info(f"Parameters: {metrics['params']}")
                 
+                # PineScript Generation for Best Strategy
+                if recommendations['top_strategies']:
+                    st.subheader("📋 TradingView PineScript - Best Strategy")
+                    
+                    best_strategy_name, best_metrics = recommendations['top_strategies'][0]
+                    
+                    # Generate PineScript based on strategy type
+                    pinescript_code = PineScriptGenerator.get_strategy_script(
+                        best_strategy_name, 
+                        best_metrics, 
+                        ticker_input
+                    )
+                    
+                    st.success(f"**Ready-to-use PineScript for {best_strategy_name} Strategy**")
+                    st.markdown("**Instructions:**")
+                    st.markdown("1. Copy the code below")
+                    st.markdown("2. Go to TradingView.com → Pine Editor")
+                    st.markdown("3. Paste the code and click 'Add to Chart'")
+                    st.markdown("4. The strategy will automatically trade with optimized parameters")
+                    
+                    st.code(pinescript_code, language="javascript")
+                    
+                    # Copy button helper
+                    st.markdown("💡 **Tip:** Click the copy button in the top-right corner of the code block")
+                
                 # Moving Average optimization details
                 if 'moving_average' in recommendations and recommendations['moving_average']['best']:
                     st.subheader("📈 Moving Average Strategy Optimization")
@@ -392,54 +418,58 @@ else:
     # Run backtests for selected strategies
     with st.spinner("Running strategy backtests..."):
         try:
-        # Moving Average Crossover
-        if "Moving Average Crossover" in strategies_to_test:
-            params = strategy_params.get("MA", {"short_window": 20, "long_window": 50})
-            ma_data = strategy_engine.moving_average_strategy(**params)
+            # Moving Average Crossover
+            if "Moving Average Crossover" in strategies_to_test:
+                params = strategy_params.get("MA", {"short_window": 20, "long_window": 50})
+                ma_data = strategy_engine.moving_average_strategy(**params)
+                
+                # Create signals for backtesting
+                ma_signals = ma_data['Signal'].copy()
+                ma_backtest = backtesting_engine.backtest_signals(ohlcv_data, ma_signals)
+                ma_metrics = backtesting_engine.calculate_performance_metrics(ma_backtest)
+                
+                strategy_results["Moving Average"] = {
+                    "data": ma_data,
+                    "backtest": ma_backtest,
+                    "metrics": ma_metrics,
+                    "params": params
+                }
             
-            # Create signals for backtesting
-            ma_signals = ma_data['Signal'].copy()
-            ma_backtest = backtesting_engine.backtest_signals(ohlcv_data, ma_signals)
-            ma_metrics = backtesting_engine.calculate_performance_metrics(ma_backtest)
+            # RSI Mean Reversion
+            if "RSI Mean Reversion" in strategies_to_test:
+                params = strategy_params.get("RSI", {"rsi_window": 14, "oversold": 30, "overbought": 70})
+                rsi_data = strategy_engine.rsi_strategy(**params)
+                
+                rsi_signals = rsi_data['Position'].copy()
+                rsi_backtest = backtesting_engine.backtest_signals(ohlcv_data, rsi_signals)
+                rsi_metrics = backtesting_engine.calculate_performance_metrics(rsi_backtest)
+                
+                strategy_results["RSI"] = {
+                    "data": rsi_data,
+                    "backtest": rsi_backtest,
+                    "metrics": rsi_metrics,
+                    "params": params
+                }
             
-            strategy_results["Moving Average"] = {
-                "data": ma_data,
-                "backtest": ma_backtest,
-                "metrics": ma_metrics,
-                "params": params
-            }
-        
-        # RSI Mean Reversion
-        if "RSI Mean Reversion" in strategies_to_test:
-            params = strategy_params.get("RSI", {"rsi_window": 14, "oversold": 30, "overbought": 70})
-            rsi_data = strategy_engine.rsi_strategy(**params)
-            
-            rsi_signals = rsi_data['Position'].copy()
-            rsi_backtest = backtesting_engine.backtest_signals(ohlcv_data, rsi_signals)
-            rsi_metrics = backtesting_engine.calculate_performance_metrics(rsi_backtest)
-            
-            strategy_results["RSI"] = {
-                "data": rsi_data,
-                "backtest": rsi_backtest,
-                "metrics": rsi_metrics,
-                "params": params
-            }
-        
-        # Bollinger Bands
-        if "Bollinger Bands" in strategies_to_test:
-            params = strategy_params.get("BB", {"window": 20, "num_std": 2.0})
-            bb_data = strategy_engine.bollinger_bands_strategy(**params)
-            
-            bb_signals = bb_data['Position'].copy()
-            bb_backtest = backtesting_engine.backtest_signals(ohlcv_data, bb_signals)
-            bb_metrics = backtesting_engine.calculate_performance_metrics(bb_backtest)
-            
-            strategy_results["Bollinger Bands"] = {
-                "data": bb_data,
-                "backtest": bb_backtest,
-                "metrics": bb_metrics,
-                "params": params
-            }
+            # Bollinger Bands
+            if "Bollinger Bands" in strategies_to_test:
+                params = strategy_params.get("BB", {"window": 20, "num_std": 2.0})
+                bb_data = strategy_engine.bollinger_bands_strategy(**params)
+                
+                bb_signals = bb_data['Position'].copy()
+                bb_backtest = backtesting_engine.backtest_signals(ohlcv_data, bb_signals)
+                bb_metrics = backtesting_engine.calculate_performance_metrics(bb_backtest)
+                
+                strategy_results["Bollinger Bands"] = {
+                    "data": bb_data,
+                    "backtest": bb_backtest,
+                    "metrics": bb_metrics,
+                    "params": params
+                }
+                
+        except Exception as e:
+            st.error(f"Error running backtests: {str(e)}")
+            strategy_results = {}
         
         # Momentum Strategy
         if "Momentum Strategy" in strategies_to_test:
