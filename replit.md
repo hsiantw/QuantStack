@@ -42,12 +42,7 @@ This is a comprehensive quantitative finance platform built with Streamlit that 
   - DeFi ecosystem analysis with TVL proxy, yield opportunities, and liquidity scoring
   - Cryptocurrency correlation analysis across major digital assets
   - Specialized crypto trading strategies including DCA, swing trading, DeFi farming, and momentum strategies
-- **Golden Cross Strategy Implementation**: Complete trend-following strategy with buy-the-dip logic:
-  - Automated golden cross (50/200 MA) and death cross detection
-  - Buy-the-dip signals during bullish regime (1%+ daily drops)
-  - Comprehensive backtesting with performance metrics and trade analysis
-  - Real-time signal monitoring and current market regime tracking
-  - Strategy vs buy-and-hold comparison with detailed trade history
+
 
 ## User Preferences
 

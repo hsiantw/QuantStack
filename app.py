@@ -569,21 +569,18 @@ def main_dashboard():
             "desc": "Comprehensive cryptocurrency analysis with DeFi metrics, on-chain data, fear & greed index and correlation analysis.",
             "page": "pages/crypto_analysis.py"
         },
-        {
-            "icon": "⭐",
-            "title": "Golden Cross Strategy",
-            "desc": "Simple trend-following strategy: Buy dips during golden cross, exit on death cross with full backtesting.",
-            "page": "pages/golden_cross_strategy.py"
-        }
+
     ]
     
-    # Display features in grid layout (adjusted for 9 features)
-    # Three rows of 3 features each
-    cols1 = st.columns(3)  # Row 1
-    cols2 = st.columns(3)  # Row 2
-    cols3 = st.columns(3)  # Row 3
+    # Display features in grid layout (adjusted for 8 features)
+    # First row: 3 features
+    cols1 = st.columns(3)
+    # Second row: 3 features  
+    cols2 = st.columns(3)
+    # Third row: 2 features centered
+    cols3 = st.columns([1, 2, 2, 1])
     
-    all_cols = list(cols1) + list(cols2) + list(cols3)
+    all_cols = list(cols1) + list(cols2) + [cols3[1], cols3[2]]
     
     for i, feature in enumerate(features):
         with all_cols[i]:
