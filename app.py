@@ -556,14 +556,33 @@ def main_dashboard():
             "title": "AI Pairs Trading",
             "desc": "Comprehensive pairs trading system with AI-optimized strategies, cointegration testing and mean reversion analysis.",
             "page": "pages/ai_pairs_trading.py"
+        },
+        {
+            "icon": "🔍",
+            "title": "Advanced Market Analysis",
+            "desc": "Money flow, liquidity analysis, dark pool detection, crypto analysis and institutional trading secrets.",
+            "page": "pages/advanced_market_analysis.py"
+        },
+        {
+            "icon": "₿",
+            "title": "Crypto Analysis",
+            "desc": "Comprehensive cryptocurrency analysis with DeFi metrics, on-chain data, fear & greed index and correlation analysis.",
+            "page": "pages/crypto_analysis.py"
         }
     ]
     
-    # Display features in grid layout
-    cols = st.columns(3)
+    # Display features in grid layout (adjusted for 8 features)
+    # First row: 3 features
+    cols1 = st.columns(3)
+    # Second row: 3 features  
+    cols2 = st.columns(3)
+    # Third row: 2 features centered
+    cols3 = st.columns([1, 2, 2, 1])
+    
+    all_cols = list(cols1) + list(cols2) + [cols3[1], cols3[2]]
     
     for i, feature in enumerate(features):
-        with cols[i % 3]:
+        with all_cols[i]:
             st.markdown(f"""
             <div class="nav-card" onclick="window.open('#{feature['page']}', '_self')">
                 <div class="nav-card-icon">{feature['icon']}</div>

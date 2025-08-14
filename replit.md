@@ -30,6 +30,18 @@ This is a comprehensive quantitative finance platform built with Streamlit that 
   - Adaptive strategy with market regime detection and parameter adjustment
 - **Advanced Signal Execution**: Detailed trading instructions with specific entry/exit rules, position sizing formulas, and risk management protocols
 - **Professional Backtesting Suite**: Complete performance analysis including Sharpe ratio, Calmar ratio, drawdown analysis, and trade-by-trade breakdown
+- **Advanced Market Analysis Module**: Comprehensive trading secrets analysis including:
+  - Money Flow Index, Accumulation/Distribution Line, On-Balance Volume analysis
+  - Liquidity metrics with spread proxy, volume rate, and turnover analysis
+  - Dark pool activity detection using volume and price pattern analysis
+  - Volume profile analysis and institutional activity detection
+  - Advanced trading strategies for dark pool breakouts, liquidity scalping, and money flow reversals
+- **Comprehensive Cryptocurrency Analysis**: Full crypto ecosystem analysis featuring:
+  - Fear & Greed index calculation with market sentiment analysis
+  - On-chain metrics proxy including network activity, HODL strength, and accumulation patterns
+  - DeFi ecosystem analysis with TVL proxy, yield opportunities, and liquidity scoring
+  - Cryptocurrency correlation analysis across major digital assets
+  - Specialized crypto trading strategies including DCA, swing trading, DeFi farming, and momentum strategies
 
 ## User Preferences
 
