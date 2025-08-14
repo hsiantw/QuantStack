@@ -32,7 +32,7 @@ def find_best_pairs_tab():
     col1, col2, col3 = st.columns([2, 1, 1])
     
     with col1:
-        base_ticker = st.text_input("Base Ticker for Pairs Analysis", value="SPY", key="pairs_base_ticker")
+        base_ticker = st.text_input("Base Ticker for Pairs Analysis", value="SPY")
         
     with col2:
         lookback_days = st.selectbox("Analysis Period", 
@@ -91,7 +91,7 @@ def find_best_pairs_tab():
                 
                 # Store results in session state for detailed analysis
                 st.session_state['pairs_results'] = results
-                st.session_state['pairs_base_ticker'] = base_ticker
+                st.session_state['current_base_ticker'] = base_ticker
                 
                 # Show analysis methodology
                 with st.expander("🧠 How AI Found These Pairs", expanded=False):
@@ -165,7 +165,7 @@ def detailed_analysis_tab():
         return
     
     results = st.session_state['pairs_results']
-    base_ticker = st.session_state['pairs_base_ticker']
+    base_ticker = st.session_state['current_base_ticker']
     
     # Pair selection
     pair_options = [pair['pair'] for pair in results['pairs']]
