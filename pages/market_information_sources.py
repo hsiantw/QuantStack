@@ -30,6 +30,7 @@ category = st.sidebar.selectbox(
         "SEC Filings Overview",
         "Economic Indicators", 
         "Federal Reserve Data",
+        "Banking & Interest Rates",
         "Earnings Information",
         "International Data",
         "Market Sentiment",
@@ -194,6 +195,102 @@ elif category == "Federal Reserve Data":
             # Add specific insights for FOMC
             if source == "FedFundsRate":
                 st.info("💡 **Trading Tip:** Markets often price in rate changes weeks before FOMC meetings. Watch fed funds futures for market expectations.")
+
+# Banking & Interest Rates Section
+elif category == "Banking & Interest Rates":
+    st.header("🏛️ Banking Sector & Interest Rate Data Sources")
+    
+    st.markdown("""
+    **Interest rates are the backbone of the financial system.** Banking sector health and interest rate movements 
+    affect everything from mortgages to corporate borrowing costs to currency values.
+    """)
+    
+    banking_data = MarketDataSources.get_banking_and_interest_rates()
+    
+    # Create tabs for different rate categories
+    rate_tabs = st.tabs(["Key Interest Rates", "Banking Health", "Credit Markets", "Benchmark Rates"])
+    
+    with rate_tabs[0]:  # Key Interest Rates
+        st.subheader("🎯 Critical Interest Rate Indicators")
+        key_rates = ["MortgageRates", "BankPrimeRate", "SOFR", "EFFR"]
+        
+        for rate_key in key_rates:
+            if rate_key in banking_data:
+                info = banking_data[rate_key]
+                with st.expander(f"{info['name']} - {info['importance']} Importance"):
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.write(f"**Description:** {info['description']}")
+                        st.write(f"**Market Impact:** {info['market_impact']}")
+                        st.write(f"**Frequency:** {info['frequency']}")
+                        if 'url' in info:
+                            st.markdown(f"[📊 View Data Source]({info['url']})")
+                    
+                    with col2:
+                        importance_colors = {
+                            "Very High": "#FF4444",
+                            "High": "#FF8800", 
+                            "Medium-High": "#FFBB00"
+                        }
+                        color = importance_colors.get(info['importance'], '#88CCFF')
+                        st.markdown(f"""
+                        <div style="background: {color}; padding: 8px; border-radius: 5px; 
+                                   text-align: center; color: white; font-weight: bold;">
+                            {info['importance']}
+                        </div>
+                        """, unsafe_allow_html=True)
+    
+    with rate_tabs[1]:  # Banking Health
+        st.subheader("🏦 Banking Sector Health Indicators") 
+        banking_health = ["BankEarnings", "BankStressTests", "BankReserves"]
+        
+        for bank_key in banking_health:
+            if bank_key in banking_data:
+                info = banking_data[bank_key]
+                st.write(f"**{info['name']}**")
+                st.write(f"• {info['description']}")
+                st.write(f"• **Impact:** {info['market_impact']}")
+                st.write(f"• **Frequency:** {info['frequency']}")
+                if 'url' in info:
+                    st.markdown(f"[📊 View Source]({info['url']})")
+                st.write("---")
+    
+    with rate_tabs[2]:  # Credit Markets
+        st.subheader("💳 Credit Market Indicators")
+        credit_markets = ["CreditSpreads", "CorporateBondYields", "TED_Spread", "CommercialPaper"]
+        
+        for credit_key in credit_markets:
+            if credit_key in banking_data:
+                info = banking_data[credit_key]
+                st.write(f"**{info['name']}**")
+                st.write(f"• {info['description']}")
+                st.write(f"• **Impact:** {info['market_impact']}")
+                if 'url' in info:
+                    st.markdown(f"[📊 View Source]({info['url']})")
+                st.write("---")
+    
+    with rate_tabs[3]:  # Benchmark Rates
+        st.subheader("📊 Benchmark Rate Information")
+        benchmark_rates = ["LIBOR", "InterestRateSwaps", "MunicipalBondYields"]
+        
+        for benchmark_key in benchmark_rates:
+            if benchmark_key in banking_data:
+                info = banking_data[benchmark_key]
+                st.write(f"**{info['name']}**")
+                st.write(f"• {info['description']}")
+                st.write(f"• **Impact:** {info['market_impact']}")
+                if 'url' in info:
+                    st.markdown(f"[📊 View Source]({info['url']})")
+                st.write("---")
+    
+    # Add comprehensive interest rate explanation
+    st.info("""
+    **🎓 Key Interest Rate Relationships:**
+    - **Fed Funds Rate → Prime Rate:** Banks typically set prime rate = Fed funds + 3%
+    - **SOFR vs LIBOR:** SOFR is replacing LIBOR as the US benchmark rate
+    - **Credit Spreads:** Higher spreads indicate increased credit risk and economic uncertainty
+    - **Yield Curve:** Shape indicates economic expectations (normal, flat, inverted)
+    """)
 
 # Earnings Information Section
 elif category == "Earnings Information":

@@ -124,7 +124,8 @@ class MarketDataSources:
                 "importance": "Very High",
                 "description": "Total economic output measure",
                 "market_impact": "Very High - overall economic health indicator",
-                "typical_release": "Last week of each quarter"
+                "typical_release": "Last week of each quarter",
+                "url": "https://www.bea.gov/data/gdp/gross-domestic-product"
             },
             "CPI": {
                 "name": "Consumer Price Index", 
@@ -133,7 +134,18 @@ class MarketDataSources:
                 "importance": "Very High",
                 "description": "Inflation measure based on consumer goods basket",
                 "market_impact": "Very High - affects Fed policy decisions",
-                "typical_release": "Mid-month for previous month"
+                "typical_release": "Mid-month for previous month",
+                "url": "https://www.bls.gov/cpi/"
+            },
+            "PCE": {
+                "name": "Personal Consumption Expenditures Price Index",
+                "frequency": "Monthly",
+                "source": "Bureau of Economic Analysis (BEA)",
+                "importance": "Very High",
+                "description": "Fed's preferred inflation measure",
+                "market_impact": "Very High - Fed's primary inflation gauge",
+                "typical_release": "End of month for prior month",
+                "url": "https://www.bea.gov/data/personal-consumption-expenditures-price-index"
             },
             "NFP": {
                 "name": "Non-Farm Payrolls",
@@ -142,7 +154,8 @@ class MarketDataSources:
                 "importance": "Very High",
                 "description": "Employment change excluding agricultural workers",
                 "market_impact": "Very High - labor market strength indicator",
-                "typical_release": "First Friday of each month"
+                "typical_release": "First Friday of each month",
+                "url": "https://www.bls.gov/news.release/empsit.htm"
             },
             "FOMC": {
                 "name": "Federal Open Market Committee Meetings",
@@ -151,16 +164,38 @@ class MarketDataSources:
                 "importance": "Extremely High",
                 "description": "Federal Reserve monetary policy decisions",
                 "market_impact": "Extremely High - sets interest rates",
-                "typical_release": "FOMC meeting conclusions"
+                "typical_release": "FOMC meeting conclusions",
+                "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
             },
-            "PMI": {
-                "name": "Purchasing Managers' Index",
+            "JobsReport": {
+                "name": "Employment Situation Report",
+                "frequency": "Monthly",
+                "source": "Bureau of Labor Statistics (BLS)",
+                "importance": "Very High",
+                "description": "Comprehensive employment data including NFP and unemployment",
+                "market_impact": "Very High - complete labor market picture",
+                "typical_release": "First Friday of each month at 8:30 AM ET",
+                "url": "https://www.bls.gov/news.release/empsit.htm"
+            },
+            "PMI_Manufacturing": {
+                "name": "ISM Manufacturing PMI",
                 "frequency": "Monthly",
                 "source": "Institute for Supply Management (ISM)",
                 "importance": "High",
-                "description": "Manufacturing and services sector health",
-                "market_impact": "High - business activity indicator",
-                "typical_release": "First business day of month"
+                "description": "Manufacturing sector health and business activity",
+                "market_impact": "High - manufacturing sector indicator",
+                "typical_release": "First business day of month",
+                "url": "https://www.ismworld.org/supply-management-news-and-reports/reports/ism-report-on-business/"
+            },
+            "PMI_Services": {
+                "name": "ISM Services PMI",
+                "frequency": "Monthly", 
+                "source": "Institute for Supply Management (ISM)",
+                "importance": "High",
+                "description": "Services sector health and business activity",
+                "market_impact": "High - services sector indicator (70% of US economy)",
+                "typical_release": "Third business day of month",
+                "url": "https://www.ismworld.org/supply-management-news-and-reports/reports/ism-report-on-business/"
             },
             "RetailSales": {
                 "name": "Retail Sales",
@@ -169,7 +204,8 @@ class MarketDataSources:
                 "importance": "High",
                 "description": "Consumer spending measure",
                 "market_impact": "High - consumer demand indicator",
-                "typical_release": "Mid-month for previous month"
+                "typical_release": "Mid-month for previous month",
+                "url": "https://www.census.gov/retail/marts/www/marts_current.pdf"
             },
             "HousingStarts": {
                 "name": "Housing Starts",
@@ -178,7 +214,8 @@ class MarketDataSources:
                 "importance": "Medium-High",
                 "description": "New residential construction activity",
                 "market_impact": "Medium-High - economic growth indicator",
-                "typical_release": "Mid-month for previous month"
+                "typical_release": "Mid-month for previous month",
+                "url": "https://www.census.gov/construction/nrc/"
             },
             "UnemploymentRate": {
                 "name": "Unemployment Rate",
@@ -187,7 +224,58 @@ class MarketDataSources:
                 "importance": "Very High",
                 "description": "Percentage of unemployed in labor force",
                 "market_impact": "Very High - labor market health",
-                "typical_release": "First Friday of each month"
+                "typical_release": "First Friday of each month",
+                "url": "https://www.bls.gov/news.release/empsit.htm"
+            },
+            "InitialClaims": {
+                "name": "Initial Unemployment Claims",
+                "frequency": "Weekly",
+                "source": "Department of Labor",
+                "importance": "High",
+                "description": "Weekly unemployment insurance claims",
+                "market_impact": "High - real-time labor market indicator",
+                "typical_release": "Every Thursday at 8:30 AM ET",
+                "url": "https://www.dol.gov/ui/data.pdf"
+            },
+            "ConsumerConfidence": {
+                "name": "Consumer Confidence Index",
+                "frequency": "Monthly",
+                "source": "Conference Board",
+                "importance": "Medium-High",
+                "description": "Consumer sentiment about economic conditions",
+                "market_impact": "Medium-High - consumer spending predictor",
+                "typical_release": "Last Tuesday of each month",
+                "url": "https://www.conference-board.org/data/consumerconfidence.cfm"
+            },
+            "ConsumerSentiment": {
+                "name": "University of Michigan Consumer Sentiment",
+                "frequency": "Monthly (preliminary & final)",
+                "source": "University of Michigan",
+                "importance": "Medium-High",
+                "description": "Consumer sentiment survey",
+                "market_impact": "Medium-High - consumer behavior predictor",
+                "typical_release": "Mid-month (preliminary) and end-month (final)",
+                "url": "http://www.sca.isr.umich.edu/"
+            },
+            "DurableGoods": {
+                "name": "Durable Goods Orders",
+                "frequency": "Monthly",
+                "source": "U.S. Census Bureau",
+                "importance": "Medium-High",
+                "description": "Orders for long-lasting manufactured goods",
+                "market_impact": "Medium-High - business investment indicator",
+                "typical_release": "Fourth week of month",
+                "url": "https://www.census.gov/manufacturing/m3/"
+            },
+            "IndustrialProduction": {
+                "name": "Industrial Production Index",
+                "frequency": "Monthly",
+                "source": "Federal Reserve Board",
+                "importance": "Medium-High",
+                "description": "Manufacturing, mining, and utilities output",
+                "market_impact": "Medium-High - industrial sector health",
+                "typical_release": "Mid-month for previous month",
+                "url": "https://www.federalreserve.gov/releases/g17/"
             }
         }
     
@@ -200,28 +288,206 @@ class MarketDataSources:
                 "importance": "Extremely High",
                 "description": "Target interest rate set by Federal Reserve",
                 "market_impact": "Extremely High - affects all asset classes",
-                "frequency": "FOMC meetings (8 per year)"
+                "frequency": "FOMC meetings (8 per year)",
+                "url": "https://www.federalreserve.gov/monetarypolicy/openmarket.htm"
             },
             "FOMCMinutes": {
                 "name": "FOMC Meeting Minutes",
                 "importance": "Very High",
                 "description": "Detailed record of Federal Reserve policy discussions",
                 "market_impact": "Very High - reveals Fed thinking",
-                "frequency": "3 weeks after each FOMC meeting"
+                "frequency": "3 weeks after each FOMC meeting",
+                "url": "https://www.federalreserve.gov/monetarypolicy/fomcminutes.htm"
             },
             "FedSpeech": {
                 "name": "Federal Reserve Speeches",
                 "importance": "High",
                 "description": "Public speeches by Fed officials",
                 "market_impact": "Medium-High - policy hints",
-                "frequency": "Regular throughout year"
+                "frequency": "Regular throughout year",
+                "url": "https://www.federalreserve.gov/newsevents/speech/"
             },
-            "BeigeBoo": {
+            "BeigeBook": {
                 "name": "Beige Book",
                 "importance": "Medium-High",
                 "description": "Regional economic conditions report",
                 "market_impact": "Medium - regional economic insights",
-                "frequency": "8 times per year, 2 weeks before FOMC"
+                "frequency": "8 times per year, 2 weeks before FOMC",
+                "url": "https://www.federalreserve.gov/monetarypolicy/beigebook/"
+            },
+            "DiscountRate": {
+                "name": "Federal Reserve Discount Rate",
+                "importance": "High",
+                "description": "Interest rate charged to commercial banks by Federal Reserve",
+                "market_impact": "High - affects bank lending rates",
+                "frequency": "As needed",
+                "url": "https://www.federalreserve.gov/monetarypolicy/discountrate.htm"
+            },
+            "ReserveRequirements": {
+                "name": "Bank Reserve Requirements",
+                "importance": "Medium-High", 
+                "description": "Minimum reserves banks must hold",
+                "market_impact": "Medium-High - affects bank lending capacity",
+                "frequency": "As needed",
+                "url": "https://www.federalreserve.gov/monetarypolicy/reservereq.htm"
+            },
+            "YieldCurve": {
+                "name": "Treasury Yield Curve",
+                "importance": "Very High",
+                "description": "Interest rates across different Treasury maturities",
+                "market_impact": "Very High - economic outlook indicator",
+                "frequency": "Daily",
+                "url": "https://www.treasury.gov/resource-center/data-chart-center/interest-rates/"
+            },
+            "EFFR": {
+                "name": "Effective Federal Funds Rate",
+                "importance": "Very High",
+                "description": "Actual rate at which banks lend to each other overnight",
+                "market_impact": "Very High - market-determined short-term rate",
+                "frequency": "Daily",
+                "url": "https://fred.stlouisfed.org/series/EFFR"
+            },
+            "SOFR": {
+                "name": "Secured Overnight Financing Rate",
+                "importance": "Very High",
+                "description": "Replacement for LIBOR in US markets",
+                "market_impact": "Very High - benchmark for derivatives and loans",
+                "frequency": "Daily",
+                "url": "https://www.newyorkfed.org/markets/reference-rates/sofr"
+            },
+            "TreasuryAuctions": {
+                "name": "Treasury Debt Auctions",
+                "importance": "High",
+                "description": "Government bond issuance results",
+                "market_impact": "High - affects benchmark interest rates",
+                "frequency": "Weekly (bills), monthly/quarterly (notes/bonds)",
+                "url": "https://www.treasurydirect.gov/auctions/"
+            },
+            "FOMC_Statement": {
+                "name": "FOMC Policy Statement",
+                "importance": "Extremely High",
+                "description": "Official Federal Reserve policy announcement",
+                "market_impact": "Extremely High - immediate market reaction",
+                "frequency": "8 times per year after FOMC meetings",
+                "url": "https://www.federalreserve.gov/newsevents/pressreleases/"
+            },
+            "FedBalanceSheet": {
+                "name": "Federal Reserve Balance Sheet",
+                "importance": "High",
+                "description": "Assets and liabilities of the Federal Reserve",
+                "market_impact": "High - QE and monetary policy tool",
+                "frequency": "Weekly (H.4.1 report)",
+                "url": "https://www.federalreserve.gov/releases/h41/"
+            },
+            "BankPrimeRate": {
+                "name": "Bank Prime Lending Rate",
+                "importance": "High",
+                "description": "Rate banks charge their most creditworthy customers",
+                "market_impact": "High - affects consumer and business loans",
+                "frequency": "Changes with Fed funds rate",
+                "url": "https://fred.stlouisfed.org/series/DPRIME"
+            }
+        }
+    
+    @staticmethod
+    def get_banking_and_interest_rates() -> Dict[str, Dict]:
+        """Get banking sector and interest rate data sources."""
+        return {
+            "LIBOR": {
+                "name": "London Interbank Offered Rate (Legacy)",
+                "importance": "Medium",
+                "description": "Legacy benchmark rate (being phased out)",
+                "market_impact": "Medium - historical benchmark for derivatives",
+                "frequency": "Daily (legacy data)",
+                "url": "https://www.theice.com/iba/libor"
+            },
+            "BankEarnings": {
+                "name": "Major Bank Quarterly Earnings",
+                "importance": "Very High",
+                "description": "Financial results from major banks (JPM, BAC, C, WFC, GS, MS)",
+                "market_impact": "Very High - banking sector health indicator",
+                "frequency": "Quarterly earnings seasons",
+                "url": "https://www.sec.gov/edgar"
+            },
+            "BankStressTests": {
+                "name": "Federal Reserve Bank Stress Tests (CCAR)",
+                "importance": "Very High",
+                "description": "Annual comprehensive capital analysis and review",
+                "market_impact": "Very High - bank capital adequacy assessment",
+                "frequency": "Annual (June release)",
+                "url": "https://www.federalreserve.gov/supervisionreg/dfa-stress-tests.htm"
+            },
+            "CD_Rates": {
+                "name": "Certificate of Deposit Rates",
+                "importance": "Medium",
+                "description": "Bank deposit rates for various terms",
+                "market_impact": "Medium - retail banking indicator",
+                "frequency": "Weekly updates",
+                "url": "https://www.fdic.gov/resources/tools/bank-find/"
+            },
+            "MortgageRates": {
+                "name": "30-Year Fixed Mortgage Rate",
+                "importance": "High",
+                "description": "Primary mortgage lending rate",
+                "market_impact": "High - housing market indicator",
+                "frequency": "Daily/Weekly",
+                "url": "https://www.freddiemac.com/primary-mortgage-market-survey"
+            },
+            "CorporateBondYields": {
+                "name": "Corporate Bond Yields",
+                "importance": "High",
+                "description": "Investment grade and high yield corporate bond yields",
+                "market_impact": "High - corporate borrowing costs",
+                "frequency": "Daily",
+                "url": "https://fred.stlouisfed.org/categories/119"
+            },
+            "MunicipalBondYields": {
+                "name": "Municipal Bond Yields",
+                "importance": "Medium-High",
+                "description": "Tax-exempt municipal bond yields",
+                "market_impact": "Medium-High - public finance indicator",
+                "frequency": "Daily",
+                "url": "https://www.municipalbonds.com/"
+            },
+            "CreditSpreads": {
+                "name": "Credit Spreads",
+                "importance": "Very High",
+                "description": "Spread between corporate and Treasury bonds",
+                "market_impact": "Very High - credit risk indicator",
+                "frequency": "Daily",
+                "url": "https://fred.stlouisfed.org/series/BAMLH0A0HYM2"
+            },
+            "TED_Spread": {
+                "name": "TED Spread (Treasury-Eurodollar)",
+                "importance": "High",
+                "description": "Difference between 3-month Treasury and 3-month SOFR",
+                "market_impact": "High - banking system stress indicator",
+                "frequency": "Daily",
+                "url": "https://fred.stlouisfed.org/series/TEDRATE"
+            },
+            "BankReserves": {
+                "name": "Bank Reserves and Deposits",
+                "importance": "Medium-High",
+                "description": "Commercial bank reserves held at Federal Reserve",
+                "market_impact": "Medium-High - banking system liquidity",
+                "frequency": "Weekly",
+                "url": "https://fred.stlouisfed.org/series/TOTRESNS"
+            },
+            "CommercialPaper": {
+                "name": "Commercial Paper Rates",
+                "importance": "Medium-High",
+                "description": "Short-term unsecured corporate debt rates",
+                "market_impact": "Medium-High - short-term funding costs",
+                "frequency": "Daily",
+                "url": "https://www.federalreserve.gov/releases/cp/"
+            },
+            "InterestRateSwaps": {
+                "name": "Interest Rate Swap Rates",
+                "importance": "High",
+                "description": "Fixed-for-floating interest rate swap rates",
+                "market_impact": "High - long-term interest rate expectations",
+                "frequency": "Daily",
+                "url": "https://www.cmegroup.com/markets/interest-rates.html"
             }
         }
     
