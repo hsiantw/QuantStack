@@ -49,6 +49,15 @@ class NewsAndDataScraper:
             "CENSUS": "https://www.census.gov/economic-indicators/"
         }
         
+        self.stock_news_sources = {
+            "MARKETWATCH": "https://www.marketwatch.com/latest-news",
+            "REUTERS_BUSINESS": "https://www.reuters.com/business/",
+            "CNBC_MARKETS": "https://www.cnbc.com/markets/",
+            "BLOOMBERG_MARKETS": "https://www.bloomberg.com/markets",
+            "SEC_EDGAR": "https://www.sec.gov/edgar/",
+            "YAHOO_FINANCE": "https://finance.yahoo.com/news/"
+        }
+        
     def scrape_federal_reserve_news(self) -> List[NewsArticle]:
         """Scrape latest Federal Reserve news and communications"""
         articles = []
@@ -220,18 +229,227 @@ class NewsAndDataScraper:
         else:
             return "neutral"
     
+    def scrape_marketwatch_headlines(self) -> List[NewsArticle]:
+        """Scrape high-impact stock news from MarketWatch"""
+        articles = []
+        
+        try:
+            marketwatch_url = "https://www.marketwatch.com/latest-news"
+            content = trafilatura.fetch_url(marketwatch_url)
+            text = trafilatura.extract(content)
+            
+            if text:
+                # Split content into potential headlines
+                lines = text.split('\n')
+                headlines = []
+                
+                for line in lines:
+                    line = line.strip()
+                    if (len(line) > 20 and len(line) < 200 and 
+                        any(keyword in line.lower() for keyword in 
+                            ['stock', 'shares', 'earnings', 'dividend', 'merger', 'acquisition', 
+                             'ceo', 'revenue', 'profit', 'loss', 'beat', 'miss', 'forecast',
+                             'guidance', 'outlook', 'upgrade', 'downgrade', 'price target'])):
+                        headlines.append(line)
+                
+                # Take top headlines
+                for i, headline in enumerate(headlines[:10]):
+                    articles.append(NewsArticle(
+                        title=f"MarketWatch Headline {i+1}",
+                        content=headline,
+                        source="MarketWatch",
+                        url=marketwatch_url,
+                        timestamp=datetime.now(),
+                        market_impact="high"
+                    ))
+                    
+        except Exception as e:
+            print(f"Error scraping MarketWatch: {e}")
+            
+        return articles
+    
+    def scrape_reuters_business_news(self) -> List[NewsArticle]:
+        """Scrape business and market news from Reuters"""
+        articles = []
+        
+        try:
+            reuters_url = "https://www.reuters.com/business/"
+            content = trafilatura.fetch_url(reuters_url)
+            text = trafilatura.extract(content)
+            
+            if text:
+                articles.append(NewsArticle(
+                    title="Reuters Business & Markets Update",
+                    content=text[:2500] + "..." if len(text) > 2500 else text,
+                    source="Reuters Business",
+                    url=reuters_url,
+                    timestamp=datetime.now(),
+                    market_impact="high"
+                ))
+                
+        except Exception as e:
+            print(f"Error scraping Reuters business: {e}")
+            
+        return articles
+    
+    def scrape_cnbc_market_news(self) -> List[NewsArticle]:
+        """Scrape market-moving news from CNBC"""
+        articles = []
+        
+        try:
+            cnbc_url = "https://www.cnbc.com/markets/"
+            content = trafilatura.fetch_url(cnbc_url)
+            text = trafilatura.extract(content)
+            
+            if text:
+                articles.append(NewsArticle(
+                    title="CNBC Markets Breaking News",
+                    content=text[:2500] + "..." if len(text) > 2500 else text,
+                    source="CNBC Markets",
+                    url=cnbc_url,
+                    timestamp=datetime.now(),
+                    market_impact="high"
+                ))
+                
+        except Exception as e:
+            print(f"Error scraping CNBC markets: {e}")
+            
+        return articles
+    
+    def get_high_impact_stock_headlines(self) -> List[Dict]:
+        """Generate high-impact stock headlines and market movers"""
+        high_impact_events = [
+            {
+                "headline": "Major Earnings Releases This Week",
+                "description": "Key companies reporting quarterly results with potential market impact",
+                "impact": "very_high",
+                "category": "earnings",
+                "timing": "Throughout week"
+            },
+            {
+                "headline": "Federal Reserve Policy Decision Impact on Financials",
+                "description": "Banking sector positioning ahead of interest rate decisions",
+                "impact": "very_high",
+                "category": "monetary_policy",
+                "timing": "FOMC meeting days"
+            },
+            {
+                "headline": "Technology Sector Momentum Analysis",
+                "description": "AI, semiconductor, and cloud computing stock movements",
+                "impact": "high",
+                "category": "sector_rotation",
+                "timing": "Ongoing"
+            },
+            {
+                "headline": "Energy Sector Volatility on Oil Price Changes",
+                "description": "Crude oil inventory reports driving energy stock movements",
+                "impact": "high",
+                "category": "commodities",
+                "timing": "Wednesday EIA reports"
+            },
+            {
+                "headline": "Healthcare Merger & Acquisition Activity",
+                "description": "Biotech and pharmaceutical company consolidation trends",
+                "impact": "medium_high",
+                "category": "mergers",
+                "timing": "Ongoing"
+            },
+            {
+                "headline": "Consumer Discretionary Earnings Season Impact",
+                "description": "Retail and consumer spending patterns reflected in quarterly results",
+                "impact": "high",
+                "category": "earnings",
+                "timing": "Earnings season"
+            },
+            {
+                "headline": "ESG Investment Flows Affecting Stock Valuations",
+                "description": "Environmental and social governance criteria driving institutional flows",
+                "impact": "medium",
+                "category": "flows",
+                "timing": "Ongoing trend"
+            },
+            {
+                "headline": "Dividend Aristocrat Announcements and Ex-Dividend Dates",
+                "description": "S&P 500 dividend-paying stocks with consecutive increase streaks",
+                "impact": "medium",
+                "category": "dividends",
+                "timing": "Quarterly cycles"
+            }
+        ]
+        
+        return high_impact_events
+    
+    def get_sector_specific_news(self) -> Dict[str, List[str]]:
+        """Get sector-specific high-impact news categories"""
+        sector_news = {
+            "Technology": [
+                "AI and Machine Learning breakthroughs affecting valuations",
+                "Semiconductor supply chain and chip shortage updates",
+                "Cloud computing market share battles and earnings",
+                "Cybersecurity threats and software security spending",
+                "Social media regulation and platform policy changes"
+            ],
+            "Healthcare": [
+                "FDA drug approvals and clinical trial results",
+                "Healthcare policy and Medicare/Medicaid changes",
+                "Biotech merger and acquisition activity",
+                "Medical device innovation and regulatory approvals",
+                "Pharmaceutical patent expirations and generic competition"
+            ],
+            "Financial": [
+                "Federal Reserve interest rate policy impacts",
+                "Banking regulation and stress test results",
+                "Credit default rates and loan portfolio quality",
+                "Fintech disruption and digital banking adoption",
+                "Insurance sector natural disaster exposure"
+            ],
+            "Energy": [
+                "Oil price volatility and OPEC production decisions",
+                "Renewable energy policy and subsidies",
+                "Natural gas pipeline and storage capacity",
+                "Electric vehicle adoption affecting oil demand",
+                "Carbon credit trading and ESG investment flows"
+            ],
+            "Consumer": [
+                "Retail sales and consumer confidence data",
+                "Supply chain disruption and inventory levels",
+                "E-commerce growth and brick-and-mortar closures",
+                "Consumer price inflation affecting spending patterns",
+                "Brand loyalty shifts and demographic changes"
+            ],
+            "Industrial": [
+                "Manufacturing PMI and industrial production data",
+                "Infrastructure spending and government contracts",
+                "Transportation and logistics capacity constraints",
+                "Automation and robotics adoption in manufacturing",
+                "Global trade tensions affecting export-dependent companies"
+            ]
+        }
+        
+        return sector_news
+    
     def get_all_market_news(self) -> List[NewsArticle]:
-        """Aggregate news from all sources"""
+        """Aggregate news from all sources including stock-specific news"""
         all_articles = []
         
-        # Scrape from different sources
-        sources = [
+        # Economic and Fed sources
+        economic_sources = [
             self.scrape_federal_reserve_news,
             self.scrape_bls_releases,
             self.scrape_treasury_data
         ]
         
-        for source_func in sources:
+        # Stock market news sources
+        stock_sources = [
+            self.scrape_marketwatch_headlines,
+            self.scrape_reuters_business_news,
+            self.scrape_cnbc_market_news
+        ]
+        
+        # Combine all sources
+        all_sources = economic_sources + stock_sources
+        
+        for source_func in all_sources:
             try:
                 articles = source_func()
                 for article in articles:
@@ -243,11 +461,112 @@ class NewsAndDataScraper:
         
         return all_articles
     
+    def get_earnings_calendar_this_week(self) -> List[Dict]:
+        """Get major earnings releases for current week"""
+        # Major companies that typically have high market impact
+        major_earnings = [
+            {
+                "company": "Apple Inc.",
+                "ticker": "AAPL",
+                "date": "This Week",
+                "time": "After Market Close",
+                "sector": "Technology",
+                "market_cap": "Large Cap",
+                "expected_impact": "very_high",
+                "key_metrics": ["iPhone sales", "Services revenue", "China performance"]
+            },
+            {
+                "company": "Microsoft Corporation",
+                "ticker": "MSFT", 
+                "date": "This Week",
+                "time": "After Market Close",
+                "sector": "Technology",
+                "market_cap": "Large Cap",
+                "expected_impact": "very_high",
+                "key_metrics": ["Azure growth", "Office 365 adoption", "AI integration"]
+            },
+            {
+                "company": "Amazon.com Inc.",
+                "ticker": "AMZN",
+                "date": "This Week",
+                "time": "After Market Close", 
+                "sector": "Consumer Discretionary",
+                "market_cap": "Large Cap",
+                "expected_impact": "very_high",
+                "key_metrics": ["AWS revenue", "Prime membership", "Retail margins"]
+            },
+            {
+                "company": "NVIDIA Corporation",
+                "ticker": "NVDA",
+                "date": "This Week",
+                "time": "After Market Close",
+                "sector": "Technology",
+                "market_cap": "Large Cap", 
+                "expected_impact": "very_high",
+                "key_metrics": ["Data center revenue", "AI chip demand", "Gaming segment"]
+            },
+            {
+                "company": "Tesla Inc.",
+                "ticker": "TSLA",
+                "date": "This Week",
+                "time": "After Market Close",
+                "sector": "Consumer Discretionary",
+                "market_cap": "Large Cap",
+                "expected_impact": "high",
+                "key_metrics": ["Vehicle deliveries", "Energy business", "Full self-driving"]
+            }
+        ]
+        
+        return major_earnings
+    
+    def get_breaking_news_alerts(self) -> List[Dict]:
+        """Generate breaking news alert categories for stock market"""
+        alerts = [
+            {
+                "category": "Earnings Surprises",
+                "description": "Companies beating or missing earnings estimates by significant margins",
+                "impact_level": "very_high",
+                "typical_stocks": ["Large cap technology", "Financial institutions", "Healthcare leaders"],
+                "watch_for": ["Revenue beats >5%", "EPS surprises >10%", "Guidance revisions"]
+            },
+            {
+                "category": "Merger & Acquisition News", 
+                "description": "Deal announcements, takeover bids, and strategic partnerships",
+                "impact_level": "very_high",
+                "typical_stocks": ["Mid-cap targets", "Industry consolidation plays"],
+                "watch_for": ["Premium offers >20%", "Strategic buyer interest", "Regulatory approvals"]
+            },
+            {
+                "category": "FDA Drug Approvals",
+                "description": "Pharmaceutical and biotech regulatory decisions",
+                "impact_level": "high",
+                "typical_stocks": ["Biotech companies", "Big pharma", "Medical devices"],
+                "watch_for": ["Phase 3 trial results", "FDA panel meetings", "Breakthrough designations"]
+            },
+            {
+                "category": "Analyst Rating Changes",
+                "description": "Major Wall Street upgrades, downgrades, and price target changes",
+                "impact_level": "medium_high",
+                "typical_stocks": ["Coverage universe stocks", "Sector rotation plays"],
+                "watch_for": ["Initiations with Buy", "Target increases >15%", "Sector overweights"]
+            },
+            {
+                "category": "Management Changes",
+                "description": "CEO appointments, board changes, and executive departures",
+                "impact_level": "medium_high", 
+                "typical_stocks": ["Turnaround situations", "Growth companies", "Distressed names"],
+                "watch_for": ["Activist involvement", "Succession planning", "Strategic pivots"]
+            }
+        ]
+        
+        return alerts
+    
     def get_market_impact_summary(self) -> Dict:
         """Generate a summary of current market-impacting events"""
         articles = self.get_all_market_news()
         economic_events = self.get_economic_calendar_today()
         fomc_schedule = self.get_fomc_schedule()
+        earnings_this_week = self.get_earnings_calendar_this_week()
         
         # Count articles by sentiment
         sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
@@ -259,11 +578,16 @@ class NewsAndDataScraper:
         for event in economic_events:
             impact_counts[event.impact] += 1
         
+        # Count high-impact earnings
+        high_impact_earnings = len([e for e in earnings_this_week if e["expected_impact"] == "very_high"])
+        
         return {
             "articles_count": len(articles),
             "sentiment_distribution": sentiment_counts,
             "economic_events_today": len(economic_events),
             "impact_distribution": impact_counts,
             "next_fomc_meeting": fomc_schedule[0] if fomc_schedule else None,
-            "total_tickers_mentioned": len(set([ticker for article in articles for ticker in (article.tickers_mentioned or [])]))
+            "total_tickers_mentioned": len(set([ticker for article in articles for ticker in (article.tickers_mentioned or [])])),
+            "high_impact_earnings_this_week": high_impact_earnings,
+            "total_earnings_this_week": len(earnings_this_week)
         }

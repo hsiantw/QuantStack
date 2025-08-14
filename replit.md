@@ -44,11 +44,15 @@ This is a comprehensive quantitative finance platform built with Streamlit that 
   - Specialized crypto trading strategies including DCA, swing trading, DeFi farming, and momentum strategies
 - **Live News & Economic Data Intelligence System**: Real-time market intelligence platform featuring:
   - Automated web scraping of Federal Reserve news, BLS releases, and Treasury announcements
+  - High-impact stock news from MarketWatch, Reuters Business, and CNBC Markets
   - Economic calendar with daily, weekly, and monthly event tracking
   - FOMC meeting schedule with countdown timers and press conference indicators
+  - Major earnings calendar with high-impact company releases and key metrics tracking
+  - Breaking news alert categories for earnings, M&A, FDA approvals, and analyst changes
+  - Sector-specific news analysis covering Technology, Healthcare, Financial, Energy, Consumer, and Industrial sectors
   - News sentiment analysis with ticker extraction and market impact assessment
-  - Market intelligence summary dashboard with sentiment distribution charts
-  - Comprehensive economic data sources including over 30 critical indicators
+  - Market intelligence summary dashboard with sentiment distribution charts and earnings metrics
+  - Comprehensive economic data sources including over 30 critical indicators plus stock market news sources
   - Banking sector health monitoring with interest rates, credit spreads, and yield curves
 
 

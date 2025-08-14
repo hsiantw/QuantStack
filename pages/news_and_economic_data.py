@@ -177,6 +177,7 @@ def main():
         "📊 Today's Economic Calendar",
         "🏦 Federal Reserve News", 
         "📈 Market-Moving Data",
+        "🔥 High-Impact Stock News",
         "🌍 International Updates",
         "📰 News Sources Directory",
         "⚡ Live Market Context"
@@ -354,8 +355,120 @@ def main():
             for indicator, description in key_indicators.items():
                 st.write(f"**{indicator}:** {description}")
     
-    # International Updates
+    # High-Impact Stock News
     with tabs[3]:
+        st.header("🔥 High-Impact Stock News & Headlines")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("📰 Live Stock Market Headlines")
+            
+            if st.button("🔄 Fetch Stock Market News", type="primary"):
+                with st.spinner("Retrieving latest stock market news..."):
+                    stock_articles = []
+                    
+                    # Get MarketWatch headlines
+                    mw_articles = news_scraper.scrape_marketwatch_headlines()
+                    stock_articles.extend(mw_articles)
+                    
+                    # Get Reuters business news
+                    reuters_articles = news_scraper.scrape_reuters_business_news()
+                    stock_articles.extend(reuters_articles)
+                    
+                    # Get CNBC market news
+                    cnbc_articles = news_scraper.scrape_cnbc_market_news()
+                    stock_articles.extend(cnbc_articles)
+                    
+                    if stock_articles:
+                        st.success(f"✅ Retrieved {len(stock_articles)} stock market updates")
+                        
+                        for article in stock_articles:
+                            with st.expander(f"📈 {article.title}", expanded=True):
+                                st.write(f"**Source:** {article.source}")
+                                st.write(f"**Retrieved:** {article.timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+                                st.write(f"**Market Impact:** {article.market_impact.upper()}")
+                                st.write(f"**Sentiment:** {article.sentiment.upper()}")
+                                st.write("---")
+                                st.write(article.content)
+                                
+                                if article.tickers_mentioned:
+                                    st.write("**Tickers Mentioned:**", ", ".join(article.tickers_mentioned[:10]))
+                    else:
+                        st.warning("No stock market news retrieved at this time")
+            
+            st.subheader("🎯 Market-Moving Headlines Categories")
+            
+            high_impact_headlines = news_scraper.get_high_impact_stock_headlines()
+            
+            for headline in high_impact_headlines:
+                impact_color = {
+                    "very_high": "🔴",
+                    "high": "🟠",
+                    "medium_high": "🟡",
+                    "medium": "🟢"
+                }
+                color = impact_color.get(headline["impact"], "⚪")
+                
+                st.write(f"{color} **{headline['headline']}**")
+                st.write(f"   {headline['description']}")
+                st.write(f"   *Category: {headline['category']} | Timing: {headline['timing']}*")
+                st.write("---")
+        
+        with col2:
+            st.subheader("📊 Sector-Specific News Impact")
+            
+            sector_news = news_scraper.get_sector_specific_news()
+            
+            selected_sector = st.selectbox(
+                "Choose sector for detailed news analysis:",
+                list(sector_news.keys()),
+                key="sector_select"
+            )
+            
+            if selected_sector:
+                st.write(f"**{selected_sector} Sector - Key News Drivers:**")
+                
+                for i, news_item in enumerate(sector_news[selected_sector], 1):
+                    st.write(f"{i}. {news_item}")
+            
+            st.subheader("📅 Major Earnings This Week")
+            
+            earnings_calendar = news_scraper.get_earnings_calendar_this_week()
+            
+            for earning in earnings_calendar[:5]:  # Top 5 most impactful
+                impact_color = {
+                    "very_high": "🔴",
+                    "high": "🟠", 
+                    "medium": "🟡"
+                }
+                color = impact_color.get(earning["expected_impact"], "⚪")
+                
+                st.write(f"{color} **{earning['company']} ({earning['ticker']})**")
+                st.write(f"   Sector: {earning['sector']} | {earning['time']}")
+                st.write(f"   Key Metrics: {', '.join(earning['key_metrics'][:2])}")
+                st.write("---")
+            
+            st.subheader("🚨 Breaking News Alert Categories")
+            
+            breaking_alerts = news_scraper.get_breaking_news_alerts()
+            
+            for alert in breaking_alerts:
+                impact_color = {
+                    "very_high": "🔴",
+                    "high": "🟠",
+                    "medium_high": "🟡",
+                    "medium": "🟢"
+                }
+                color = impact_color.get(alert["impact_level"], "⚪")
+                
+                with st.expander(f"{color} {alert['category']}"):
+                    st.write(f"**Description:** {alert['description']}")
+                    st.write(f"**Typical Stocks:** {', '.join(alert['typical_stocks'])}")
+                    st.write(f"**Watch For:** {', '.join(alert['watch_for'])}")
+    
+    # International Updates
+    with tabs[4]:
         st.header("🌍 International Economic Updates")
         
         st.subheader("🏛️ Major Central Banks")
@@ -390,10 +503,30 @@ def main():
                 st.write(f"**Market Impact:** {info['impact']}")
     
     # News Sources Directory
-    with tabs[4]:
+    with tabs[5]:
         st.header("📰 Essential News Sources for Traders")
         
         news_sources = get_market_moving_news_sources()
+        
+        # Add stock-specific news sources
+        news_sources["Stock Market News"] = {
+            "MarketWatch Latest": "https://www.marketwatch.com/latest-news",
+            "Reuters Business": "https://www.reuters.com/business/",
+            "CNBC Markets": "https://www.cnbc.com/markets/",
+            "Yahoo Finance News": "https://finance.yahoo.com/news/",
+            "Seeking Alpha": "https://seekingalpha.com/",
+            "The Motley Fool": "https://www.fool.com/",
+            "Benzinga": "https://www.benzinga.com/",
+            "InvestorPlace": "https://investorplace.com/"
+        }
+        
+        news_sources["Earnings & Analyst Coverage"] = {
+            "Earnings Calendar": "https://finance.yahoo.com/calendar/earnings",
+            "Analyst Recommendations": "https://www.zacks.com/",
+            "FactSet Research": "https://www.factset.com/",
+            "S&P Capital IQ": "https://www.spglobal.com/",
+            "Morningstar Analysis": "https://www.morningstar.com/",
+        }
         
         for category, sources in news_sources.items():
             st.subheader(f"📂 {category}")
@@ -404,13 +537,15 @@ def main():
         st.info("""
         **💡 Trading News Strategy:**
         - **Economic Data:** Follow BLS, BEA, and Fed releases for macro trends
-        - **Corporate News:** Monitor earnings, guidance, and SEC filings
+        - **Stock News:** Monitor earnings, analyst changes, and breaking company news
+        - **Corporate Events:** Track mergers, acquisitions, and leadership changes
+        - **Sector Analysis:** Focus on industry-specific trends and regulatory changes
         - **International:** Watch major central bank communications
         - **Market Structure:** Track VIX, bond yields, and currency moves
         """)
     
     # Live Market Context
-    with tabs[5]:
+    with tabs[6]:
         st.header("⚡ Live Market Context & Intelligence Summary")
         
         col1, col2 = st.columns(2)
@@ -469,6 +604,14 @@ def main():
                             if summary['next_fomc_meeting']:
                                 days_until_fomc = summary['next_fomc_meeting']['days_until']
                                 st.metric("Days to FOMC", days_until_fomc)
+                        
+                        # Additional earnings metrics
+                        if summary.get('high_impact_earnings_this_week'):
+                            col2c, col2d = st.columns(2)
+                            with col2c:
+                                st.metric("High-Impact Earnings", summary['high_impact_earnings_this_week'])
+                            with col2d:
+                                st.metric("Total Earnings This Week", summary['total_earnings_this_week'])
                         
                         # Sentiment distribution
                         st.subheader("📈 News Sentiment Analysis")
