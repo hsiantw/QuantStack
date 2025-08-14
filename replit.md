@@ -54,6 +54,15 @@ This is a comprehensive quantitative finance platform built with Streamlit that 
   - Market intelligence summary dashboard with sentiment distribution charts and earnings metrics
   - Comprehensive economic data sources including over 30 critical indicators plus stock market news sources
   - Banking sector health monitoring with interest rates, credit spreads, and yield curves
+- **Commodities, Forex & Futures Analysis**: Complete multi-asset class trading platform featuring:
+  - Real-time commodity prices for precious metals, energy, industrial metals, and agricultural products
+  - Major forex pairs analysis including EUR/USD, GBP/USD, USD/JPY and commodity currencies
+  - Futures contracts tracking for equity indices, fixed income, volatility, and crypto futures
+  - Advanced correlation analysis between commodities with interactive heatmaps
+  - Market drivers and economic indicators specific to commodity and forex markets
+  - Global trading sessions calendar with optimal trading times for different asset classes
+  - Comprehensive coverage of gold, silver, oil, natural gas, copper, wheat, corn, soybeans
+  - Technical analysis with candlestick charts and price trend visualization
 
 
 ## User Preferences

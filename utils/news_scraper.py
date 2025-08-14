@@ -423,6 +423,20 @@ class NewsAndDataScraper:
                 "Transportation and logistics capacity constraints",
                 "Automation and robotics adoption in manufacturing",
                 "Global trade tensions affecting export-dependent companies"
+            ],
+            "Commodities": [
+                "OPEC production decisions affecting oil prices",
+                "Weather patterns impacting agricultural commodities",
+                "US Dollar strength affecting commodity prices",
+                "Central bank gold purchases and policy decisions",
+                "China demand for industrial metals and energy"
+            ],
+            "Forex": [
+                "Central bank interest rate decisions and policy divergence",
+                "Economic data releases (GDP, inflation, employment)",
+                "Geopolitical tensions affecting safe-haven currencies",
+                "Trade balance and current account data",
+                "Risk-on/risk-off sentiment driving currency flows"
             ]
         }
         

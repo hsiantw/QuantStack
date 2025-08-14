@@ -576,19 +576,27 @@ def main_dashboard():
             "title": "Live News & Economic Data",
             "desc": "Real-time market intelligence with news analysis, economic calendar, Fed updates and trading-relevant data sources.",
             "page": "pages/news_and_economic_data.py"
+        },
+        {
+            "icon": "🌾",
+            "title": "Commodities, Forex & Futures",
+            "desc": "Comprehensive analysis of commodity markets, foreign exchange pairs, futures contracts with correlations and trading sessions.",
+            "page": "pages/commodities_forex_futures.py"
         }
 
     ]
     
-    # Display features in grid layout (adjusted for 9 features)
+    # Display features in grid layout (adjusted for 10 features)
     # First row: 3 features
     cols1 = st.columns(3)
     # Second row: 3 features  
     cols2 = st.columns(3)
     # Third row: 3 features
     cols3 = st.columns(3)
+    # Fourth row: 1 feature centered
+    cols4 = st.columns([1, 2, 1])
     
-    all_cols = list(cols1) + list(cols2) + list(cols3)
+    all_cols = list(cols1) + list(cols2) + list(cols3) + [cols4[1]]
     
     for i, feature in enumerate(features):
         with all_cols[i]:
