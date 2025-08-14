@@ -69,7 +69,7 @@ class GoldenCrossStrategy:
             current_price = results['Close'].iloc[i]
             
             # Buy signal: during bullish regime on 1%+ dip
-            if results['Buy_Signal'].iloc[i] and position == 0:
+            if results['Buy_Signal'].iloc[i] and position == 0 and current_price > 0:
                 shares = cash / current_price
                 cash = 0
                 position = 1
@@ -103,7 +103,9 @@ class GoldenCrossStrategy:
                 portfolio_value.append(cash)
         
         results['Portfolio_Value'] = portfolio_value
-        results['Position'] = [1 if pv > cash else 0 for pv in portfolio_value]
+        # Create position indicator - fix for when cash is 0
+        initial_cash = initial_capital
+        results['Position'] = [1 if pv > initial_cash else 0 for pv in portfolio_value]
         
         return results, trades
     
@@ -116,7 +118,7 @@ class GoldenCrossStrategy:
         final_value = results['Portfolio_Value'].iloc[-1]
         
         # Basic returns
-        total_return = (final_value - initial_value) / initial_value * 100
+        total_return = (final_value - initial_value) / initial_value * 100 if initial_value > 0 else 0
         
         # Calculate returns series
         portfolio_returns = results['Portfolio_Value'].pct_change().dropna()
@@ -130,14 +132,15 @@ class GoldenCrossStrategy:
         
         # Maximum drawdown
         peak = results['Portfolio_Value'].cummax()
-        drawdown = (results['Portfolio_Value'] - peak) / peak
-        max_drawdown = drawdown.min() * 100
+        drawdown = (results['Portfolio_Value'] - peak) / peak.replace(0, np.nan)
+        max_drawdown = drawdown.min() * 100 if not drawdown.isna().all() else 0
         
         # Trade statistics
         profitable_trades = [t for t in trades if 'Profit' in t and t['Profit'] > 0]
         losing_trades = [t for t in trades if 'Profit' in t and t['Profit'] <= 0]
         
-        win_rate = len(profitable_trades) / len([t for t in trades if 'Profit' in t]) * 100 if len(trades) > 0 else 0
+        completed_trades = [t for t in trades if 'Profit' in t]
+        win_rate = len(profitable_trades) / len(completed_trades) * 100 if len(completed_trades) > 0 else 0
         
         avg_win = np.mean([t['Profit'] for t in profitable_trades]) if profitable_trades else 0
         avg_loss = np.mean([t['Profit'] for t in losing_trades]) if losing_trades else 0
@@ -147,7 +150,7 @@ class GoldenCrossStrategy:
             'Volatility (%)': volatility,
             'Sharpe Ratio': sharpe_ratio,
             'Max Drawdown (%)': max_drawdown,
-            'Total Trades': len([t for t in trades if 'Profit' in t]),
+            'Total Trades': len(completed_trades),
             'Win Rate (%)': win_rate,
             'Average Win ($)': avg_win,
             'Average Loss ($)': avg_loss,
