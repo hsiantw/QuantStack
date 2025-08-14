@@ -516,7 +516,69 @@ st.set_page_config(
 
 # Main dashboard
 def main_dashboard():
-    # Market overview section with enhanced styling (moved to top)
+    # Platform features with modern card design (moved to top)
+    st.markdown("### 🚀 Platform Features")
+    
+    # Define platform features
+    features = [
+        {
+            "icon": "📊",
+            "title": "Portfolio Optimization",
+            "desc": "Modern Portfolio Theory implementation with efficient frontier calculation and Markowitz optimization for risk-adjusted returns.",
+            "page": "pages/portfolio_optimization.py"
+        },
+        {
+            "icon": "🔗",
+            "title": "Statistical Arbitrage",
+            "desc": "Detect arbitrage opportunities through correlation analysis and pair trading strategies with cointegration testing.",
+            "page": "pages/statistical_arbitrage.py"
+        },
+        {
+            "icon": "📈",
+            "title": "Time Series Analysis",
+            "desc": "Advanced time series analysis with ARIMA modeling, trend identification and seasonality detection.",
+            "page": "pages/time_series_analysis.py"
+        },
+        {
+            "icon": "⚡",
+            "title": "Trading Strategies",
+            "desc": "Backtest and optimize various trading strategies with comprehensive performance metrics and risk analysis.",
+            "page": "pages/trading_strategies.py"
+        },
+        {
+            "icon": "🤖",
+            "title": "AI Analysis",
+            "desc": "AI-powered price prediction and pattern recognition using machine learning models with feature engineering.",
+            "page": "pages/ai_analysis.py"
+        },
+        {
+            "icon": "🎯",
+            "title": "AI Pairs Trading",
+            "desc": "Comprehensive pairs trading system with AI-optimized strategies, cointegration testing and mean reversion analysis.",
+            "page": "pages/ai_pairs_trading.py"
+        }
+    ]
+    
+    # Display features in grid layout
+    cols = st.columns(3)
+    
+    for i, feature in enumerate(features):
+        with cols[i % 3]:
+            st.markdown(f"""
+            <div class="nav-card" onclick="window.open('#{feature['page']}', '_self')">
+                <div class="nav-card-icon">{feature['icon']}</div>
+                <div class="nav-card-title">{feature['title']}</div>
+                <div class="nav-card-desc">{feature['desc']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Add the button functionality with consistent sizing
+            if st.button(f"Launch {feature['title']}", key=f"btn_{i}"):
+                st.switch_page(feature['page'])
+    
+    st.markdown("---")
+    
+    # Market overview section with enhanced styling (moved below navigation)
     st.markdown("### 🌍 Global Market Overview")
     
     # Major indices - US and Worldwide
@@ -600,68 +662,6 @@ def main_dashboard():
                     
     except Exception as e:
         st.error(f"Error loading international market data: {str(e)}")
-    
-    st.markdown("---")
-    
-    # Platform features with modern card design (moved below market overview)
-    st.markdown("### 🚀 Platform Features")
-    
-    # Define platform features
-    features = [
-        {
-            "icon": "📊",
-            "title": "Portfolio Optimization",
-            "desc": "Modern Portfolio Theory implementation with efficient frontier calculation and Markowitz optimization for risk-adjusted returns.",
-            "page": "pages/portfolio_optimization.py"
-        },
-        {
-            "icon": "🔗",
-            "title": "Statistical Arbitrage",
-            "desc": "Detect arbitrage opportunities through correlation analysis and pair trading strategies with cointegration testing.",
-            "page": "pages/statistical_arbitrage.py"
-        },
-        {
-            "icon": "📈",
-            "title": "Time Series Analysis",
-            "desc": "Advanced time series analysis with ARIMA modeling, trend identification and seasonality detection.",
-            "page": "pages/time_series_analysis.py"
-        },
-        {
-            "icon": "⚡",
-            "title": "Trading Strategies",
-            "desc": "Backtest and optimize various trading strategies with comprehensive performance metrics and risk analysis.",
-            "page": "pages/trading_strategies.py"
-        },
-        {
-            "icon": "🤖",
-            "title": "AI Analysis",
-            "desc": "AI-powered price prediction and pattern recognition using machine learning models with feature engineering.",
-            "page": "pages/ai_analysis.py"
-        },
-        {
-            "icon": "🎯",
-            "title": "AI Pairs Trading",
-            "desc": "Comprehensive pairs trading system with AI-optimized strategies, cointegration testing and mean reversion analysis.",
-            "page": "pages/ai_pairs_trading.py"
-        }
-    ]
-    
-    # Display features in grid layout
-    cols = st.columns(3)
-    
-    for i, feature in enumerate(features):
-        with cols[i % 3]:
-            st.markdown(f"""
-            <div class="nav-card" onclick="window.open('#{feature['page']}', '_self')">
-                <div class="nav-card-icon">{feature['icon']}</div>
-                <div class="nav-card-title">{feature['title']}</div>
-                <div class="nav-card-desc">{feature['desc']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Add the button functionality with consistent sizing
-            if st.button(f"Launch {feature['title']}", key=f"btn_{i}"):
-                st.switch_page(feature['page'])
     
     st.markdown("---")
     
