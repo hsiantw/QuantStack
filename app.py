@@ -501,14 +501,6 @@ st.set_page_config(
 
 # Main dashboard
 def main_dashboard():
-    # Modern header with gradient background
-    st.markdown("""
-    <div class="main-header">
-        <h1>📊 Quantitative Finance Platform</h1>
-        <p>Advanced AI-powered financial analysis and trading strategies</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
     # Platform features with modern card design (moved to top)
     st.markdown("### 🚀 Platform Features")
     
