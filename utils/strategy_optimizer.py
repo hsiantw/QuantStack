@@ -40,7 +40,7 @@ class StrategyOptimizer:
             delta = self.data['Close'].diff()
             gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-            rs = gain / loss
+            rs = gain / np.where(loss != 0, loss, 1e-6)
             self.data[f'RSI_{period}'] = 100 - (100 / (1 + rs))
         
         # MACD
@@ -55,20 +55,22 @@ class StrategyOptimizer:
             self.data[f'BB_Upper_{period}'] = ma + (2 * std)
             self.data[f'BB_Lower_{period}'] = ma - (2 * std)
             self.data[f'BB_Middle_{period}'] = ma
-            self.data[f'BB_Width_{period}'] = (self.data[f'BB_Upper_{period}'] - self.data[f'BB_Lower_{period}']) / ma
+            self.data[f'BB_Width_{period}'] = (self.data[f'BB_Upper_{period}'] - self.data[f'BB_Lower_{period}']) / np.where(ma != 0, ma, 1e-6)
         
         # Stochastic Oscillator
         for period in [14, 21]:
             low_min = self.data['Low'].rolling(window=period).min()
             high_max = self.data['High'].rolling(window=period).max()
-            self.data[f'Stoch_K_{period}'] = 100 * (self.data['Close'] - low_min) / (high_max - low_min)
+            stoch_denominator = high_max - low_min
+            self.data[f'Stoch_K_{period}'] = 100 * (self.data['Close'] - low_min) / np.where(stoch_denominator != 0, stoch_denominator, 1e-6)
             self.data[f'Stoch_D_{period}'] = self.data[f'Stoch_K_{period}'].rolling(window=3).mean()
         
         # Williams %R
         for period in [14, 21]:
             high_max = self.data['High'].rolling(window=period).max()
             low_min = self.data['Low'].rolling(window=period).min()
-            self.data[f'Williams_R_{period}'] = -100 * (high_max - self.data['Close']) / (high_max - low_min)
+            williams_denominator = high_max - low_min
+            self.data[f'Williams_R_{period}'] = -100 * (high_max - self.data['Close']) / np.where(williams_denominator != 0, williams_denominator, 1e-6)
         
         # Average True Range (ATR)
         high_low = self.data['High'] - self.data['Low']
@@ -83,7 +85,7 @@ class StrategyOptimizer:
             tp = (self.data['High'] + self.data['Low'] + self.data['Close']) / 3
             sma = tp.rolling(window=period).mean()
             mad = tp.rolling(window=period).apply(lambda x: np.abs(x - x.mean()).mean())
-            self.data[f'CCI_{period}'] = (tp - sma) / (0.015 * mad)
+            self.data[f'CCI_{period}'] = (tp - sma) / np.where((0.015 * mad) != 0, (0.015 * mad), 1e-6)
         
         # Volume indicators
         if 'Volume' in self.data.columns:

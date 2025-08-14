@@ -138,18 +138,21 @@ class AIStrategyOptimizer:
         ]
         
         for fast_ma, slow_ma in ma_combinations:
+            # Work on a copy to avoid modifying original data
+            temp_data = data.copy()
+            
             # Calculate signals
-            data[f'ma_fast'] = data['Close'].rolling(fast_ma).mean()
-            data[f'ma_slow'] = data['Close'].rolling(slow_ma).mean()
+            temp_data[f'ma_fast'] = temp_data['Close'].rolling(fast_ma).mean()
+            temp_data[f'ma_slow'] = temp_data['Close'].rolling(slow_ma).mean()
             
             # Generate signals
-            data['signal'] = 0
-            data.loc[data['ma_fast'] > data['ma_slow'], 'signal'] = 1
-            data.loc[data['ma_fast'] <= data['ma_slow'], 'signal'] = -1
+            temp_data['signal'] = 0
+            temp_data.loc[temp_data['ma_fast'] > temp_data['ma_slow'], 'signal'] = 1
+            temp_data.loc[temp_data['ma_fast'] <= temp_data['ma_slow'], 'signal'] = -1
             
             # Calculate returns
-            data['strategy_returns'] = data['signal'].shift(1) * data['Close'].pct_change()
-            strategy_returns = data['strategy_returns'].dropna()
+            temp_data['strategy_returns'] = temp_data['signal'].shift(1) * temp_data['Close'].pct_change()
+            strategy_returns = temp_data['strategy_returns'].dropna()
             
             if len(strategy_returns) > 0:
                 metrics = self.calculate_strategy_metrics(strategy_returns)
@@ -176,16 +179,18 @@ class AIStrategyOptimizer:
         ]
         
         for period, oversold, overbought in rsi_configs:
-            rsi = self.calculate_rsi(data['Close'], period)
+            # Work on a copy to avoid modifying original data
+            temp_data = data.copy()
+            rsi = self.calculate_rsi(temp_data['Close'], period)
             
             # Generate signals
-            data['signal'] = 0
-            data.loc[rsi < oversold, 'signal'] = 1  # Buy oversold
-            data.loc[rsi > overbought, 'signal'] = -1  # Sell overbought
+            temp_data['signal'] = 0
+            temp_data.loc[rsi < oversold, 'signal'] = 1  # Buy oversold
+            temp_data.loc[rsi > overbought, 'signal'] = -1  # Sell overbought
             
             # Calculate returns
-            data['strategy_returns'] = data['signal'].shift(1) * data['Close'].pct_change()
-            strategy_returns = data['strategy_returns'].dropna()
+            temp_data['strategy_returns'] = temp_data['signal'].shift(1) * temp_data['Close'].pct_change()
+            strategy_returns = temp_data['strategy_returns'].dropna()
             
             if len(strategy_returns) > 0:
                 metrics = self.calculate_strategy_metrics(strategy_returns)
