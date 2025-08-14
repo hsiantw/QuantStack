@@ -170,26 +170,41 @@ st.markdown("""
         color: #f44336;
     }
     
-    /* Enhanced Button Styling */
+    /* Enhanced Button Styling - Uniform Size */
     .stButton > button {
-        background: linear-gradient(45deg, #1f77b4, #17becf);
-        color: white;
-        border: none;
-        padding: 1rem 2rem;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 1rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 6px 20px rgba(31, 119, 180, 0.4);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        position: relative;
-        overflow: hidden;
-        width: 100%;
-        height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        background: linear-gradient(45deg, #1f77b4, #17becf) !important;
+        color: white !important;
+        border: none !important;
+        padding: 1rem 1.5rem !important;
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        font-size: 0.9rem !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 6px 20px rgba(31, 119, 180, 0.4) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        position: relative !important;
+        overflow: hidden !important;
+        width: 100% !important;
+        height: 55px !important;
+        min-height: 55px !important;
+        max-height: 55px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        text-overflow: ellipsis !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    /* Force button container uniformity */
+    .stButton {
+        width: 100% !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    div[data-testid="column"] .stButton {
+        width: 100% !important;
     }
     
     .stButton > button::before {
