@@ -312,19 +312,36 @@ if analysis_mode == "🤖 AI Strategy Optimization":
                     st.dataframe(comparison_df, use_container_width=True, hide_index=True)
                 
                 # PineScript Generation for Best Strategy
-                if recommendations['top_strategies']:
+                if best_strategy:
                     st.subheader("📋 TradingView PineScript - Best Strategy")
                     
-                    best_strategy_name, best_metrics = recommendations['top_strategies'][0]
-                    
                     # Generate PineScript based on strategy type
-                    pinescript_code = PineScriptGenerator.get_strategy_script(
-                        best_strategy_name, 
-                        best_metrics, 
-                        ticker_input
-                    )
+                    strategy_type = best_strategy.get('type', 'unknown')
                     
-                    st.success(f"**Ready-to-use PineScript for {best_strategy_name} Strategy**")
+                    if 'ma' in strategy_type.lower() or 'moving_average' in strategy_type.lower():
+                        params = best_strategy.get('params', {})
+                        fast_ma = params.get('short_period', params.get('fast', 20))
+                        slow_ma = params.get('long_period', params.get('slow', 50))
+                        from utils.pinescript_generator import PineScriptGenerator
+                        pinescript_code = PineScriptGenerator.generate_moving_average_strategy(fast_ma, slow_ma, ticker_input)
+                    
+                    elif 'rsi' in strategy_type.lower():
+                        params = best_strategy.get('params', {})
+                        rsi_period = params.get('period', 14)
+                        oversold = params.get('oversold', 30)
+                        overbought = params.get('overbought', 70)
+                        from utils.pinescript_generator import PineScriptGenerator
+                        pinescript_code = PineScriptGenerator.generate_rsi_strategy(rsi_period, oversold, overbought, ticker_input)
+                    
+                    else:
+                        # Generate ensemble strategy for complex strategies
+                        from utils.pinescript_generator import PineScriptGenerator
+                        pinescript_code = PineScriptGenerator.generate_ensemble_strategy(
+                            ['Moving Average', 'RSI', 'Bollinger Bands'], 
+                            ticker_input
+                        )
+                    
+                    st.success(f"**Ready-to-use PineScript for {best_strategy['name']} Strategy**")
                     st.markdown("**Instructions:**")
                     st.markdown("1. Copy the code below")
                     st.markdown("2. Go to TradingView.com → Pine Editor")
@@ -336,43 +353,35 @@ if analysis_mode == "🤖 AI Strategy Optimization":
                     # Copy button helper
                     st.markdown("💡 **Tip:** Click the copy button in the top-right corner of the code block")
                 
-                # Moving Average optimization details
-                if 'moving_average' in recommendations and recommendations['moving_average']['best']:
-                    st.subheader("📈 Moving Average Strategy Optimization")
-                    
-                    ma_best = recommendations['moving_average']['best']
-                    st.success(f"**Best MA Strategy:** {ma_best.get('params', 'N/A')}")
-                    
-                    # Create comparison table
-                    ma_results = recommendations['moving_average']['all_results']
-                    if ma_results:
-                        df_ma = pd.DataFrame(ma_results)
-                        df_ma = df_ma.sort_values('calmar_ratio', ascending=False)
-                        
-                        st.dataframe(
-                            df_ma[['params', 'total_return', 'max_drawdown', 'sharpe_ratio', 'calmar_ratio']].round(4),
-                            use_container_width=True
-                        )
-                        
-                        # Highlight the issue with high drawdown
-                        high_drawdown = df_ma[df_ma['max_drawdown'] < -0.20]  # More than 20% drawdown
-                        if not high_drawdown.empty:
-                            st.warning(f"⚠️ {len(high_drawdown)} MA strategies have drawdown > 20%. Consider the risk-adjusted strategy below.")
+                # Strategy Details
+                st.subheader("🔍 Strategy Analysis Details")
                 
-                # Risk-adjusted strategy
-                if 'risk_adjusted' in recommendations:
-                    st.subheader("🛡️ AI Risk-Adjusted Strategy")
-                    risk_metrics = recommendations['risk_adjusted']
+                with st.expander("Strategy Parameter Details", expanded=False):
+                    st.write("**Selected Strategy Details:**")
+                    st.write(f"• **Type:** {best_strategy['type']}")
+                    st.write(f"• **Parameters:** {best_strategy['params']}")
                     
-                    st.success("**AI Solution:** Dynamic position sizing with volatility and drawdown filters")
+                    if 'calculation_details' in recommendations:
+                        calc_details = recommendations['calculation_details']
+                        st.write("**Performance Calculation Details:**")
+                        st.write(f"• **Total Trading Days:** {calc_details.get('total_days', 'N/A')}")
+                        st.write(f"• **Mean Daily Return:** {calc_details.get('mean_daily_return', 0):.6f}")
+                        st.write(f"• **Daily Return Std:** {calc_details.get('daily_return_std', 0):.6f}")
+                        st.write(f"• **Peak Portfolio Value:** ${calc_details.get('peak_value', 0):,.2f}")
+                        st.write(f"• **Trough Portfolio Value:** ${calc_details.get('trough_value', 0):,.2f}")
+                
+                # Risk Assessment
+                if 'monte_carlo' in recommendations and recommendations['monte_carlo']:
+                    st.subheader("🎲 Risk Assessment")
+                    mc_results = recommendations['monte_carlo']
                     
                     col1, col2, col3 = st.columns(3)
                     with col1:
-                        st.metric("Max Drawdown", f"{risk_metrics.get('max_drawdown', 0):.2%}")
+                        st.metric("95% Confidence Lower", f"{mc_results.get('ci_lower', 0):.1%}")
                     with col2:
-                        st.metric("Calmar Ratio", f"{risk_metrics.get('calmar_ratio', 0):.3f}")
+                        st.metric("95% Confidence Upper", f"{mc_results.get('ci_upper', 0):.1%}")
                     with col3:
-                        st.metric("Total Return", f"{risk_metrics.get('total_return', 0):.2%}")
+                        st.metric("Probability of Loss", f"{mc_results.get('prob_loss', 0):.1f}%")
                     
                     st.info("🔬 This strategy uses AI to dynamically adjust position sizes based on volatility and current drawdown, helping minimize downside while preserving upside.")
                 
