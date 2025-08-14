@@ -65,6 +65,8 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         position: relative;
         overflow: hidden;
+        text-decoration: none;
+        display: block;
     }
     
     .nav-card::before {
@@ -590,17 +592,20 @@ def main_dashboard():
     
     for i, feature in enumerate(features):
         with all_cols[i]:
-            st.markdown(f"""
-            <div class="nav-card" onclick="window.open('#{feature['page']}', '_self')">
-                <div class="nav-card-icon">{feature['icon']}</div>
-                <div class="nav-card-title">{feature['title']}</div>
-                <div class="nav-card-desc">{feature['desc']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Add the button functionality with consistent sizing
-            if st.button(f"Launch {feature['title']}", key=f"btn_{i}"):
-                st.switch_page(feature['page'])
+            # Create clickable navigation using streamlit button styled as card
+            with st.container():
+                # Display the card visually
+                st.markdown(f"""
+                <div class="nav-card">
+                    <div class="nav-card-icon">{feature['icon']}</div>
+                    <div class="nav-card-title">{feature['title']}</div>
+                    <div class="nav-card-desc">{feature['desc']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Invisible full-width button overlay for navigation
+                if st.button(f"Access {feature['title']}", key=f"card_{i}", use_container_width=True):
+                    st.switch_page(feature['page'])
     
     st.markdown("---")
     
