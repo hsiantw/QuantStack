@@ -13,7 +13,7 @@ warnings.filterwarnings('ignore')
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.ui_components import apply_custom_css, create_metric_card, create_info_box
+from utils.ui_components import create_enhanced_metric_card, display_info_box, create_analysis_header
 
 def calculate_money_flow_index(data, period=14):
     """Calculate Money Flow Index (MFI)"""
@@ -134,14 +134,7 @@ def calculate_liquidity_metrics(data):
         }
 
 def main():
-    apply_custom_css()
-    
-    st.markdown("""
-    <div class="main-header">
-        <h1>🔍 Advanced Market Analysis</h1>
-        <p>Comprehensive analysis of money flow, liquidity, dark pool activity, and crypto markets</p>
-    </div>
-    """, unsafe_allow_html=True)
+    create_analysis_header("🔍 Advanced Market Analysis", "Comprehensive analysis of money flow, liquidity, dark pool activity, and crypto markets")
     
     # Sidebar controls
     st.sidebar.header("Analysis Settings")
@@ -209,20 +202,20 @@ def main():
             change_pct = (change / prev_price) * 100 if prev_price != 0 else 0
             
             with col1:
-                create_metric_card("Current Price", f"${current_price:.2f}", f"{change_pct:+.2f}%")
+                create_enhanced_metric_card("Current Price", f"${current_price:.2f}", change_pct, "💰")
             with col2:
                 avg_volume = data['Volume'].tail(20).mean()
-                create_metric_card("Avg Volume (20d)", f"{avg_volume:,.0f}", "")
+                create_enhanced_metric_card("Avg Volume (20d)", f"{avg_volume:,.0f}", icon="📊")
             with col3:
                 volatility = data['Close'].pct_change().std() * np.sqrt(252) * 100
-                create_metric_card("Volatility (Annual)", f"{volatility:.1f}%", "")
+                create_enhanced_metric_card("Volatility (Annual)", f"{volatility:.1f}%", icon="📈")
             with col4:
                 market_cap = info.get('marketCap', 'N/A')
                 if market_cap != 'N/A':
                     market_cap_str = f"${market_cap/1e9:.1f}B" if market_cap > 1e9 else f"${market_cap/1e6:.1f}M"
                 else:
                     market_cap_str = "N/A"
-                create_metric_card("Market Cap", market_cap_str, "")
+                create_enhanced_metric_card("Market Cap", market_cap_str, icon="🏢")
             
             st.markdown("---")
             
@@ -239,16 +232,15 @@ def main():
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     current_mfi = mfi.iloc[-1]
-                    mfi_signal = "Overbought" if current_mfi > 80 else "Oversold" if current_mfi < 20 else "Neutral"
-                    create_metric_card("Money Flow Index", f"{current_mfi:.1f}", mfi_signal)
+                    create_enhanced_metric_card("Money Flow Index", f"{current_mfi:.1f}", icon="💰")
                 
                 with col2:
                     ad_trend = "Bullish" if ad_line.iloc[-1] > ad_line.iloc[-10] else "Bearish"
-                    create_metric_card("A/D Line Trend", ad_trend, "")
+                    create_enhanced_metric_card("A/D Line Trend", ad_trend, icon="📈")
                 
                 with col3:
                     obv_trend = "Bullish" if obv.iloc[-1] > obv.iloc[-10] else "Bearish"
-                    create_metric_card("OBV Trend", obv_trend, "")
+                    create_enhanced_metric_card("OBV Trend", obv_trend, icon="📊")
                 
                 # Money flow chart
                 fig_mf = make_subplots(
@@ -277,21 +269,19 @@ def main():
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
                     avg_spread = liquidity_metrics['spread_proxy'].tail(20).mean()
-                    create_metric_card("Avg Spread Proxy", f"{avg_spread:.2f}%", "")
+                    create_enhanced_metric_card("Avg Spread Proxy", f"{avg_spread:.2f}%", icon="📊")
                 
                 with col2:
                     avg_volume_rate = liquidity_metrics['volume_rate'].tail(20).mean()
-                    volume_status = "High" if avg_volume_rate > 1.2 else "Low" if avg_volume_rate < 0.8 else "Normal"
-                    create_metric_card("Volume Rate", f"{avg_volume_rate:.2f}x", volume_status)
+                    create_enhanced_metric_card("Volume Rate", f"{avg_volume_rate:.2f}x", icon="🌊")
                 
                 with col3:
                     current_liquidity = liquidity_metrics['liquidity_score'].iloc[-1]
-                    liquidity_status = "High" if current_liquidity > 2 else "Low" if current_liquidity < 1 else "Medium"
-                    create_metric_card("Liquidity Score", f"{current_liquidity:.2f}", liquidity_status)
+                    create_enhanced_metric_card("Liquidity Score", f"{current_liquidity:.2f}", icon="💧")
                 
                 with col4:
                     avg_turnover = liquidity_metrics['turnover_proxy'].tail(20).mean()
-                    create_metric_card("Turnover Proxy", f"{avg_turnover:.0f}", "")
+                    create_enhanced_metric_card("Turnover Proxy", f"{avg_turnover:.0f}", icon="🔄")
                 
                 # Liquidity chart
                 fig_liq = make_subplots(
@@ -322,16 +312,15 @@ def main():
                 with col1:
                     avg_dark_activity = dark_pool_indicator.tail(20).mean()
                     activity_level = "High" if avg_dark_activity > 1.5 else "Medium" if avg_dark_activity > 0.5 else "Low"
-                    create_metric_card("Dark Pool Activity", activity_level, f"Score: {avg_dark_activity:.2f}")
+                    create_enhanced_metric_card("Dark Pool Activity", activity_level, icon="🕳️")
                 
                 with col2:
                     price_vs_vwap = ((current_price - vwap.iloc[-1]) / vwap.iloc[-1]) * 100
-                    vwap_status = "Above VWAP" if price_vs_vwap > 0 else "Below VWAP"
-                    create_metric_card("Price vs VWAP", f"{price_vs_vwap:+.2f}%", vwap_status)
+                    create_enhanced_metric_card("Price vs VWAP", f"{price_vs_vwap:+.2f}%", icon="⚖️")
                 
                 with col3:
                     dark_signals = len(dark_pool_indicator[dark_pool_indicator > 1.5].tail(20))
-                    create_metric_card("Dark Pool Signals (20d)", str(dark_signals), "")
+                    create_enhanced_metric_card("Dark Pool Signals (20d)", str(dark_signals), icon="📡")
                 
                 # Dark pool chart
                 fig_dp = make_subplots(
@@ -354,13 +343,12 @@ def main():
                 st.plotly_chart(fig_dp, use_container_width=True)
                 
                 # Dark pool interpretation
-                create_info_box(
+                display_info_box(
                     "Dark Pool Activity Interpretation",
                     """
-                    **High Activity (>1.5)**: Potential institutional trading or dark pool activity
-                    **Medium Activity (0.5-1.5)**: Normal institutional flow
-                    **Low Activity (<0.5)**: Primarily retail trading
-                    
+                    **High Activity (>1.5)**: Potential institutional trading or dark pool activity<br>
+                    **Medium Activity (0.5-1.5)**: Normal institutional flow<br>
+                    **Low Activity (<0.5)**: Primarily retail trading<br><br>
                     Dark pool indicators combine unusual volume patterns with low price volatility,
                     suggesting large trades executed without significant market impact.
                     """
@@ -433,15 +421,15 @@ def main():
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     institutional_days = len(large_volume_days.tail(20))
-                    create_metric_card("High Volume Days (20d)", str(institutional_days), "")
+                    create_enhanced_metric_card("High Volume Days (20d)", str(institutional_days), icon="🏛️")
                 
                 with col2:
                     block_trade_count = len(block_trades.tail(20))
-                    create_metric_card("Block Trades (20d)", str(block_trade_count), "")
+                    create_enhanced_metric_card("Block Trades (20d)", str(block_trade_count), icon="🧱")
                 
                 with col3:
                     avg_institutional_volume = large_volume_days['Volume'].tail(10).mean() if len(large_volume_days) > 0 else 0
-                    create_metric_card("Avg Institutional Volume", f"{avg_institutional_volume:,.0f}", "")
+                    create_enhanced_metric_card("Avg Institutional Volume", f"{avg_institutional_volume:,.0f}", icon="📊")
                 
                 # Institutional activity chart
                 fig_inst = make_subplots(

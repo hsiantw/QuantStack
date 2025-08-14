@@ -10,18 +10,32 @@ warnings.filterwarnings('ignore')
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.ui_components import apply_custom_css, create_metric_card, create_info_box
+from utils.ui_components import create_enhanced_metric_card, display_info_box, create_analysis_header
 from utils.golden_cross_strategy import GoldenCrossStrategy
 
 def main():
-    apply_custom_css()
-    
+    # Apply custom CSS from main app
     st.markdown("""
-    <div class="main-header">
-        <h1>⭐ Golden Cross Strategy</h1>
-        <p>Simple trend-following strategy: Buy dips during golden cross, exit on death cross</p>
-    </div>
+    <style>
+    .stButton > button {
+        background: linear-gradient(45deg, #1f77b4, #17becf) !important;
+        color: white !important;
+        border: none !important;
+        padding: 1rem 1.5rem !important;
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        font-size: 0.9rem !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 6px 20px rgba(31, 119, 180, 0.4) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        width: 100% !important;
+        height: 55px !important;
+    }
+    </style>
     """, unsafe_allow_html=True)
+    
+    create_analysis_header("⭐ Golden Cross Strategy", "Simple trend-following strategy: Buy dips during golden cross, exit on death cross")
     
     # Strategy explanation
     st.markdown("""
@@ -82,31 +96,30 @@ def main():
             
             with col1:
                 total_return = performance.get('Total Return (%)', 0)
-                create_metric_card("Total Return", f"{total_return:.1f}%", "")
+                create_enhanced_metric_card("Total Return", f"{total_return:.1f}%", icon="💰")
             
             with col2:
                 sharpe = performance.get('Sharpe Ratio', 0)
-                sharpe_rating = "Excellent" if sharpe > 1.5 else "Good" if sharpe > 1 else "Fair" if sharpe > 0.5 else "Poor"
-                create_metric_card("Sharpe Ratio", f"{sharpe:.2f}", sharpe_rating)
+                create_enhanced_metric_card("Sharpe Ratio", f"{sharpe:.2f}", icon="⭐")
             
             with col3:
                 max_dd = performance.get('Max Drawdown (%)', 0)
-                create_metric_card("Max Drawdown", f"{max_dd:.1f}%", "")
+                create_enhanced_metric_card("Max Drawdown", f"{max_dd:.1f}%", icon="📉")
             
             with col4:
                 total_trades = performance.get('Total Trades', 0)
-                create_metric_card("Total Trades", str(total_trades), "")
+                create_enhanced_metric_card("Total Trades", str(total_trades), icon="📊")
             
             # Additional metrics
             col5, col6, col7, col8 = st.columns(4)
             
             with col5:
                 win_rate = performance.get('Win Rate (%)', 0)
-                create_metric_card("Win Rate", f"{win_rate:.1f}%", "")
+                create_enhanced_metric_card("Win Rate", f"{win_rate:.1f}%", icon="🎯")
             
             with col6:
                 volatility = performance.get('Volatility (%)', 0)
-                create_metric_card("Volatility", f"{volatility:.1f}%", "")
+                create_enhanced_metric_card("Volatility", f"{volatility:.1f}%", icon="📊")
             
             with col7:
                 profit_factor = performance.get('Profit Factor', 0)
@@ -114,11 +127,11 @@ def main():
                     pf_display = "∞"
                 else:
                     pf_display = f"{profit_factor:.2f}"
-                create_metric_card("Profit Factor", pf_display, "")
+                create_enhanced_metric_card("Profit Factor", pf_display, icon="💎")
             
             with col8:
                 final_value = results['Portfolio_Value'].iloc[-1]
-                create_metric_card("Final Value", f"${final_value:,.0f}", "")
+                create_enhanced_metric_card("Final Value", f"${final_value:,.0f}", icon="💰")
             
             # Strategy chart
             st.markdown("### 📈 Strategy Visualization")
@@ -133,13 +146,12 @@ def main():
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                create_metric_card("Strategy Return", f"{strategy_return:.1f}%", "")
+                create_enhanced_metric_card("Strategy Return", f"{strategy_return:.1f}%", icon="🚀")
             with col2:
-                create_metric_card("Buy & Hold Return", f"{buy_hold_return:.1f}%", "")
+                create_enhanced_metric_card("Buy & Hold Return", f"{buy_hold_return:.1f}%", icon="📈")
             with col3:
                 outperformance = strategy_return - buy_hold_return
-                performance_status = "Outperformed" if outperformance > 0 else "Underperformed"
-                create_metric_card("Outperformance", f"{outperformance:+.1f}%", performance_status)
+                create_enhanced_metric_card("Outperformance", f"{outperformance:+.1f}%", icon="⚡")
             
             # Trade history
             if trades:
@@ -170,11 +182,11 @@ def main():
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                create_metric_card("Golden Crosses", str(golden_crosses), "Trend Starts")
+                create_enhanced_metric_card("Golden Crosses", str(golden_crosses), icon="🟡")
             with col2:
-                create_metric_card("Buy Signals", str(buy_signals), "Dip Purchases")
+                create_enhanced_metric_card("Buy Signals", str(buy_signals), icon="🟢")
             with col3:
-                create_metric_card("Death Crosses", str(death_crosses), "Trend Ends")
+                create_enhanced_metric_card("Death Crosses", str(death_crosses), icon="🔴")
             
             # Current status
             st.markdown("### 🎯 Current Status")

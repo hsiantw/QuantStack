@@ -13,7 +13,7 @@ warnings.filterwarnings('ignore')
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.ui_components import apply_custom_css, create_metric_card, create_info_box
+from utils.ui_components import create_enhanced_metric_card, display_info_box, create_analysis_header
 
 def calculate_crypto_fear_greed_proxy(data):
     """Calculate a proxy for Fear & Greed index using price and volume data"""
@@ -110,14 +110,7 @@ def calculate_defi_metrics_proxy(data):
         }
 
 def main():
-    apply_custom_css()
-    
-    st.markdown("""
-    <div class="main-header">
-        <h1>₿ Comprehensive Crypto Analysis</h1>
-        <p>Advanced cryptocurrency analysis with DeFi metrics, on-chain analysis, and market sentiment</p>
-    </div>
-    """, unsafe_allow_html=True)
+    create_analysis_header("₿ Comprehensive Crypto Analysis", "Advanced cryptocurrency analysis with DeFi metrics, on-chain analysis, and market sentiment")
     
     # Sidebar controls
     st.sidebar.header("Crypto Analysis Settings")
@@ -178,15 +171,15 @@ def main():
                 col1, col2, col3, col4 = st.columns(4)
                 
                 with col1:
-                    create_metric_card("Current Price", f"${current_price:,.2f}", f"{change_pct:+.2f}%")
+                    create_enhanced_metric_card("Current Price", f"${current_price:,.2f}", change_pct, "₿")
                 
                 with col2:
                     volume_24h = data['Volume'].iloc[-1]
-                    create_metric_card("24h Volume", f"${volume_24h:,.0f}", "")
+                    create_enhanced_metric_card("24h Volume", f"${volume_24h:,.0f}", icon="📊")
                 
                 with col3:
                     volatility = data['Close'].pct_change().std() * np.sqrt(365) * 100
-                    create_metric_card("Volatility (Annual)", f"{volatility:.1f}%", "")
+                    create_enhanced_metric_card("Volatility (Annual)", f"{volatility:.1f}%", icon="📈")
                 
                 with col4:
                     market_cap = info.get('marketCap', 'N/A')
@@ -194,7 +187,7 @@ def main():
                         market_cap_str = f"${market_cap/1e9:.1f}B" if market_cap > 1e9 else f"${market_cap/1e6:.1f}M"
                     else:
                         market_cap_str = "N/A"
-                    create_metric_card("Market Cap", market_cap_str, "")
+                    create_enhanced_metric_card("Market Cap", market_cap_str, icon="💰")
                 
                 # Price chart with volume
                 fig_overview = make_subplots(
@@ -257,7 +250,7 @@ def main():
                         color = "#2e7d32"
                         advice = "Strong buying opportunity"
                     
-                    create_metric_card("Fear & Greed Index", f"{current_fg:.0f}", sentiment)
+                    create_enhanced_metric_card("Fear & Greed Index", f"{current_fg:.0f}", icon="😨")
                     st.markdown(f"**Trading Advice:** {advice}")
                 
                 with col2:
@@ -317,18 +310,16 @@ def main():
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     network_activity = on_chain['network_activity'].iloc[-1]
-                    activity_status = "High" if network_activity > 1.2 else "Low" if network_activity < 0.8 else "Normal"
-                    create_metric_card("Network Activity", f"{network_activity:.2f}x", activity_status)
+                    create_enhanced_metric_card("Network Activity", f"{network_activity:.2f}x", icon="⛓️")
                 
                 with col2:
                     hodl_strength = on_chain['hodl_strength'].iloc[-1]
-                    hodl_status = "Strong" if hodl_strength > 0.7 else "Weak" if hodl_strength < 0.3 else "Moderate"
-                    create_metric_card("HODL Strength", f"{hodl_strength:.2f}", hodl_status)
+                    create_enhanced_metric_card("HODL Strength", f"{hodl_strength:.2f}", icon="💎")
                 
                 with col3:
                     accumulation = on_chain['accumulation'].tail(10).mean()
                     acc_status = "Accumulation" if accumulation > 0.1 else "Distribution" if accumulation < -0.1 else "Neutral"
-                    create_metric_card("Market Behavior", acc_status, f"Score: {accumulation:.2f}")
+                    create_enhanced_metric_card("Market Behavior", acc_status, icon="📈")
                 
                 # On-chain metrics chart
                 fig_onchain = make_subplots(
@@ -372,15 +363,15 @@ def main():
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     tvl_current = defi_metrics['tvl_proxy'].iloc[-1]
-                    create_metric_card("TVL Proxy", f"${tvl_current:,.0f}", "")
+                    create_enhanced_metric_card("TVL Proxy", f"${tvl_current:,.0f}", icon="🏦")
                 
                 with col2:
                     yield_current = defi_metrics['yield_proxy'].iloc[-1]
-                    create_metric_card("Yield Opportunity", f"{yield_current:.1f}%", "")
+                    create_enhanced_metric_card("Yield Opportunity", f"{yield_current:.1f}%", icon="🌾")
                 
                 with col3:
                     liquidity_current = defi_metrics['liquidity_proxy'].iloc[-1]
-                    create_metric_card("Liquidity Score", f"{liquidity_current:.0f}", "")
+                    create_enhanced_metric_card("Liquidity Score", f"{liquidity_current:.0f}", icon="💧")
                 
                 # DeFi metrics chart
                 fig_defi = make_subplots(
@@ -438,18 +429,17 @@ def main():
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
                     trend = "Bullish" if current_price > sma_20.iloc[-1] > sma_50.iloc[-1] else "Bearish"
-                    create_metric_card("Trend", trend, "")
+                    create_enhanced_metric_card("Trend", trend, icon="📈")
                 
                 with col2:
                     rsi_current = rsi.iloc[-1]
-                    rsi_status = "Overbought" if rsi_current > 70 else "Oversold" if rsi_current < 30 else "Neutral"
-                    create_metric_card("RSI", f"{rsi_current:.1f}", rsi_status)
+                    create_enhanced_metric_card("RSI", f"{rsi_current:.1f}", icon="📊")
                 
                 with col3:
-                    create_metric_card("Resistance", f"${recent_high:.2f}", "")
+                    create_enhanced_metric_card("Resistance", f"${recent_high:.2f}", icon="🔴")
                 
                 with col4:
-                    create_metric_card("Support", f"${recent_low:.2f}", "")
+                    create_enhanced_metric_card("Support", f"${recent_low:.2f}", icon="🟢")
                 
                 # Technical analysis chart
                 fig_tech = make_subplots(
