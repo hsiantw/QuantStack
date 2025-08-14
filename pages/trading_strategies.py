@@ -261,37 +261,55 @@ if analysis_mode == "🤖 AI Strategy Optimization":
     with st.spinner("Running AI optimization to find best strategies with minimal drawdown..."):
         try:
             # Initialize AI optimizer
-            ai_optimizer = AIStrategyOptimizer()
+            ai_optimizer = AIStrategyOptimizer(ohlcv_data, ticker_input)
             
             # Generate comprehensive recommendations
-            recommendations = ai_optimizer.generate_strategy_recommendations(ohlcv_data)
+            recommendations = ai_optimizer.optimize_strategy()
             
             # Display AI optimization results
             if recommendations:
-                # Top 3 strategies
-                if 'top_strategies' in recommendations:
-                    st.subheader("🏆 Top Optimized Strategies")
+                best_strategy = recommendations['best_strategy']
+                all_strategies = recommendations.get('all_strategies', [])
+                
+                st.subheader("🏆 Best Optimized Strategy")
+                
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    st.metric("Strategy", best_strategy['name'])
+                    st.metric("Annual Return", f"{best_strategy['annual_return']:.2%}")
+                
+                with col2:
+                    st.metric("Sharpe Ratio", f"{best_strategy['sharpe_ratio']:.3f}")
+                    st.metric("Win Rate", f"{best_strategy['win_rate']:.1f}%")
+                
+                with col3:
+                    st.metric("Max Drawdown", f"{best_strategy['max_drawdown']:.2%}")
+                    st.metric("Total Trades", best_strategy['total_trades'])
+                
+                with col4:
+                    st.metric("Calmar Ratio", f"{best_strategy['calmar_ratio']:.3f}")
+                    if 'params' in best_strategy:
+                        st.info(f"Parameters: {best_strategy['params']}")
+                
+                # Show top 5 strategies comparison
+                if len(all_strategies) > 1:
+                    st.subheader("📊 Top Strategy Comparison")
                     
-                    for i, (strategy_name, metrics) in enumerate(recommendations['top_strategies']):
-                        with st.expander(f"#{i+1} {strategy_name} - Calmar Ratio: {metrics.get('calmar_ratio', 0):.3f}"):
-                            col1, col2, col3, col4 = st.columns(4)
-                            
-                            with col1:
-                                st.metric("Total Return", f"{metrics.get('total_return', 0):.2%}")
-                                st.metric("Win Rate", f"{metrics.get('win_rate', 0):.2%}")
-                            
-                            with col2:
-                                st.metric("Sharpe Ratio", f"{metrics.get('sharpe_ratio', 0):.3f}")
-                                st.metric("Profit Factor", f"{metrics.get('profit_factor', 0):.2f}")
-                            
-                            with col3:
-                                st.metric("Max Drawdown", f"{metrics.get('max_drawdown', 0):.2%}")
-                                st.metric("Volatility", f"{metrics.get('volatility', 0):.2%}")
-                            
-                            with col4:
-                                st.metric("Calmar Ratio", f"{metrics.get('calmar_ratio', 0):.3f}")
-                                if 'params' in metrics:
-                                    st.info(f"Parameters: {metrics['params']}")
+                    comparison_data = []
+                    for i, strategy in enumerate(all_strategies[:5]):
+                        comparison_data.append({
+                            "Rank": i + 1,
+                            "Strategy": strategy['name'],
+                            "Annual Return": f"{strategy['annual_return']:.2%}",
+                            "Sharpe Ratio": f"{strategy['sharpe_ratio']:.3f}",
+                            "Max Drawdown": f"{strategy['max_drawdown']:.2%}",
+                            "Win Rate": f"{strategy['win_rate']:.1f}%",
+                            "Calmar Ratio": f"{strategy['calmar_ratio']:.3f}"
+                        })
+                    
+                    comparison_df = pd.DataFrame(comparison_data)
+                    st.dataframe(comparison_df, use_container_width=True, hide_index=True)
                 
                 # PineScript Generation for Best Strategy
                 if recommendations['top_strategies']:
