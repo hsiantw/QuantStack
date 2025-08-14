@@ -158,7 +158,7 @@ class GoldenCrossStrategy:
         """Create comprehensive strategy visualization"""
         fig = make_subplots(
             rows=3, cols=1,
-            shared_xaxis=True,
+            shared_xaxes=True,
             subplot_titles=('Price with Moving Averages & Signals', 'Portfolio Value', 'Market Regime & Daily Returns'),
             vertical_spacing=0.05,
             row_heights=[0.5, 0.25, 0.25]
