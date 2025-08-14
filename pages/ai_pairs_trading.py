@@ -390,7 +390,7 @@ def create_pairs_trading_chart(pair_data, strategy_results, backtest_results):
     return fig
 
 def live_signals_tab():
-    st.header("⚡ Live Trading Signals")
+    st.header("⚡ Live Trading Signals & Execution Guide")
     
     # Check if we have results
     if 'pairs_results' not in st.session_state:
@@ -399,58 +399,165 @@ def live_signals_tab():
     
     results = st.session_state['pairs_results']
     
-    # Current signals
+    # Current signals with detailed execution instructions
     st.subheader("🚨 Current Trading Opportunities")
     
     strong_signals = [pair for pair in results['pairs'] if abs(pair['current_zscore']) > 1.5]
     
     if strong_signals:
-        for pair in strong_signals[:5]:
+        for i, pair in enumerate(strong_signals[:5]):
             zscore = pair['current_zscore']
+            hedge_ratio = abs(pair['hedge_ratio'])
             
             # Determine signal direction and strength
             if zscore > 2.0:
-                signal_type = "🔴 STRONG SELL"
-                signal_color = "red"
-                action = f"Short {pair['ticker1']}, Long {pair['ticker2']}"
+                signal_type = "🔴 STRONG SELL SPREAD"
+                confidence = "Very High"
+                direction = "SELL"
+                primary_action = f"SHORT {pair['ticker1']}"
+                secondary_action = f"LONG {pair['ticker2']}"
+                expected_move = "Spread expected to converge (decrease)"
             elif zscore > 1.5:
-                signal_type = "🟡 SELL"
-                signal_color = "orange"
-                action = f"Short {pair['ticker1']}, Long {pair['ticker2']}"
+                signal_type = "🟡 SELL SPREAD"
+                confidence = "High"
+                direction = "SELL"
+                primary_action = f"SHORT {pair['ticker1']}"
+                secondary_action = f"LONG {pair['ticker2']}"
+                expected_move = "Spread expected to converge (decrease)"
             elif zscore < -2.0:
-                signal_type = "🟢 STRONG BUY"
-                signal_color = "green"
-                action = f"Long {pair['ticker1']}, Short {pair['ticker2']}"
+                signal_type = "🟢 STRONG BUY SPREAD"
+                confidence = "Very High"
+                direction = "BUY"
+                primary_action = f"LONG {pair['ticker1']}"
+                secondary_action = f"SHORT {pair['ticker2']}"
+                expected_move = "Spread expected to converge (increase)"
             elif zscore < -1.5:
-                signal_type = "🟡 BUY"
-                signal_color = "orange"
-                action = f"Long {pair['ticker1']}, Short {pair['ticker2']}"
+                signal_type = "🟡 BUY SPREAD"
+                confidence = "High"
+                direction = "BUY"
+                primary_action = f"LONG {pair['ticker1']}"
+                secondary_action = f"SHORT {pair['ticker2']}"
+                expected_move = "Spread expected to converge (increase)"
             else:
                 continue
             
-            with st.container():
-                col1, col2, col3, col4 = st.columns([2, 2, 2, 2])
+            with st.expander(f"Signal #{i+1}: {pair['pair']} - {signal_type}", expanded=True):
+                
+                # Signal overview
+                col1, col2, col3, col4 = st.columns(4)
                 
                 with col1:
-                    st.markdown(f"**{pair['pair']}**")
-                    st.markdown(f"*{signal_type}*")
+                    st.metric("Current Z-Score", f"{zscore:.2f}")
+                    st.metric("Signal Confidence", confidence)
                 
                 with col2:
-                    st.metric("Z-Score", f"{zscore:.2f}")
-                    st.markdown(f"*{pair['signal_strength']}*")
+                    st.metric("Trading Score", f"{pair['trading_score']:.0f}/100")
+                    st.metric("Half-life", f"{pair['half_life']:.1f} days")
                 
                 with col3:
-                    st.metric("Score", f"{pair['trading_score']:.0f}/100")
-                    st.markdown(f"Half-life: {pair['half_life']:.1f}d")
+                    st.metric("Hedge Ratio", f"{hedge_ratio:.4f}")
+                    st.metric("Correlation", f"{pair['correlation']:.3f}")
                 
                 with col4:
-                    st.markdown(f"**Action:** {action}")
-                    st.markdown(f"Hedge ratio: {abs(pair['hedge_ratio']):.4f}")
+                    cointegrated = "✅ Yes" if pair['is_cointegrated'] else "❌ No"
+                    st.metric("Cointegrated", cointegrated)
+                    st.metric("P-Value", f"{pair['cointegration_pvalue']:.4f}")
                 
-                st.divider()
+                st.markdown("---")
+                
+                # Detailed execution instructions
+                st.markdown("### 📋 Detailed Execution Instructions")
+                
+                tab1, tab2, tab3 = st.tabs(["🎯 Trade Setup", "💰 Position Sizing", "⚡ Risk Management"])
+                
+                with tab1:
+                    st.markdown(f"""
+                    **SIGNAL DIRECTION: {direction} SPREAD**
+                    
+                    **Step 1: Primary Position**
+                    - {primary_action}
+                    - Entry reason: {expected_move}
+                    
+                    **Step 2: Hedge Position** 
+                    - {secondary_action}
+                    - Hedge ratio: {hedge_ratio:.4f}
+                    
+                    **Expected Outcome:**
+                    - {expected_move}
+                    - Target Z-score: 0 (mean reversion)
+                    - Time horizon: {pair['half_life']:.1f} days average
+                    """)
+                
+                with tab2:
+                    st.markdown(f"""
+                    **Position Sizing Formula:**
+                    
+                    If trading $10,000 total:
+                    - **{pair['ticker1']} position:** $5,000 ({primary_action.split()[0]})
+                    - **{pair['ticker2']} position:** ${5000 * hedge_ratio:,.0f} ({secondary_action.split()[0]})
+                    
+                    **Alternative: Share-based calculation**
+                    - For every 100 shares of {pair['ticker1']}: {int(100 * hedge_ratio)} shares of {pair['ticker2']}
+                    - Hedge ratio ensures dollar-neutral position
+                    
+                    **Risk Allocation:**
+                    - Maximum position size: 2-5% of portfolio
+                    - Consider correlation with existing positions
+                    """)
+                
+                with tab3:
+                    st.markdown(f"""
+                    **Entry Rules:**
+                    - Current Z-score: {zscore:.2f} ({"Above" if abs(zscore) > 2 else "Near"} entry threshold of ±2.0)
+                    - Wait for Z-score > 2.0 for SELL or < -2.0 for BUY signals
+                    
+                    **Exit Rules:**
+                    - **Target Exit:** Z-score reaches ±0.5 (75% mean reversion)
+                    - **Stop Loss:** Z-score reaches ±3.0 (position against us)
+                    - **Time Stop:** Close after {pair['half_life']*3:.0f} days if no convergence
+                    
+                    **Monitoring:**
+                    - Check Z-score daily for exit signals
+                    - Monitor both individual stock news/events
+                    - Watch for breakdown in correlation
+                    """)
+                
+                # Current market context
+                st.markdown("### 📊 Current Market Context")
+                st.info(f"""
+                **Why This Signal Exists:**
+                - Spread is currently {abs(zscore):.1f} standard deviations from historical mean
+                - Statistical significance: {pair['signal_strength']} confidence
+                - Historical mean reversion time: {pair['half_life']:.1f} days
+                - Cointegration test confirms long-term relationship (p-value: {pair['cointegration_pvalue']:.4f})
+                """)
     
     else:
         st.info("📊 No strong signals currently. Market conditions may be neutral.")
+        
+        # Show weaker signals for reference
+        weaker_signals = [pair for pair in results['pairs'][:5] if 1.0 <= abs(pair['current_zscore']) < 1.5]
+        
+        if weaker_signals:
+            st.subheader("📋 Moderate Signals (Monitor Only)")
+            
+            for pair in weaker_signals:
+                zscore = pair['current_zscore']
+                direction = "SELL" if zscore > 0 else "BUY"
+                
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    st.write(f"**{pair['pair']}**")
+                
+                with col2:
+                    st.write(f"Z-Score: {zscore:.2f}")
+                
+                with col3:
+                    st.write(f"Direction: {direction}")
+                
+                with col4:
+                    st.write(f"Score: {pair['trading_score']:.0f}/100")
     
     # Market overview
     st.subheader("📈 Pairs Market Overview")
@@ -458,18 +565,44 @@ def live_signals_tab():
     # Create summary metrics
     total_pairs = len(results['pairs'])
     cointegrated_pairs = len([p for p in results['pairs'] if p['is_cointegrated']])
-    active_signals = len([p for p in results['pairs'] if abs(p['current_zscore']) > 1.0])
+    strong_signals_count = len([p for p in results['pairs'] if abs(p['current_zscore']) > 2.0])
+    moderate_signals_count = len([p for p in results['pairs'] if 1.5 <= abs(p['current_zscore']) <= 2.0])
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Total Pairs Analyzed", total_pairs)
+        st.metric("Total Pairs", total_pairs)
     
     with col2:
-        st.metric("Cointegrated Pairs", cointegrated_pairs)
+        st.metric("Cointegrated", cointegrated_pairs)
     
     with col3:
-        st.metric("Active Signals", active_signals)
+        st.metric("Strong Signals", strong_signals_count)
+    
+    with col4:
+        st.metric("Moderate Signals", moderate_signals_count)
+    
+    # Trading tips
+    with st.expander("💡 General Pairs Trading Tips", expanded=False):
+        st.markdown("""
+        **Before You Trade:**
+        1. **Verify Cointegration:** Only trade pairs with p-value < 0.05
+        2. **Check Half-life:** Prefer pairs with 5-60 day mean reversion
+        3. **Monitor News:** Avoid trading around earnings or major events
+        4. **Position Sizing:** Never risk more than 2-5% of portfolio per pair
+        
+        **During Trading:**
+        1. **Execute Simultaneously:** Enter both legs as close to simultaneously as possible
+        2. **Monitor Daily:** Check Z-scores and exit signals daily
+        3. **Respect Stops:** Always honor your stop-loss levels
+        4. **Time Management:** Don't hold positions indefinitely
+        
+        **Risk Management:**
+        1. **Diversification:** Don't trade multiple pairs from same sector
+        2. **Correlation Risk:** Monitor overall portfolio correlation
+        3. **Regime Changes:** Be aware that relationships can break down
+        4. **Liquidity:** Ensure both stocks have adequate trading volume
+        """)
     
     # Refresh button
     if st.button("🔄 Refresh Signals", type="secondary"):
