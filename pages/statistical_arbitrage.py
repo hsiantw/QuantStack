@@ -21,8 +21,13 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🔗 Statistical Arbitrage Analysis")
-st.markdown("Identify pair trading opportunities through cointegration analysis and mean reversion strategies")
+# Modern header with enhanced styling
+st.markdown("""
+<div class="main-header">
+    <h1>🔗 Statistical Arbitrage Analysis</h1>
+    <p>Identify pair trading opportunities through cointegration analysis and mean reversion strategies</p>
+</div>
+""", unsafe_allow_html=True)
 
 # Sidebar for inputs
 st.sidebar.header("Analysis Configuration")

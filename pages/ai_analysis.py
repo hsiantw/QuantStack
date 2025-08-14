@@ -23,8 +23,13 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🤖 AI-Powered Financial Analysis")
-st.markdown("Advanced machine learning models for price prediction, pattern recognition, and market analysis")
+# Modern header with enhanced styling
+st.markdown("""
+<div class="main-header">
+    <h1>🤖 AI-Powered Financial Analysis</h1>
+    <p>Advanced machine learning models for price prediction, pattern recognition, and market analysis</p>
+</div>
+""", unsafe_allow_html=True)
 
 # Sidebar for inputs
 st.sidebar.header("AI Analysis Configuration")

@@ -12,8 +12,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 def main():
-    st.title("🤖 AI-Powered Pairs Trading Analysis")
-    st.markdown("**Find the best pairs to trade using AI-optimized strategies for statistical arbitrage**")
+    # Modern header with enhanced styling
+    st.markdown("""
+    <div class="main-header">
+        <h1>🤖 AI-Powered Pairs Trading Analysis</h1>
+        <p>Find the best pairs to trade using AI-optimized strategies for statistical arbitrage</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Create tabs for different analyses
     tab1, tab2, tab3, tab4 = st.tabs(["🔍 Find Best Pairs", "📊 Detailed Analysis", "⚡ Live Trading Signals", "📈 Mean Reversion Analysis"])

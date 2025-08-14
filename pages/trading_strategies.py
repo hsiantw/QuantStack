@@ -23,8 +23,13 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("⚡ Trading Strategy Backtesting")
-st.markdown("Comprehensive backtesting of various trading strategies with detailed performance analysis")
+# Modern header with enhanced styling
+st.markdown("""
+<div class="main-header">
+    <h1>⚡ Trading Strategy Backtesting</h1>
+    <p>Comprehensive backtesting of various trading strategies with detailed performance analysis</p>
+</div>
+""", unsafe_allow_html=True)
 
 # Sidebar for inputs
 st.sidebar.header("Strategy Configuration")

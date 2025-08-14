@@ -21,8 +21,13 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📈 Time Series Analysis")
-st.markdown("Advanced time series analysis with trend identification, seasonality detection, and forecasting")
+# Modern header with enhanced styling
+st.markdown("""
+<div class="main-header">
+    <h1>📈 Time Series Analysis</h1>
+    <p>Advanced time series analysis with trend identification, seasonality detection, and forecasting</p>
+</div>
+""", unsafe_allow_html=True)
 
 # Sidebar for inputs
 st.sidebar.header("Analysis Configuration")

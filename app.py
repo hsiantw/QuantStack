@@ -8,6 +8,424 @@ from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
+# Configure page
+st.set_page_config(
+    page_title="Quantitative Finance Platform",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS for enhanced UI/UX
+st.markdown("""
+<style>
+    /* Global Styling */
+    .main {
+        padding-top: 1rem;
+    }
+    
+    /* Header Styling */
+    .main-header {
+        background: linear-gradient(90deg, #1f77b4, #17becf);
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(31, 119, 180, 0.3);
+        backdrop-filter: blur(10px);
+    }
+    
+    .main-header h1 {
+        margin: 0;
+        font-size: 2.8rem;
+        font-weight: 700;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        background: linear-gradient(45deg, #ffffff, #e3f2fd);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .main-header p {
+        margin: 1rem 0 0 0;
+        font-size: 1.3rem;
+        opacity: 0.95;
+        font-weight: 300;
+    }
+    
+    /* Navigation Cards */
+    .nav-card {
+        background: linear-gradient(135deg, #262730, #3d3d5c);
+        padding: 2rem;
+        border-radius: 15px;
+        margin: 1rem 0;
+        border: 1px solid #404040;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .nav-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(31, 119, 180, 0.1), transparent);
+        transition: left 0.6s;
+    }
+    
+    .nav-card:hover::before {
+        left: 100%;
+    }
+    
+    .nav-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 12px 30px rgba(31, 119, 180, 0.25);
+        border-color: #1f77b4;
+    }
+    
+    .nav-card-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+        filter: drop-shadow(0 0 10px rgba(31, 119, 180, 0.5));
+    }
+    
+    .nav-card-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f77b4;
+        margin-bottom: 0.75rem;
+        text-shadow: 0 0 10px rgba(31, 119, 180, 0.3);
+    }
+    
+    .nav-card-desc {
+        color: #c4c4c4;
+        font-size: 1rem;
+        line-height: 1.6;
+        font-weight: 300;
+    }
+    
+    /* Metric Cards */
+    .metric-card {
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        padding: 2rem;
+        border-radius: 12px;
+        border: 1px solid #333;
+        text-align: center;
+        margin: 0.5rem;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #1f77b4, #17becf);
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(45deg, #17becf, #1f77b4);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-label {
+        font-size: 1rem;
+        color: #b3b3b3;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .metric-change {
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .positive-change {
+        color: #4caf50;
+    }
+    
+    .negative-change {
+        color: #f44336;
+    }
+    
+    /* Enhanced Button Styling */
+    .stButton > button {
+        background: linear-gradient(45deg, #1f77b4, #17becf);
+        color: white;
+        border: none;
+        padding: 1rem 2.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 6px 20px rgba(31, 119, 180, 0.4);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stButton > button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    .stButton > button:hover::before {
+        left: 100%;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(31, 119, 180, 0.5);
+        background: linear-gradient(45deg, #1565c0, #0097a7);
+    }
+    
+    /* Info Boxes with Animations */
+    .info-box {
+        background: linear-gradient(135deg, #0f3460, #16537e);
+        padding: 2rem;
+        border-radius: 12px;
+        border-left: 5px solid #17becf;
+        margin: 1.5rem 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .info-box::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(23,190,207,0.1) 0%, transparent 70%);
+        animation: pulse-glow 4s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-glow {
+        0%, 100% { transform: scale(0.8); opacity: 0.5; }
+        50% { transform: scale(1.2); opacity: 0.8; }
+    }
+    
+    /* Enhanced Alert Boxes */
+    .success-box {
+        background: linear-gradient(135deg, #2e7d32, #388e3c);
+        padding: 1.5rem;
+        border-radius: 10px;
+        border-left: 5px solid #4caf50;
+        color: white;
+        margin: 1rem 0;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        animation: slideInLeft 0.5s ease-out;
+    }
+    
+    .warning-box {
+        background: linear-gradient(135deg, #f57c00, #ff9800);
+        padding: 1.5rem;
+        border-radius: 10px;
+        border-left: 5px solid #ffc107;
+        color: white;
+        margin: 1rem 0;
+        box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        animation: slideInLeft 0.5s ease-out;
+    }
+    
+    .error-box {
+        background: linear-gradient(135deg, #d32f2f, #f44336);
+        padding: 1.5rem;
+        border-radius: 10px;
+        border-left: 5px solid #f44336;
+        color: white;
+        margin: 1rem 0;
+        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        animation: slideInLeft 0.5s ease-out;
+    }
+    
+    @keyframes slideInLeft {
+        from { transform: translateX(-100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    /* Enhanced Tab Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 12px;
+        background: rgba(38, 39, 48, 0.5);
+        padding: 0.5rem;
+        border-radius: 12px;
+        border: 1px solid #404040;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: transparent;
+        color: #b3b3b3;
+        border-radius: 10px;
+        padding: 1rem 2rem;
+        border: 1px solid transparent;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        position: relative;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(45deg, #1f77b4, #17becf);
+        color: white;
+        border-color: #1f77b4;
+        box-shadow: 0 4px 15px rgba(31, 119, 180, 0.4);
+        transform: scale(1.05);
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover:not([aria-selected="true"]) {
+        background: rgba(31, 119, 180, 0.1);
+        border-color: rgba(31, 119, 180, 0.3);
+        color: #17becf;
+    }
+    
+    /* Sidebar Enhancements */
+    .css-1d391kg {
+        background: linear-gradient(180deg, #1a1a2e, #16213e);
+        border-right: 2px solid rgba(31, 119, 180, 0.3);
+    }
+    
+    /* Loading Animation */
+    @keyframes loading-pulse {
+        0% { 
+            opacity: 0.6; 
+            transform: scale(1);
+        }
+        50% { 
+            opacity: 1; 
+            transform: scale(1.05);
+        }
+        100% { 
+            opacity: 0.6; 
+            transform: scale(1);
+        }
+    }
+    
+    .loading-indicator {
+        animation: loading-pulse 2s infinite;
+        color: #17becf;
+        text-align: center;
+        padding: 3rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    /* Chart Containers */
+    .js-plotly-plot {
+        background: rgba(38, 39, 48, 0.3) !important;
+        border-radius: 15px;
+        border: 1px solid #404040;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .js-plotly-plot:hover {
+        box-shadow: 0 8px 30px rgba(31, 119, 180, 0.2);
+        border-color: rgba(31, 119, 180, 0.5);
+    }
+    
+    /* Data Tables */
+    .stDataFrame {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: 1px solid #404040;
+    }
+    
+    /* Progress Bars */
+    .stProgress .st-bo {
+        background: linear-gradient(90deg, #1f77b4, #17becf);
+        border-radius: 10px;
+    }
+    
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+        .main-header h1 {
+            font-size: 2.2rem;
+        }
+        
+        .main-header p {
+            font-size: 1.1rem;
+        }
+        
+        .nav-card {
+            margin: 0.5rem 0;
+            padding: 1.5rem;
+        }
+        
+        .nav-card-icon {
+            font-size: 2.5rem;
+        }
+        
+        .nav-card-title {
+            font-size: 1.3rem;
+        }
+        
+        .metric-card {
+            margin: 0.25rem;
+            padding: 1.5rem;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+        }
+    }
+    
+    /* Hide Streamlit Elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: #1a1a2e;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #1f77b4, #17becf);
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #1565c0, #0097a7);
+    }
+</style>
+""", unsafe_allow_html=True)
+
 @st.cache_data(ttl=300)  # Cache for 5 minutes
 def get_most_recent_price(ticker, periods=["2d", "5d", "1mo", "3mo"]):
     """
@@ -78,11 +496,16 @@ st.set_page_config(
 
 # Main dashboard
 def main_dashboard():
-    st.title("📈 Quantitative Finance Platform")
-    st.markdown("---")
+    # Modern header with gradient background
+    st.markdown("""
+    <div class="main-header">
+        <h1>📊 Quantitative Finance Platform</h1>
+        <p>Advanced AI-powered financial analysis and trading strategies</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Market overview section
-    st.header("🌍 Market Overview")
+    # Market overview section with enhanced styling
+    st.markdown("### 🌍 Global Market Overview")
     
     # Major indices - US and Worldwide
     indices = {
@@ -168,42 +591,65 @@ def main_dashboard():
     
     st.markdown("---")
     
-    # Platform features
-    st.header("🚀 Platform Features")
+    # Platform features with modern card design
+    st.markdown("### 🚀 Platform Features")
     
-    col1, col2, col3 = st.columns(3)
+    # Define platform features
+    features = [
+        {
+            "icon": "📊",
+            "title": "Portfolio Optimization",
+            "desc": "Modern Portfolio Theory implementation with efficient frontier calculation and Markowitz optimization for risk-adjusted returns.",
+            "page": "pages/portfolio_optimization.py"
+        },
+        {
+            "icon": "🔗",
+            "title": "Statistical Arbitrage",
+            "desc": "Detect arbitrage opportunities through correlation analysis and pair trading strategies with cointegration testing.",
+            "page": "pages/statistical_arbitrage.py"
+        },
+        {
+            "icon": "📈",
+            "title": "Time Series Analysis",
+            "desc": "Advanced time series analysis with ARIMA modeling, trend identification and seasonality detection.",
+            "page": "pages/time_series_analysis.py"
+        },
+        {
+            "icon": "⚡",
+            "title": "Trading Strategies",
+            "desc": "Backtest and optimize various trading strategies with comprehensive performance metrics and risk analysis.",
+            "page": "pages/trading_strategies.py"
+        },
+        {
+            "icon": "🤖",
+            "title": "AI Analysis",
+            "desc": "AI-powered price prediction and pattern recognition using machine learning models with feature engineering.",
+            "page": "pages/ai_analysis.py"
+        },
+        {
+            "icon": "🎯",
+            "title": "AI Pairs Trading",
+            "desc": "Comprehensive pairs trading system with AI-optimized strategies, cointegration testing and mean reversion analysis.",
+            "page": "pages/ai_pairs_trading.py"
+        }
+    ]
     
-    with col1:
-        st.subheader("📊 Portfolio Optimization")
-        st.write("Modern Portfolio Theory implementation with efficient frontier calculation and Markowitz optimization.")
-        if st.button("Launch Portfolio Optimizer"):
-            st.switch_page("pages/portfolio_optimization.py")
+    # Display features in grid layout
+    cols = st.columns(3)
     
-    with col2:
-        st.subheader("🔗 Statistical Arbitrage")
-        st.write("Detect arbitrage opportunities through correlation analysis and pair trading strategies.")
-        if st.button("Launch Arbitrage Analysis"):
-            st.switch_page("pages/statistical_arbitrage.py")
-    
-    with col3:
-        st.subheader("📈 Time Series Analysis")
-        st.write("Advanced time series analysis with trend identification and seasonality detection.")
-        if st.button("Launch Time Series Analysis"):
-            st.switch_page("pages/time_series_analysis.py")
-    
-    col4, col5, col6 = st.columns(3)
-    
-    with col4:
-        st.subheader("⚡ Trading Strategies")
-        st.write("Backtest and optimize various trading strategies with comprehensive performance metrics.")
-        if st.button("Launch Strategy Backtesting"):
-            st.switch_page("pages/trading_strategies.py")
-    
-    with col5:
-        st.subheader("🤖 AI Analysis")
-        st.write("AI-powered price prediction and pattern recognition using machine learning models.")
-        if st.button("Launch AI Analysis"):
-            st.switch_page("pages/ai_analysis.py")
+    for i, feature in enumerate(features):
+        with cols[i % 3]:
+            st.markdown(f"""
+            <div class="nav-card" onclick="window.open('#{feature['page']}', '_self')">
+                <div class="nav-card-icon">{feature['icon']}</div>
+                <div class="nav-card-title">{feature['title']}</div>
+                <div class="nav-card-desc">{feature['desc']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Add the button functionality
+            if st.button(f"Launch {feature['title']}", key=f"btn_{i}"):
+                st.switch_page(feature['page'])
     
     with col6:
         st.subheader("🎯 Strategy Optimizer")

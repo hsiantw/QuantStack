@@ -21,8 +21,13 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 Portfolio Optimization")
-st.markdown("Modern Portfolio Theory implementation with efficient frontier calculation and risk analysis")
+# Modern header with enhanced styling
+st.markdown("""
+<div class="main-header">
+    <h1>📊 Portfolio Optimization</h1>
+    <p>Modern Portfolio Theory implementation with efficient frontier calculation and risk analysis</p>
+</div>
+""", unsafe_allow_html=True)
 
 # Sidebar for inputs
 st.sidebar.header("Portfolio Configuration")
