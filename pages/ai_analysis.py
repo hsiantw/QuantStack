@@ -13,6 +13,8 @@ from utils.data_fetcher import DataFetcher
 from utils.ai_models import AIModels
 from utils.time_series_analysis import TimeSeriesAnalysis
 from utils.tooltips import get_tooltip_help
+from utils.ai_strategy_optimizer import AIStrategyOptimizer
+from utils.pinescript_generator import PineScriptGenerator
 
 # Page configuration
 st.set_page_config(
@@ -709,6 +711,258 @@ try:
 
 except Exception as e:
     st.error(f"Error in pattern recognition: {str(e)}")
+
+# AI Strategy Analysis with Entry/Exit Points
+st.header("🎯 AI Strategy Analysis & Trading Signals")
+
+try:
+    with st.spinner("Generating AI trading strategy..."):
+        # Initialize AI Strategy Optimizer
+        ai_strategy = AIStrategyOptimizer(ohlcv_data, ticker_input)
+        
+        # Optimize strategy
+        optimization_results = ai_strategy.optimize_strategy()
+        
+        if optimization_results:
+            best_strategy = optimization_results['best_strategy']
+            
+            st.subheader("🏆 Optimized AI Strategy")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Strategy", best_strategy['name'])
+                st.metric("Annual Return", f"{best_strategy['annual_return']:.2%}")
+            
+            with col2:
+                st.metric("Sharpe Ratio", f"{best_strategy['sharpe_ratio']:.3f}")
+                st.metric("Max Drawdown", f"{best_strategy['max_drawdown']:.2%}")
+            
+            with col3:
+                st.metric("Win Rate", f"{best_strategy['win_rate']:.1%}")
+                st.metric("Total Trades", best_strategy['total_trades'])
+            
+            # Generate comprehensive strategy chart with entry/exit points
+            st.subheader("📊 Strategy Chart with Entry/Exit Signals")
+            
+            # Get strategy signals and backtesting results
+            strategy_signals = ai_strategy.get_strategy_signals(best_strategy)
+            backtest_results = ai_strategy.backtest_strategy(best_strategy)
+            
+            # Create comprehensive chart
+            fig_strategy = go.Figure()
+            
+            # Price data
+            fig_strategy.add_trace(go.Candlestick(
+                x=ohlcv_data.index[-252:],  # Last year of data
+                open=ohlcv_data['Open'][-252:],
+                high=ohlcv_data['High'][-252:],
+                low=ohlcv_data['Low'][-252:],
+                close=ohlcv_data['Close'][-252:],
+                name=f'{ticker_input} Price',
+                showlegend=True
+            ))
+            
+            # Add entry signals (buy points)
+            if 'entry_points' in strategy_signals and len(strategy_signals['entry_points']) > 0:
+                entry_dates = strategy_signals['entry_points'].index
+                entry_prices = strategy_signals['entry_points'].values
+                
+                fig_strategy.add_trace(go.Scatter(
+                    x=entry_dates,
+                    y=entry_prices,
+                    mode='markers',
+                    marker=dict(
+                        symbol='triangle-up',
+                        size=12,
+                        color='green',
+                        line=dict(width=2, color='darkgreen')
+                    ),
+                    name='Buy Signals',
+                    text=[f'BUY: ${price:.2f}' for price in entry_prices],
+                    hovertemplate='<b>Buy Signal</b><br>Date: %{x}<br>Price: $%{y:.2f}<extra></extra>'
+                ))
+            
+            # Add exit signals (sell points)
+            if 'exit_points' in strategy_signals and len(strategy_signals['exit_points']) > 0:
+                exit_dates = strategy_signals['exit_points'].index
+                exit_prices = strategy_signals['exit_points'].values
+                
+                fig_strategy.add_trace(go.Scatter(
+                    x=exit_dates,
+                    y=exit_prices,
+                    mode='markers',
+                    marker=dict(
+                        symbol='triangle-down',
+                        size=12,
+                        color='red',
+                        line=dict(width=2, color='darkred')
+                    ),
+                    name='Sell Signals',
+                    text=[f'SELL: ${price:.2f}' for price in exit_prices],
+                    hovertemplate='<b>Sell Signal</b><br>Date: %{x}<br>Price: $%{y:.2f}<extra></extra>'
+                ))
+            
+            # Add moving averages if strategy uses them
+            if 'MA_' in str(best_strategy.get('params', {})):
+                for period in [20, 50]:
+                    ma_col = f'MA_{period}'
+                    if ma_col in ohlcv_data.columns:
+                        fig_strategy.add_trace(go.Scatter(
+                            x=ohlcv_data.index[-252:],
+                            y=ohlcv_data[ma_col][-252:],
+                            mode='lines',
+                            name=f'MA{period}',
+                            line=dict(width=1, dash='dash'),
+                            opacity=0.7
+                        ))
+            
+            fig_strategy.update_layout(
+                title=f'{ticker_input} - AI Optimized Strategy: {best_strategy["name"]}',
+                xaxis_title='Date',
+                yaxis_title='Price ($)',
+                height=600,
+                hovermode='x unified',
+                legend=dict(x=0, y=1),
+                xaxis_rangeslider_visible=False
+            )
+            
+            st.plotly_chart(fig_strategy, use_container_width=True)
+            
+            # Strategy Performance Analysis
+            st.subheader("📈 Strategy Performance Breakdown")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if 'equity_curve' in backtest_results:
+                    # Equity curve
+                    fig_equity = go.Figure()
+                    fig_equity.add_trace(go.Scatter(
+                        x=backtest_results['equity_curve'].index,
+                        y=backtest_results['equity_curve'].values,
+                        mode='lines',
+                        name='Portfolio Value',
+                        line=dict(color='green', width=2)
+                    ))
+                    
+                    # Add benchmark
+                    if 'benchmark' in backtest_results:
+                        fig_equity.add_trace(go.Scatter(
+                            x=backtest_results['benchmark'].index,
+                            y=backtest_results['benchmark'].values,
+                            mode='lines',
+                            name='Buy & Hold',
+                            line=dict(color='blue', width=2, dash='dash')
+                        ))
+                    
+                    fig_equity.update_layout(
+                        title='Equity Curve Comparison',
+                        xaxis_title='Date',
+                        yaxis_title='Portfolio Value',
+                        height=400
+                    )
+                    
+                    st.plotly_chart(fig_equity, use_container_width=True)
+            
+            with col2:
+                if 'monthly_returns' in backtest_results:
+                    # Monthly returns heatmap
+                    monthly_returns = backtest_results['monthly_returns']
+                    
+                    fig_heatmap = go.Figure(data=go.Heatmap(
+                        z=monthly_returns.values,
+                        x=monthly_returns.columns,
+                        y=monthly_returns.index,
+                        colorscale='RdYlGn',
+                        showscale=True
+                    ))
+                    
+                    fig_heatmap.update_layout(
+                        title='Monthly Returns Heatmap',
+                        xaxis_title='Month',
+                        yaxis_title='Year',
+                        height=400
+                    )
+                    
+                    st.plotly_chart(fig_heatmap, use_container_width=True)
+            
+            # PineScript Code Generation
+            st.subheader("📝 PineScript Code for TradingView")
+            st.markdown("Copy this code and paste it into TradingView's Pine Editor:")
+            
+            # Generate PineScript based on strategy type
+            pinescript_code = ""
+            strategy_type = best_strategy.get('type', 'unknown')
+            
+            if 'ma' in strategy_type.lower() or 'moving_average' in strategy_type.lower():
+                params = best_strategy.get('params', {})
+                fast_ma = params.get('short_period', params.get('fast', 20))
+                slow_ma = params.get('long_period', params.get('slow', 50))
+                pinescript_code = PineScriptGenerator.generate_moving_average_strategy(fast_ma, slow_ma, ticker_input)
+            
+            elif 'rsi' in strategy_type.lower():
+                params = best_strategy.get('params', {})
+                rsi_period = params.get('period', 14)
+                oversold = params.get('oversold', 30)
+                overbought = params.get('overbought', 70)
+                pinescript_code = PineScriptGenerator.generate_rsi_strategy(rsi_period, oversold, overbought, ticker_input)
+            
+            else:
+                # Generate ensemble strategy for complex strategies
+                pinescript_code = PineScriptGenerator.generate_ensemble_strategy(
+                    ['Moving Average', 'RSI', 'Bollinger Bands'], 
+                    ticker_input
+                )
+            
+            # Display PineScript code in a text area for easy copying
+            st.text_area(
+                "PineScript Code (Click to select all - Ctrl+A, then Ctrl+C to copy):",
+                value=pinescript_code,
+                height=400,
+                key="pinescript_code"
+            )
+            
+            # Additional strategy insights
+            st.subheader("💡 Strategy Insights")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write("**Strategy Characteristics:**")
+                if best_strategy['sharpe_ratio'] > 1.5:
+                    st.success("🟢 Excellent risk-adjusted returns")
+                elif best_strategy['sharpe_ratio'] > 1.0:
+                    st.info("🟡 Good risk-adjusted returns")
+                else:
+                    st.warning("🟠 Moderate risk-adjusted returns")
+                
+                if best_strategy['max_drawdown'] < 0.1:
+                    st.success("🟢 Low drawdown risk")
+                elif best_strategy['max_drawdown'] < 0.2:
+                    st.info("🟡 Moderate drawdown risk")
+                else:
+                    st.warning("🟠 High drawdown risk")
+            
+            with col2:
+                st.write("**Trading Frequency:**")
+                trades_per_year = best_strategy['total_trades'] / max(1, len(ohlcv_data) / 252)
+                
+                if trades_per_year < 12:
+                    st.info("📅 Long-term strategy (< 1 trade/month)")
+                elif trades_per_year < 52:
+                    st.info("📊 Medium-term strategy (1-4 trades/month)")
+                else:
+                    st.warning("⚡ High-frequency strategy (> 1 trade/week)")
+                
+                st.metric("Avg Trades/Year", f"{trades_per_year:.1f}")
+        
+        else:
+            st.warning("Unable to optimize AI strategy. Insufficient data or market conditions not suitable for current models.")
+
+except Exception as e:
+    st.error(f"Error generating AI strategy: {str(e)}")
+    st.info("Ensure you have sufficient historical data and valid market conditions for strategy optimization.")
 
 # Sentiment Analysis Proxy
 st.header("💭 Market Sentiment Analysis")
