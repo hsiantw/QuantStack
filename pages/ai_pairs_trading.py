@@ -643,11 +643,19 @@ def mean_reversion_analysis_tab():
                 
                 data = yf.download(ticker_input, start=start_date, end=end_date, progress=False)
                 
-                if len(data) < 100:
+                if data.empty or len(data) < 100:
                     st.error("Insufficient data for analysis. Please try a different ticker or period.")
                     return
                 
+                # Handle MultiIndex columns if present
+                if isinstance(data.columns, pd.MultiIndex):
+                    data.columns = data.columns.droplevel(1)
+                
                 price_series = data['Close'].dropna()
+                
+                if len(price_series) < 50:
+                    st.error("Insufficient price data for analysis. Please try a different ticker.")
+                    return
                 
                 # Initialize mean reversion strategy
                 mr_strategy = MeanReversionStrategy(data)

@@ -48,7 +48,7 @@ class MeanReversionStrategy:
         signals.iloc[middle_crosses] = 0
         
         # Forward fill signals to maintain positions
-        signals = signals.replace(0, np.nan).fillna(method='ffill').fillna(0)
+        signals = signals.replace(0, np.nan).ffill().fillna(0)
         
         return {
             'signals': signals,
@@ -82,7 +82,7 @@ class MeanReversionStrategy:
         signals[neutral_zone] = 0
         
         # Forward fill signals
-        signals = signals.replace(0, np.nan).fillna(method='ffill').fillna(0)
+        signals = signals.replace(0, np.nan).ffill().fillna(0)
         
         return {
             'signals': signals,
@@ -199,7 +199,7 @@ class MeanReversionStrategy:
         signals[abs(deviation) < 0.5 * rolling_std] = 0  # Exit near fair value
         
         # Forward fill signals
-        signals = signals.replace(0, np.nan).fillna(method='ffill').fillna(0)
+        signals = signals.replace(0, np.nan).ffill().fillna(0)
         
         return {
             'signals': signals,
@@ -278,7 +278,7 @@ class MeanReversionStrategy:
                     signals.iloc[i] = 0   # Exit position
         
         # Forward fill signals
-        signals = signals.replace(0, np.nan).fillna(method='ffill').fillna(0)
+        signals = signals.replace(0, np.nan).ffill().fillna(0)
         
         return {
             'signals': signals,
@@ -319,7 +319,7 @@ class MeanReversionStrategy:
         final_signals[abs(ensemble_signal) <= 0.5] = 0  # Hold/Exit
         
         # Forward fill
-        final_signals = final_signals.replace(0, np.nan).fillna(method='ffill').fillna(0)
+        final_signals = final_signals.replace(0, np.nan).ffill().fillna(0)
         
         return {
             'ensemble_signals': final_signals,
@@ -435,26 +435,35 @@ class MeanReversionStrategy:
         trades = []
         position = 0
         entry_price = 0
+        entry_date = None
         
         for date, signal in aligned_signals.items():
             if signal != position:
-                if position != 0:  # Close existing position
-                    exit_price = price_series[date]
-                    trade_return = (exit_price - entry_price) / entry_price * position
-                    trades.append({
-                        'entry_date': entry_date,
-                        'exit_date': date,
-                        'entry_price': entry_price,
-                        'exit_price': exit_price,
-                        'position': position,
-                        'return': trade_return,
-                        'duration': (date - entry_date).days
-                    })
+                if position != 0 and entry_date is not None:  # Close existing position
+                    try:
+                        exit_price = price_series[date]
+                        trade_return = (exit_price - entry_price) / entry_price * position
+                        trades.append({
+                            'entry_date': entry_date,
+                            'exit_date': date,
+                            'entry_price': entry_price,
+                            'exit_price': exit_price,
+                            'position': position,
+                            'return': trade_return,
+                            'duration': (date - entry_date).days
+                        })
+                    except KeyError:
+                        # Skip if price not available for this date
+                        pass
                 
                 if signal != 0:  # Open new position
-                    entry_date = date
-                    entry_price = price_series[date]
-                    position = signal
+                    try:
+                        entry_date = date
+                        entry_price = price_series[date]
+                        position = signal
+                    except KeyError:
+                        # Skip if price not available for this date
+                        pass
         
         # Trade statistics
         if trades:
