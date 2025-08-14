@@ -569,18 +569,24 @@ def main_dashboard():
             "desc": "Comprehensive cryptocurrency analysis with DeFi metrics, on-chain data, fear & greed index and correlation analysis.",
             "page": "pages/crypto_analysis.py"
         },
+        {
+            "icon": "📰",
+            "title": "Live News & Economic Data",
+            "desc": "Real-time market intelligence with news analysis, economic calendar, Fed updates and trading-relevant data sources.",
+            "page": "pages/news_and_economic_data.py"
+        }
 
     ]
     
-    # Display features in grid layout (adjusted for 8 features)
+    # Display features in grid layout (adjusted for 9 features)
     # First row: 3 features
     cols1 = st.columns(3)
     # Second row: 3 features  
     cols2 = st.columns(3)
-    # Third row: 2 features centered
-    cols3 = st.columns([1, 2, 2, 1])
+    # Third row: 3 features
+    cols3 = st.columns(3)
     
-    all_cols = list(cols1) + list(cols2) + [cols3[1], cols3[2]]
+    all_cols = list(cols1) + list(cols2) + list(cols3)
     
     for i, feature in enumerate(features):
         with all_cols[i]:

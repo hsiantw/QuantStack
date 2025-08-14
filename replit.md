@@ -42,6 +42,14 @@ This is a comprehensive quantitative finance platform built with Streamlit that 
   - DeFi ecosystem analysis with TVL proxy, yield opportunities, and liquidity scoring
   - Cryptocurrency correlation analysis across major digital assets
   - Specialized crypto trading strategies including DCA, swing trading, DeFi farming, and momentum strategies
+- **Live News & Economic Data Intelligence System**: Real-time market intelligence platform featuring:
+  - Automated web scraping of Federal Reserve news, BLS releases, and Treasury announcements
+  - Economic calendar with daily, weekly, and monthly event tracking
+  - FOMC meeting schedule with countdown timers and press conference indicators
+  - News sentiment analysis with ticker extraction and market impact assessment
+  - Market intelligence summary dashboard with sentiment distribution charts
+  - Comprehensive economic data sources including over 30 critical indicators
+  - Banking sector health monitoring with interest rates, credit spreads, and yield curves
 
 
 ## User Preferences
@@ -84,6 +92,7 @@ Preferred communication style: Simple, everyday language.
 - **AI Pairs Trading**: Comprehensive pairs trading system with AI-optimized strategy application to cointegrated pairs
 - **Extensive Mean Reversion Strategies**: Professional-grade mean reversion implementation with 6 mathematical approaches including Ornstein-Uhlenbeck modeling, Kalman filtering, ensemble methods, and adaptive regime-based parameter adjustment
 - **Market Information Sources**: Comprehensive guide to critical data sources (SEC filings, economic indicators, Fed data)
+- **Live News & Economic Intelligence**: Real-time market news sourcing with automated scraping, sentiment analysis, economic calendar tracking, and comprehensive market impact assessment
 - **Risk Management**: Value at Risk (VaR), Expected Shortfall, and comprehensive risk metrics
 - **Educational Tooltips**: Interactive help system with formulas and definitions for complex financial terms
 
