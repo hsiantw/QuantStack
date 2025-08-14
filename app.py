@@ -212,15 +212,21 @@ def main_dashboard():
             st.switch_page("pages/strategy_comparison.py")
     
     # Additional features row
-    col7, col8 = st.columns(2)
+    col7, col8, col9 = st.columns(3)
     
     with col7:
+        st.subheader("🤖 AI Pairs Trading")
+        st.write("AI-powered pairs trading with statistical arbitrage analysis to find the best cointegrated pairs.")
+        if st.button("Launch AI Pairs Trading"):
+            st.switch_page("pages/ai_pairs_trading.py")
+    
+    with col8:
         st.subheader("📰 Market Information Sources")
         st.write("Comprehensive guide to critical data sources including SEC filings, economic indicators, and Fed data.")
         if st.button("Launch Information Sources Guide"):
             st.switch_page("pages/market_information_sources.py")
     
-    with col8:
+    with col9:
         st.subheader("💡 Educational Resources")
         st.write("Learn about financial concepts, formulas, and market analysis techniques with interactive tooltips.")
         st.info("Educational tooltips are available throughout all platform pages")
