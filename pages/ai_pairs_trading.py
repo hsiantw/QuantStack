@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from utils.pairs_trading_optimizer import PairsTradingOptimizer
 from utils.ai_strategy_optimizer import AIStrategyOptimizer
+from utils.mean_reversion_strategy import MeanReversionStrategy
 import yfinance as yf
 from datetime import datetime, timedelta
 import warnings
@@ -15,7 +16,7 @@ def main():
     st.markdown("**Find the best pairs to trade using AI-optimized strategies for statistical arbitrage**")
     
     # Create tabs for different analyses
-    tab1, tab2, tab3 = st.tabs(["🔍 Find Best Pairs", "📊 Detailed Analysis", "⚡ Live Trading Signals"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🔍 Find Best Pairs", "📊 Detailed Analysis", "⚡ Live Trading Signals", "📈 Mean Reversion Analysis"])
     
     with tab1:
         find_best_pairs_tab()
@@ -25,6 +26,9 @@ def main():
     
     with tab3:
         live_signals_tab()
+    
+    with tab4:
+        mean_reversion_analysis_tab()
 
 def find_best_pairs_tab():
     st.header("🔍 AI Pairs Discovery")
@@ -607,6 +611,452 @@ def live_signals_tab():
     # Refresh button
     if st.button("🔄 Refresh Signals", type="secondary"):
         st.rerun()
+
+def mean_reversion_analysis_tab():
+    st.header("📈 Extensive Mean Reversion Strategy Analysis")
+    st.markdown("**Comprehensive mean reversion techniques with advanced signal generation and backtesting**")
+    
+    # Input section
+    col1, col2, col3 = st.columns([2, 1, 1])
+    
+    with col1:
+        ticker_input = st.text_input("Ticker for Mean Reversion Analysis", value="SPY")
+    
+    with col2:
+        analysis_period = st.selectbox("Analysis Period", 
+                                     options=[252, 504, 756, 1008], 
+                                     index=2,
+                                     format_func=lambda x: f"{x} days (~{x//252} year{'s' if x//252 > 1 else ''})")
+    
+    with col3:
+        strategy_type = st.selectbox("Strategy Type", 
+                                   options=["Ensemble", "Bollinger Bands", "RSI", "Ornstein-Uhlenbeck", "Kalman Filter", "Adaptive"])
+    
+    if st.button("🚀 Run Mean Reversion Analysis", type="primary"):
+        
+        with st.spinner(f"🔄 Running comprehensive mean reversion analysis for {ticker_input}..."):
+            
+            # Fetch data
+            try:
+                end_date = datetime.now()
+                start_date = end_date - timedelta(days=analysis_period + 100)  # Extra buffer
+                
+                data = yf.download(ticker_input, start=start_date, end=end_date, progress=False)
+                
+                if len(data) < 100:
+                    st.error("Insufficient data for analysis. Please try a different ticker or period.")
+                    return
+                
+                price_series = data['Close'].dropna()
+                
+                # Initialize mean reversion strategy
+                mr_strategy = MeanReversionStrategy(data)
+                
+                # Run selected strategy
+                if strategy_type == "Ensemble":
+                    results = mr_strategy.ensemble_mean_reversion(price_series)
+                    signals = results['ensemble_signals']
+                elif strategy_type == "Bollinger Bands":
+                    results = mr_strategy.bollinger_bands_reversion(price_series)
+                    signals = results['signals']
+                elif strategy_type == "RSI":
+                    results = mr_strategy.rsi_reversion(price_series)
+                    signals = results['signals']
+                elif strategy_type == "Ornstein-Uhlenbeck":
+                    results = mr_strategy.ornstein_uhlenbeck_reversion(price_series)
+                    signals = results['signals']
+                elif strategy_type == "Kalman Filter":
+                    results = mr_strategy.kalman_filter_reversion(price_series)
+                    signals = results['signals']
+                elif strategy_type == "Adaptive":
+                    results = mr_strategy.adaptive_mean_reversion(price_series)
+                    signals = results['adaptive_signals']
+                
+                # Backtest the strategy
+                backtest_results = mr_strategy.backtest_strategy(price_series, signals)
+                
+                # Display results
+                st.success(f"✅ Analysis complete for {ticker_input} using {strategy_type} strategy!")
+                
+                # Performance metrics
+                st.subheader("📊 Strategy Performance Metrics")
+                
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    st.metric("Annual Return", f"{backtest_results['annual_return']:.2%}")
+                    st.metric("Total Trades", backtest_results['total_trades'])
+                
+                with col2:
+                    st.metric("Sharpe Ratio", f"{backtest_results['sharpe_ratio']:.3f}")
+                    st.metric("Win Rate", f"{backtest_results['win_rate']:.1f}%")
+                
+                with col3:
+                    st.metric("Max Drawdown", f"{backtest_results['max_drawdown']:.2%}")
+                    st.metric("Volatility", f"{backtest_results['volatility']:.2%}")
+                
+                with col4:
+                    calmar_ratio = backtest_results['annual_return'] / abs(backtest_results['max_drawdown']) if backtest_results['max_drawdown'] != 0 else 0
+                    st.metric("Calmar Ratio", f"{calmar_ratio:.3f}")
+                    st.metric("Profit Factor", f"{backtest_results['profit_factor']:.2f}")
+                
+                # Create comprehensive visualization
+                fig = create_mean_reversion_chart(price_series, signals, results, backtest_results, strategy_type)
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Strategy-specific details
+                st.subheader("🔍 Strategy-Specific Analysis")
+                
+                if strategy_type == "Ensemble":
+                    display_ensemble_details(results)
+                elif strategy_type == "Bollinger Bands":
+                    display_bollinger_details(results, price_series)
+                elif strategy_type == "RSI":
+                    display_rsi_details(results)
+                elif strategy_type == "Ornstein-Uhlenbeck":
+                    display_ou_details(results)
+                elif strategy_type == "Kalman Filter":
+                    display_kalman_details(results)
+                elif strategy_type == "Adaptive":
+                    display_adaptive_details(results)
+                
+                # Trade analysis
+                if backtest_results['trades']:
+                    st.subheader("📈 Trade Analysis")
+                    
+                    trades_df = pd.DataFrame(backtest_results['trades'])
+                    
+                    # Trade statistics
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("**Trade Distribution:**")
+                        winning_trades = len([t for t in backtest_results['trades'] if t['return'] > 0])
+                        losing_trades = len([t for t in backtest_results['trades'] if t['return'] <= 0])
+                        
+                        st.write(f"• Winning trades: {winning_trades}")
+                        st.write(f"• Losing trades: {losing_trades}")
+                        st.write(f"• Average trade duration: {trades_df['duration'].mean():.1f} days")
+                        st.write(f"• Best trade: {trades_df['return'].max():.2%}")
+                        st.write(f"• Worst trade: {trades_df['return'].min():.2%}")
+                    
+                    with col2:
+                        st.markdown("**Risk Metrics:**")
+                        st.write(f"• Average win: {backtest_results['avg_win']:.2%}")
+                        st.write(f"• Average loss: {backtest_results['avg_loss']:.2%}")
+                        st.write(f"• Profit factor: {backtest_results['profit_factor']:.2f}")
+                        st.write(f"• Max consecutive losses: {calculate_max_consecutive_losses(trades_df)}")
+                        st.write(f"• Sharpe ratio: {backtest_results['sharpe_ratio']:.3f}")
+                    
+                    # Recent trades
+                    st.markdown("**Recent Trades:**")
+                    recent_trades = trades_df.tail(10)[['entry_date', 'exit_date', 'return', 'duration']].copy()
+                    recent_trades['return'] = recent_trades['return'].apply(lambda x: f"{x:.2%}")
+                    recent_trades['duration'] = recent_trades['duration'].apply(lambda x: f"{x} days")
+                    st.dataframe(recent_trades, use_container_width=True, hide_index=True)
+                
+                # Current signal
+                st.subheader("⚡ Current Signal")
+                
+                current_signal = signals.iloc[-1] if len(signals) > 0 else 0
+                
+                if current_signal > 0:
+                    st.success(f"🟢 **BUY SIGNAL** - Mean reversion strategy suggests going LONG {ticker_input}")
+                elif current_signal < 0:
+                    st.error(f"🔴 **SELL SIGNAL** - Mean reversion strategy suggests going SHORT {ticker_input}")
+                else:
+                    st.info(f"🟡 **NEUTRAL** - No clear signal for {ticker_input} at current levels")
+                
+                # Implementation guide
+                with st.expander("📋 Implementation Guide", expanded=False):
+                    st.markdown(f"""
+                    **How to Trade This Signal:**
+                    
+                    **Entry Rules:**
+                    - Wait for signal confirmation (current signal: {current_signal})
+                    - Use limit orders near current price levels
+                    - Consider market conditions and volatility
+                    
+                    **Position Sizing:**
+                    - Risk 1-2% of portfolio per trade
+                    - Use stops based on strategy parameters
+                    - Scale position based on signal strength
+                    
+                    **Exit Strategy:**
+                    - Follow mean reversion signals for exits
+                    - Use time-based stops if no reversal occurs
+                    - Take profits when price reaches opposite signal
+                    
+                    **Risk Management:**
+                    - Maximum drawdown tolerance: 10-15%
+                    - Don't trade during high volatility periods
+                    - Monitor correlation with other positions
+                    """)
+                
+            except Exception as e:
+                st.error(f"Error running analysis: {str(e)}")
+
+def create_mean_reversion_chart(price_series, signals, strategy_results, backtest_results, strategy_type):
+    """Create comprehensive mean reversion visualization"""
+    
+    fig = make_subplots(
+        rows=4, cols=1,
+        subplot_titles=[
+            f'{strategy_type} Mean Reversion Analysis',
+            'Trading Signals',
+            'Strategy Performance',
+            'Drawdown Analysis'
+        ],
+        vertical_spacing=0.05,
+        row_heights=[0.4, 0.2, 0.2, 0.2]
+    )
+    
+    # Plot 1: Price and strategy indicators
+    fig.add_trace(go.Scatter(
+        x=price_series.index, y=price_series.values,
+        name='Price',
+        line=dict(color='blue', width=1)
+    ), row=1, col=1)
+    
+    # Add strategy-specific indicators
+    if strategy_type == "Bollinger Bands" and 'upper_band' in strategy_results:
+        fig.add_trace(go.Scatter(
+            x=price_series.index, y=strategy_results['upper_band'],
+            name='Upper Band', line=dict(color='red', dash='dash')
+        ), row=1, col=1)
+        fig.add_trace(go.Scatter(
+            x=price_series.index, y=strategy_results['lower_band'],
+            name='Lower Band', line=dict(color='green', dash='dash')
+        ), row=1, col=1)
+        fig.add_trace(go.Scatter(
+            x=price_series.index, y=strategy_results['middle_band'],
+            name='Middle Band', line=dict(color='orange', dash='dot')
+        ), row=1, col=1)
+    
+    elif strategy_type == "Kalman Filter" and 'kalman_mean' in strategy_results:
+        fig.add_trace(go.Scatter(
+            x=price_series.index, y=strategy_results['kalman_mean'],
+            name='Kalman Mean', line=dict(color='purple', width=2)
+        ), row=1, col=1)
+    
+    # Plot 2: Signals
+    buy_signals = signals[signals == 1]
+    sell_signals = signals[signals == -1]
+    
+    if len(buy_signals) > 0:
+        fig.add_trace(go.Scatter(
+            x=buy_signals.index, y=[1] * len(buy_signals),
+            mode='markers', name='Buy Signals',
+            marker=dict(color='green', size=10, symbol='triangle-up')
+        ), row=2, col=1)
+    
+    if len(sell_signals) > 0:
+        fig.add_trace(go.Scatter(
+            x=sell_signals.index, y=[-1] * len(sell_signals),
+            mode='markers', name='Sell Signals',
+            marker=dict(color='red', size=10, symbol='triangle-down')
+        ), row=2, col=1)
+    
+    # Plot 3: Equity curve
+    if 'equity_curve' in backtest_results:
+        fig.add_trace(go.Scatter(
+            x=backtest_results['equity_curve'].index,
+            y=backtest_results['equity_curve'].values,
+            name='Strategy Equity',
+            line=dict(color='purple', width=2)
+        ), row=3, col=1)
+    
+    # Plot 4: Drawdown
+    if 'drawdown_series' in backtest_results:
+        fig.add_trace(go.Scatter(
+            x=backtest_results['drawdown_series'].index,
+            y=backtest_results['drawdown_series'].values * 100,
+            name='Drawdown %',
+            fill='tonexty',
+            line=dict(color='red', width=1)
+        ), row=4, col=1)
+    
+    fig.update_layout(height=1000, showlegend=True, hovermode='x unified')
+    fig.update_yaxes(title_text="Price ($)", row=1, col=1)
+    fig.update_yaxes(title_text="Signal", row=2, col=1, range=[-1.5, 1.5])
+    fig.update_yaxes(title_text="Portfolio Value", row=3, col=1)
+    fig.update_yaxes(title_text="Drawdown (%)", row=4, col=1)
+    
+    return fig
+
+def display_ensemble_details(results):
+    """Display ensemble strategy details"""
+    st.markdown("### 🎯 Ensemble Strategy Components")
+    
+    component_signals = results['component_signals']
+    signal_strength = results['signal_strength']
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Current Component Signals:**")
+        for strategy, signals in component_signals.items():
+            current_signal = signals.iloc[-1] if len(signals) > 0 else 0
+            signal_text = "BUY" if current_signal > 0 else ("SELL" if current_signal < 0 else "NEUTRAL")
+            st.write(f"• {strategy.title()}: {signal_text}")
+    
+    with col2:
+        st.markdown("**Signal Strength Distribution:**")
+        avg_strength = signal_strength.mean()
+        max_strength = signal_strength.max()
+        current_strength = signal_strength.iloc[-1] if len(signal_strength) > 0 else 0
+        
+        st.write(f"• Average strength: {avg_strength:.2f}")
+        st.write(f"• Maximum strength: {max_strength:.2f}")
+        st.write(f"• Current strength: {current_strength:.2f}")
+
+def display_bollinger_details(results, price_series):
+    """Display Bollinger Bands strategy details"""
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Bollinger Bands Parameters:**")
+        bandwidth = results['bandwidth']
+        current_bandwidth = bandwidth.iloc[-1] if len(bandwidth) > 0 else 0
+        avg_bandwidth = bandwidth.mean()
+        
+        st.write(f"• Current bandwidth: {current_bandwidth:.3f}")
+        st.write(f"• Average bandwidth: {avg_bandwidth:.3f}")
+        st.write(f"• Volatility regime: {'High' if current_bandwidth > avg_bandwidth * 1.2 else 'Low' if current_bandwidth < avg_bandwidth * 0.8 else 'Normal'}")
+    
+    with col2:
+        st.markdown("**Price Position:**")
+        current_price = price_series.iloc[-1]
+        upper_band = results['upper_band'].iloc[-1] if len(results['upper_band']) > 0 else current_price
+        lower_band = results['lower_band'].iloc[-1] if len(results['lower_band']) > 0 else current_price
+        middle_band = results['middle_band'].iloc[-1] if len(results['middle_band']) > 0 else current_price
+        
+        position_pct = (current_price - lower_band) / (upper_band - lower_band) * 100
+        st.write(f"• Band position: {position_pct:.1f}%")
+        st.write(f"• Distance from mean: {((current_price - middle_band) / middle_band * 100):.2f}%")
+
+def display_rsi_details(results):
+    """Display RSI strategy details"""
+    rsi = results['rsi']
+    current_rsi = rsi.iloc[-1] if len(rsi) > 0 else 50
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**RSI Analysis:**")
+        st.write(f"• Current RSI: {current_rsi:.1f}")
+        st.write(f"• Condition: {'Oversold' if current_rsi < 30 else 'Overbought' if current_rsi > 70 else 'Neutral'}")
+    
+    with col2:
+        st.markdown("**RSI Statistics:**")
+        avg_rsi = rsi.mean()
+        rsi_volatility = rsi.std()
+        st.write(f"• Average RSI: {avg_rsi:.1f}")
+        st.write(f"• RSI volatility: {rsi_volatility:.1f}")
+
+def display_ou_details(results):
+    """Display Ornstein-Uhlenbeck strategy details"""
+    if 'half_lives' in results and len(results['half_lives']) > 0:
+        half_lives = results['half_lives'].replace([np.inf, -np.inf], np.nan).dropna()
+        
+        if len(half_lives) > 0:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("**Mean Reversion Properties:**")
+                current_half_life = half_lives.iloc[-1] if len(half_lives) > 0 else np.inf
+                avg_half_life = half_lives.mean()
+                
+                st.write(f"• Current half-life: {current_half_life:.1f} days")
+                st.write(f"• Average half-life: {avg_half_life:.1f} days")
+            
+            with col2:
+                st.markdown("**Reversion Strength:**")
+                st.write(f"• Mean reversion: {'Strong' if avg_half_life < 20 else 'Moderate' if avg_half_life < 60 else 'Weak'}")
+                st.write(f"• Process stability: {'Stable' if half_lives.std() < avg_half_life * 0.5 else 'Variable'}")
+
+def display_kalman_details(results):
+    """Display Kalman Filter strategy details"""
+    if 'deviation' in results:
+        deviation = results['deviation']
+        confidence_bands = results['confidence_bands']
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Kalman Filter Analysis:**")
+            current_deviation = deviation.iloc[-1] if len(deviation) > 0 else 0
+            avg_deviation = abs(deviation).mean()
+            
+            st.write(f"• Current deviation: {current_deviation:.3f}")
+            st.write(f"• Average deviation: {avg_deviation:.3f}")
+        
+        with col2:
+            st.markdown("**Filter Performance:**")
+            current_confidence = confidence_bands.iloc[-1] if len(confidence_bands) > 0 else 0
+            avg_confidence = confidence_bands.mean()
+            
+            st.write(f"• Current confidence: {current_confidence:.3f}")
+            st.write(f"• Average confidence: {avg_confidence:.3f}")
+
+def display_adaptive_details(results):
+    """Display Adaptive strategy details"""
+    if 'regime_indicators' in results:
+        regime_indicators = results['regime_indicators']
+        
+        # Current regime
+        current_low_vol = regime_indicators['low_vol'].iloc[-1] if len(regime_indicators['low_vol']) > 0 else False
+        current_high_vol = regime_indicators['high_vol'].iloc[-1] if len(regime_indicators['high_vol']) > 0 else False
+        current_normal = regime_indicators['normal'].iloc[-1] if len(regime_indicators['normal']) > 0 else True
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Current Market Regime:**")
+            if current_low_vol:
+                regime = "Low Volatility"
+                description = "Aggressive mean reversion parameters"
+            elif current_high_vol:
+                regime = "High Volatility"
+                description = "Conservative mean reversion parameters"
+            else:
+                regime = "Normal Volatility"
+                description = "Standard mean reversion parameters"
+            
+            st.write(f"• Regime: {regime}")
+            st.write(f"• Strategy: {description}")
+        
+        with col2:
+            st.markdown("**Regime Distribution:**")
+            total_periods = len(regime_indicators['low_vol'])
+            low_vol_pct = regime_indicators['low_vol'].sum() / total_periods * 100
+            high_vol_pct = regime_indicators['high_vol'].sum() / total_periods * 100
+            normal_pct = regime_indicators['normal'].sum() / total_periods * 100
+            
+            st.write(f"• Low vol periods: {low_vol_pct:.1f}%")
+            st.write(f"• High vol periods: {high_vol_pct:.1f}%")
+            st.write(f"• Normal periods: {normal_pct:.1f}%")
+
+def calculate_max_consecutive_losses(trades_df):
+    """Calculate maximum consecutive losing trades"""
+    if trades_df.empty:
+        return 0
+    
+    losing_streaks = []
+    current_streak = 0
+    
+    for _, trade in trades_df.iterrows():
+        if trade['return'] <= 0:
+            current_streak += 1
+        else:
+            if current_streak > 0:
+                losing_streaks.append(current_streak)
+            current_streak = 0
+    
+    if current_streak > 0:
+        losing_streaks.append(current_streak)
+    
+    return max(losing_streaks) if losing_streaks else 0
 
 if __name__ == "__main__":
     main()

@@ -11,6 +11,15 @@ This is a comprehensive quantitative finance platform built with Streamlit that 
 - **Pairs Discovery Algorithm**: Sector-based candidate selection with trading score ranking system (0-100 scale)
 - **Comprehensive Backtesting**: Full pairs trading strategy backtesting with performance metrics and visualization
 - **Live Trading Signals**: Real-time Z-score analysis and trading recommendations for cointegrated pairs
+- **Extensive Mean Reversion Strategy Module**: Comprehensive implementation featuring 6 advanced techniques:
+  - Bollinger Bands reversion with dynamic bandwidth analysis
+  - RSI-based mean reversion with adaptive thresholds
+  - Ornstein-Uhlenbeck process modeling for statistical mean reversion
+  - Kalman Filter for dynamic mean estimation and noise filtering
+  - Ensemble strategy combining multiple approaches with weighted signals
+  - Adaptive strategy with market regime detection and parameter adjustment
+- **Advanced Signal Execution**: Detailed trading instructions with specific entry/exit rules, position sizing formulas, and risk management protocols
+- **Professional Backtesting Suite**: Complete performance analysis including Sharpe ratio, Calmar ratio, drawdown analysis, and trade-by-trade breakdown
 
 ## User Preferences
 
@@ -46,6 +55,7 @@ Preferred communication style: Simple, everyday language.
 - **Trading Strategies**: Multiple strategy implementations with comprehensive backtesting capabilities
 - **Advanced Strategy Optimization**: Systematic comparison of 15+ trading strategies with different indicator combinations
 - **AI Pairs Trading**: Comprehensive pairs trading system with AI-optimized strategy application to cointegrated pairs
+- **Extensive Mean Reversion Strategies**: Professional-grade mean reversion implementation with 6 mathematical approaches including Ornstein-Uhlenbeck modeling, Kalman filtering, ensemble methods, and adaptive regime-based parameter adjustment
 - **Market Information Sources**: Comprehensive guide to critical data sources (SEC filings, economic indicators, Fed data)
 - **Risk Management**: Value at Risk (VaR), Expected Shortfall, and comprehensive risk metrics
 - **Educational Tooltips**: Interactive help system with formulas and definitions for complex financial terms
