@@ -41,11 +41,11 @@ def main():
     st.markdown("""
     ### 📋 Strategy Overview
     
-    This strategy combines trend-following with buy-the-dip logic:
+    This pyramid strategy builds positions gradually during bullish trends:
     
     **🟡 Golden Cross Entry**: When 50-day MA crosses above 200-day MA (bullish trend confirmed)
-    **🟢 Buy Signals**: During bullish regime, buy on any day with 1%+ drop
-    **🔴 Exit Signal**: When 50-day MA crosses below 200-day MA (death cross - trend reversal)
+    **🟢 Pyramid Buying**: Use percentage of remaining cash on each 1%+ drop (builds larger positions)
+    **🔴 Complete Exit**: Sell ALL positions when 50-day MA crosses below 200-day MA (death cross)
     """)
     
     # Sidebar controls
@@ -59,6 +59,7 @@ def main():
     fast_ma = st.sidebar.slider("Fast Moving Average", 20, 100, 50, 5)
     slow_ma = st.sidebar.slider("Slow Moving Average", 100, 300, 200, 10)
     dip_threshold = st.sidebar.slider("Dip Threshold (%)", 0.5, 5.0, 1.0, 0.1) / 100
+    pyramid_size = st.sidebar.slider("Pyramid Buy Size (%)", 10, 50, 20, 5) / 100
     
     # Backtest period
     st.sidebar.subheader("Backtest Settings")
@@ -80,7 +81,7 @@ def main():
                 company_name = info.get('longName', symbol)
             
             # Initialize strategy
-            strategy = GoldenCrossStrategy(fast_ma=fast_ma, slow_ma=slow_ma, dip_threshold=dip_threshold)
+            strategy = GoldenCrossStrategy(fast_ma=fast_ma, slow_ma=slow_ma, dip_threshold=dip_threshold, pyramid_size=pyramid_size)
             
             # Calculate signals
             with st.spinner("Calculating trading signals..."):
@@ -107,8 +108,8 @@ def main():
                 create_enhanced_metric_card("Max Drawdown", f"{max_dd:.1f}%", icon="📉")
             
             with col4:
-                total_trades = performance.get('Total Trades', 0)
-                create_enhanced_metric_card("Total Trades", str(total_trades), icon="📊")
+                total_buys = performance.get('Total Buy Orders', 0)
+                create_enhanced_metric_card("Total Buy Orders", str(total_buys), icon="🛒")
             
             # Additional metrics
             col5, col6, col7, col8 = st.columns(4)
@@ -130,8 +131,8 @@ def main():
                 create_enhanced_metric_card("Profit Factor", pf_display, icon="💎")
             
             with col8:
-                final_value = results['Portfolio_Value'].iloc[-1]
-                create_enhanced_metric_card("Final Value", f"${final_value:,.0f}", icon="💰")
+                sell_cycles = performance.get('Total Sell Cycles', 0)
+                create_enhanced_metric_card("Sell Cycles", str(sell_cycles), icon="🔄")
             
             # Strategy chart
             st.markdown("### 📈 Strategy Visualization")
@@ -158,19 +159,40 @@ def main():
                 st.markdown("### 📋 Trade History")
                 
                 trade_df = pd.DataFrame(trades)
-                if 'Profit' in trade_df.columns:
-                    trade_df = trade_df[trade_df['Action'] == 'SELL']  # Show only completed trades
-                    
-                    # Format the dataframe
-                    display_df = trade_df.copy()
-                    display_df['Date'] = pd.to_datetime(display_df['Date']).dt.strftime('%Y-%m-%d')
-                    display_df['Price'] = display_df['Price'].apply(lambda x: f"${x:.2f}")
-                    display_df['Profit'] = display_df['Profit'].apply(lambda x: f"${x:.2f}")
-                    display_df['Return'] = display_df['Return'].apply(lambda x: f"{x:.1f}%")
-                    
-                    st.dataframe(display_df[['Date', 'Price', 'Profit', 'Return', 'Reason']], use_container_width=True)
-                else:
-                    st.info("No completed trades yet. Strategy may still be in a position or waiting for signals.")
+                
+                # Separate buy and sell trades
+                buy_trades = trade_df[trade_df['Action'] == 'BUY']
+                sell_trades = trade_df[trade_df['Action'] == 'SELL_ALL']
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown("#### 🛒 Buy Orders (Pyramid)")
+                    if not buy_trades.empty:
+                        display_buys = buy_trades.copy()
+                        display_buys['Date'] = pd.to_datetime(display_buys['Date']).dt.strftime('%Y-%m-%d')
+                        display_buys['Price'] = display_buys['Price'].apply(lambda x: f"${x:.2f}")
+                        display_buys['Amount'] = display_buys['Amount'].apply(lambda x: f"${x:,.0f}")
+                        display_buys['Shares'] = display_buys['Shares'].apply(lambda x: f"{x:.2f}")
+                        display_buys['Cash_Remaining'] = display_buys['Cash_Remaining'].apply(lambda x: f"${x:,.0f}")
+                        
+                        st.dataframe(display_buys[['Date', 'Price', 'Amount', 'Shares', 'Cash_Remaining']], use_container_width=True)
+                    else:
+                        st.info("No buy orders executed yet.")
+                
+                with col2:
+                    st.markdown("#### 💰 Sell Cycles (Exit All)")
+                    if not sell_trades.empty:
+                        display_sells = sell_trades.copy()
+                        display_sells['Date'] = pd.to_datetime(display_sells['Date']).dt.strftime('%Y-%m-%d')
+                        display_sells['Price'] = display_sells['Price'].apply(lambda x: f"${x:.2f}")
+                        display_sells['Sell_Value'] = display_sells['Sell_Value'].apply(lambda x: f"${x:,.0f}")
+                        display_sells['Profit'] = display_sells['Profit'].apply(lambda x: f"${x:,.0f}")
+                        display_sells['Return'] = display_sells['Return'].apply(lambda x: f"{x:.1f}%")
+                        
+                        st.dataframe(display_sells[['Date', 'Price', 'Sell_Value', 'Profit', 'Return']], use_container_width=True)
+                    else:
+                        st.info("No sell cycles completed yet.")
             
             # Signal analysis
             st.markdown("### 🔍 Signal Analysis")

@@ -5,18 +5,20 @@ from plotly.subplots import make_subplots
 import yfinance as yf
 
 class GoldenCrossStrategy:
-    def __init__(self, fast_ma=50, slow_ma=200, dip_threshold=0.01):
+    def __init__(self, fast_ma=50, slow_ma=200, dip_threshold=0.01, pyramid_size=0.2):
         """
-        Golden Cross Strategy with Buy-the-Dip logic
+        Golden Cross Strategy with Pyramid Buy-the-Dip logic
         
         Parameters:
         - fast_ma: Fast moving average period (default 50)
         - slow_ma: Slow moving average period (default 200)
         - dip_threshold: Minimum drop percentage to trigger buy signal (default 1%)
+        - pyramid_size: Fraction of available cash to use on each buy signal (default 20%)
         """
         self.fast_ma = fast_ma
         self.slow_ma = slow_ma
         self.dip_threshold = dip_threshold
+        self.pyramid_size = pyramid_size
         
     def calculate_signals(self, data):
         """Calculate trading signals based on golden cross and dip conditions"""
@@ -55,57 +57,70 @@ class GoldenCrossStrategy:
         return data
     
     def backtest_strategy(self, data, initial_capital=10000):
-        """Backtest the golden cross strategy"""
+        """Backtest the golden cross pyramid strategy"""
         results = data.copy()
         
         # Initialize tracking variables
-        position = 0  # 0: no position, 1: long position
         cash = initial_capital
         shares = 0
         portfolio_value = []
         trades = []
+        total_invested = 0
         
         for i in range(len(results)):
             current_price = results['Close'].iloc[i]
             
-            # Buy signal: during bullish regime on 1%+ dip
-            if results['Buy_Signal'].iloc[i] and position == 0 and current_price > 0:
-                shares = cash / current_price
-                cash = 0
-                position = 1
-                trades.append({
-                    'Date': results.index[i],
-                    'Action': 'BUY',
-                    'Price': current_price,
-                    'Shares': shares,
-                    'Reason': f"Dip: {results['Daily_Return'].iloc[i]:.2%}"
-                })
+            # Buy signal: during bullish regime on 1%+ dip (pyramid buying)
+            if results['Buy_Signal'].iloc[i] and cash > 0 and current_price > 0:
+                # Calculate buy amount (percentage of available cash)
+                buy_amount = min(cash * self.pyramid_size, cash)
+                if buy_amount > 0:
+                    new_shares = buy_amount / current_price
+                    shares += new_shares
+                    cash -= buy_amount
+                    total_invested += buy_amount
+                    
+                    trades.append({
+                        'Date': results.index[i],
+                        'Action': 'BUY',
+                        'Price': current_price,
+                        'Shares': new_shares,
+                        'Amount': buy_amount,
+                        'Total_Shares': shares,
+                        'Cash_Remaining': cash,
+                        'Reason': f"Pyramid buy on {results['Daily_Return'].iloc[i]:.2%} dip"
+                    })
             
-            # Sell signal: death cross
-            elif results['Sell_Signal'].iloc[i] and position == 1:
-                cash = shares * current_price
-                profit = cash - initial_capital
+            # Sell signal: death cross (sell all positions)
+            elif results['Sell_Signal'].iloc[i] and shares > 0:
+                sell_value = shares * current_price
+                total_cash = cash + sell_value
+                profit = total_cash - initial_capital
+                
                 trades.append({
                     'Date': results.index[i],
-                    'Action': 'SELL',
+                    'Action': 'SELL_ALL',
                     'Price': current_price,
                     'Shares': shares,
+                    'Sell_Value': sell_value,
+                    'Total_Cash': total_cash,
                     'Profit': profit,
-                    'Return': profit / initial_capital * 100
+                    'Return': profit / initial_capital * 100,
+                    'Reason': "Death cross - exit all positions"
                 })
+                
+                # Reset for next cycle
+                cash = total_cash
                 shares = 0
-                position = 0
+                total_invested = 0
             
             # Calculate portfolio value
-            if position == 1:
-                portfolio_value.append(shares * current_price)
-            else:
-                portfolio_value.append(cash)
+            portfolio_value.append(cash + (shares * current_price))
         
         results['Portfolio_Value'] = portfolio_value
-        # Create position indicator - fix for when cash is 0
-        initial_cash = initial_capital
-        results['Position'] = [1 if pv > initial_cash else 0 for pv in portfolio_value]
+        results['Position'] = [1 if shares > 0 else 0 for _ in portfolio_value]
+        results['Cash'] = [cash] * len(portfolio_value)  # Track remaining cash
+        results['Shares'] = [shares] * len(portfolio_value)  # Track total shares
         
         return results, trades
     
@@ -136,11 +151,13 @@ class GoldenCrossStrategy:
         max_drawdown = drawdown.min() * 100 if not drawdown.isna().all() else 0
         
         # Trade statistics
-        profitable_trades = [t for t in trades if 'Profit' in t and t['Profit'] > 0]
-        losing_trades = [t for t in trades if 'Profit' in t and t['Profit'] <= 0]
+        sell_trades = [t for t in trades if t['Action'] == 'SELL_ALL']
+        buy_trades = [t for t in trades if t['Action'] == 'BUY']
         
-        completed_trades = [t for t in trades if 'Profit' in t]
-        win_rate = len(profitable_trades) / len(completed_trades) * 100 if len(completed_trades) > 0 else 0
+        profitable_trades = [t for t in sell_trades if t['Profit'] > 0]
+        losing_trades = [t for t in sell_trades if t['Profit'] <= 0]
+        
+        win_rate = len(profitable_trades) / len(sell_trades) * 100 if len(sell_trades) > 0 else 0
         
         avg_win = np.mean([t['Profit'] for t in profitable_trades]) if profitable_trades else 0
         avg_loss = np.mean([t['Profit'] for t in losing_trades]) if losing_trades else 0
@@ -150,7 +167,8 @@ class GoldenCrossStrategy:
             'Volatility (%)': volatility,
             'Sharpe Ratio': sharpe_ratio,
             'Max Drawdown (%)': max_drawdown,
-            'Total Trades': len(completed_trades),
+            'Total Buy Orders': len(buy_trades),
+            'Total Sell Cycles': len(sell_trades),
             'Win Rate (%)': win_rate,
             'Average Win ($)': avg_win,
             'Average Loss ($)': avg_loss,
@@ -276,22 +294,28 @@ class GoldenCrossStrategy:
     def generate_strategy_summary(self):
         """Generate strategy description"""
         return f"""
-        ## Golden Cross Strategy with Buy-the-Dip
+        ## Golden Cross Pyramid Strategy
         
         **Strategy Rules:**
         1. **Golden Cross Entry**: Wait for {self.fast_ma}-day MA to cross above {self.slow_ma}-day MA
-        2. **Buy Condition**: During bullish regime (after golden cross), buy on any day with ≥{self.dip_threshold*100:.1f}% drop
-        3. **Exit Condition**: Sell all positions when death cross occurs ({self.fast_ma}-day MA crosses below {self.slow_ma}-day MA)
-        4. **Position Sizing**: All-in strategy (use full available capital on each buy signal)
+        2. **Pyramid Buying**: During bullish regime, buy {self.pyramid_size*100:.0f}% of remaining cash on each ≥{self.dip_threshold*100:.1f}% drop
+        3. **Exit Condition**: Sell ALL positions when death cross occurs ({self.fast_ma}-day MA crosses below {self.slow_ma}-day MA)
+        4. **Cash Management**: Continue buying dips until cash runs out or death cross
         
-        **Strategy Logic:**
-        - **Trend Following**: Only buy during confirmed uptrends (golden cross regime)
-        - **Buy the Dip**: Capitalize on short-term pullbacks in a bullish trend
-        - **Risk Management**: Exit completely on trend reversal (death cross)
-        - **Patience**: Wait for significant dips before entering positions
+        **Pyramid Logic:**
+        - **Progressive Accumulation**: Build larger positions as price drops further
+        - **Risk Scaling**: Use fixed percentage of remaining cash for each buy
+        - **Trend Following**: Only accumulate during confirmed uptrends
+        - **Complete Exit**: Sell entire position on trend reversal
+        
+        **Advantages:**
+        - **Dollar Cost Averaging**: Better average price through multiple entries
+        - **Risk Control**: Limited exposure per buy signal
+        - **Trend Capture**: Maximum position during strong bullish phases
+        - **Capital Preservation**: Cash reserves for continued buying
         
         **Best For:**
-        - Medium to long-term trend following
-        - Volatile assets with clear trend cycles
-        - Markets with distinct bull/bear phases
+        - Volatile trending markets
+        - Long-term accumulation strategies
+        - Assets with strong directional moves
         """
