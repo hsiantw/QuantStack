@@ -15,7 +15,7 @@ class PairsTradingOptimizer:
     """
     
     def __init__(self, base_ticker):
-        self.base_ticker = base_ticker
+        self.base_ticker = base_ticker.upper()  # Ensure uppercase
         self.pairs_data = {}
         self.cointegration_results = {}
         self.optimization_log = []
@@ -30,6 +30,9 @@ class PairsTradingOptimizer:
         self.optimization_log.append(f"Starting pairs analysis for {self.base_ticker}")
         self.optimization_log.append(f"Testing {len(candidate_tickers)} potential pairs")
         
+        # Ensure all tickers are uppercase
+        candidate_tickers = [ticker.upper() for ticker in candidate_tickers]
+        
         # Fetch data for all tickers
         all_tickers = [self.base_ticker] + candidate_tickers
         data = self._fetch_pairs_data(all_tickers, lookback_days)
@@ -39,6 +42,12 @@ class PairsTradingOptimizer:
         
         # Analyze cointegration for each pair
         pair_results = []
+        
+        # Check if base ticker exists in data columns
+        if self.base_ticker not in data.columns:
+            self.optimization_log.append(f"Error: Base ticker {self.base_ticker} not found in data")
+            return None
+            
         base_prices = data[self.base_ticker].dropna()
         
         for candidate in candidate_tickers:
@@ -132,12 +141,22 @@ class PairsTradingOptimizer:
             end_date = datetime.now()
             start_date = end_date - timedelta(days=lookback_days)
             
-            data = yf.download(tickers, start=start_date, end=end_date)['Close']
+            # Download data with error handling
+            self.optimization_log.append(f"Fetching data for tickers: {tickers}")
+            data = yf.download(tickers, start=start_date, end=end_date, progress=False)
+            
+            # Extract close prices
+            if isinstance(data.columns, pd.MultiIndex):
+                data = data['Close']
             
             # Handle single ticker case
             if len(tickers) == 1:
-                data = pd.DataFrame(data, columns=tickers)
+                data = pd.DataFrame({tickers[0]: data})
             
+            # Remove columns with insufficient data
+            data = data.dropna(axis=1, thresh=len(data) * 0.8)  # Keep columns with at least 80% data
+            
+            self.optimization_log.append(f"Successfully loaded data for {len(data.columns)} tickers")
             return data.dropna()
             
         except Exception as e:

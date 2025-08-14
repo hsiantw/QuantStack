@@ -41,7 +41,7 @@ def find_best_pairs_tab():
     col1, col2, col3 = st.columns([2, 1, 1])
     
     with col1:
-        base_ticker = st.text_input("Base Ticker for Pairs Analysis", value="SPY")
+        base_ticker = st.text_input("Base Ticker for Pairs Analysis", value="SPY").upper()
         
     with col2:
         lookback_days = st.selectbox("Analysis Period", 
