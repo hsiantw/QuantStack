@@ -3,16 +3,19 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler
+from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
 class AIStrategyOptimizer:
     """
     AI-powered trading strategy optimizer that finds optimal parameters
-    to minimize drawdown while maximizing returns.
+    to minimize drawdown while maximizing returns with detailed methodology tracking.
     """
     
-    def __init__(self):
+    def __init__(self, data, ticker):
+        self.data = data.copy()
+        self.ticker = ticker
         self.models = {
             'rf': RandomForestRegressor(n_estimators=100, random_state=42),
             'gb': GradientBoostingRegressor(n_estimators=100, random_state=42)
@@ -20,6 +23,8 @@ class AIStrategyOptimizer:
         self.scaler = StandardScaler()
         self.best_params = {}
         self.feature_importance = {}
+        self.calculation_details = {}
+        self.optimization_log = []
         
     def create_features(self, data, lookback_periods=[5, 10, 20, 50]):
         """Create technical features for ML model"""
@@ -72,6 +77,447 @@ class AIStrategyOptimizer:
         upper = ma + (std * std_dev)
         lower = ma - (std * std_dev)
         return upper, lower
+    
+    def calculate_macd(self, prices, fast=12, slow=26, signal=9):
+        """Calculate MACD"""
+        exp1 = prices.ewm(span=fast).mean()
+        exp2 = prices.ewm(span=slow).mean()
+        macd = exp1 - exp2
+        signal_line = macd.ewm(span=signal).mean()
+        return macd, signal_line
+    
+    def optimize_strategy(self):
+        """Main optimization method with detailed tracking"""
+        self.optimization_log.append(f"Starting optimization for {self.ticker} at {datetime.now()}")
+        
+        # Define strategy universe
+        strategies = self._get_strategy_universe()
+        self.optimization_log.append(f"Testing {len(strategies)} strategy combinations")
+        
+        results = []
+        for i, strategy in enumerate(strategies):
+            try:
+                performance = self._backtest_strategy(strategy)
+                if performance and performance['total_trades'] >= 10:  # Minimum trades for significance
+                    results.append({
+                        'name': strategy['name'],
+                        'type': strategy['type'],
+                        'params': strategy['params'],
+                        'annual_return': performance['annual_return'],
+                        'sharpe_ratio': performance['sharpe_ratio'],
+                        'max_drawdown': performance['max_drawdown'],
+                        'win_rate': performance['win_rate'],
+                        'total_trades': performance['total_trades'],
+                        'calmar_ratio': performance.get('calmar_ratio', 0),
+                        'calculation_details': performance['calculation_details']
+                    })
+                    
+                self.optimization_log.append(f"Strategy {i+1}/{len(strategies)}: {strategy['name']} - Complete")
+                
+            except Exception as e:
+                self.optimization_log.append(f"Strategy {strategy['name']} failed: {str(e)}")
+                continue
+        
+        if not results:
+            return None
+        
+        # Sort by Sharpe ratio (primary) and drawdown (secondary)
+        results.sort(key=lambda x: (x['sharpe_ratio'], -x['max_drawdown']), reverse=True)
+        
+        best_strategy = results[0]
+        
+        # Create detailed optimization results
+        optimization_results = {
+            'best_strategy': best_strategy,
+            'all_strategies': results,
+            'calculation_details': best_strategy['calculation_details'],
+            'annual_volatility': self._calculate_annual_volatility(),
+            'optimization_log': self.optimization_log,
+            'backtest_periods': self._get_period_analysis(best_strategy),
+            'monte_carlo': self._monte_carlo_analysis(best_strategy)
+        }
+        
+        return optimization_results
+    
+    def _get_strategy_universe(self):
+        """Define comprehensive strategy testing universe"""
+        strategies = [
+            # Moving Average Strategies
+            {'name': 'MA_Cross_5_15', 'type': 'ma_crossover', 'params': {'short_period': 5, 'long_period': 15}},
+            {'name': 'MA_Cross_10_20', 'type': 'ma_crossover', 'params': {'short_period': 10, 'long_period': 20}},
+            {'name': 'MA_Cross_20_50', 'type': 'ma_crossover', 'params': {'short_period': 20, 'long_period': 50}},
+            {'name': 'MA_Cross_50_200', 'type': 'ma_crossover', 'params': {'short_period': 50, 'long_period': 200}},
+            
+            # RSI Strategies
+            {'name': 'RSI_Conservative', 'type': 'rsi_mean_reversion', 'params': {'period': 14, 'oversold': 30, 'overbought': 70}},
+            {'name': 'RSI_Aggressive', 'type': 'rsi_mean_reversion', 'params': {'period': 14, 'oversold': 20, 'overbought': 80}},
+            {'name': 'RSI_Moderate', 'type': 'rsi_mean_reversion', 'params': {'period': 21, 'oversold': 25, 'overbought': 75}},
+            
+            # Bollinger Band Strategies
+            {'name': 'BB_Reversal_2std', 'type': 'bollinger_bands', 'params': {'period': 20, 'std_dev': 2}},
+            {'name': 'BB_Reversal_2.5std', 'type': 'bollinger_bands', 'params': {'period': 20, 'std_dev': 2.5}},
+            
+            # Combined Strategies
+            {'name': 'MA_RSI_Combo', 'type': 'ma_rsi_combo', 'params': {'ma_short': 10, 'ma_long': 30, 'rsi_period': 14, 'rsi_oversold': 30, 'rsi_overbought': 70}},
+            {'name': 'Triple_MA', 'type': 'triple_ma', 'params': {'fast': 5, 'medium': 20, 'slow': 50}},
+        ]
+        
+        return strategies
+    
+    def _backtest_strategy(self, strategy):
+        """Comprehensive backtesting with detailed calculations"""
+        # Prepare data with technical indicators
+        data = self._prepare_data()
+        
+        # Generate signals based on strategy
+        signals = self._generate_signals(data, strategy)
+        
+        if signals is None or len(signals) == 0:
+            return None
+        
+        # Calculate returns
+        returns = self._calculate_strategy_returns(data, signals)
+        
+        if returns is None or len(returns) == 0:
+            return None
+        
+        # Calculate performance metrics with detailed tracking
+        performance = self._calculate_performance_metrics(returns, data)
+        
+        # Add trade analysis
+        trades = self._analyze_trades(data, signals)
+        performance.update(trades)
+        
+        return performance
+    
+    def _prepare_data(self):
+        """Prepare data with all technical indicators"""
+        data = self.data.copy()
+        
+        # Moving averages
+        for period in [5, 10, 15, 20, 30, 50, 200]:
+            data[f'MA_{period}'] = data['Close'].rolling(window=period).mean()
+        
+        # RSI
+        data['RSI'] = self._calculate_rsi_full(data['Close'])
+        
+        # Bollinger Bands
+        data['BB_Upper'], data['BB_Lower'] = self.calculate_bollinger_bands(data['Close'])
+        data['BB_Middle'] = data['Close'].rolling(20).mean()
+        
+        # MACD
+        data['MACD'], data['MACD_Signal'] = self.calculate_macd(data['Close'])
+        
+        return data.dropna()
+    
+    def _calculate_rsi_full(self, prices, period=14):
+        """Full RSI calculation with protection against division by zero"""
+        delta = prices.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / np.where(loss != 0, loss, 1e-6)
+        return 100 - (100 / (1 + rs))
+    
+    def _generate_signals(self, data, strategy):
+        """Generate trading signals based on strategy type"""
+        signals = pd.Series(0, index=data.index)
+        
+        if strategy['type'] == 'ma_crossover':
+            short_ma = data[f"MA_{strategy['params']['short_period']}"]
+            long_ma = data[f"MA_{strategy['params']['long_period']}"]
+            signals = np.where(short_ma > long_ma, 1, -1)
+            
+        elif strategy['type'] == 'rsi_mean_reversion':
+            rsi = data['RSI']
+            oversold = strategy['params']['oversold']
+            overbought = strategy['params']['overbought']
+            signals = np.where(rsi < oversold, 1, np.where(rsi > overbought, -1, 0))
+            
+        elif strategy['type'] == 'bollinger_bands':
+            bb_upper = data['BB_Upper']
+            bb_lower = data['BB_Lower']
+            signals = np.where(data['Close'] < bb_lower, 1, np.where(data['Close'] > bb_upper, -1, 0))
+        
+        elif strategy['type'] == 'ma_rsi_combo':
+            # Combined MA and RSI signals
+            short_ma = data[f"MA_{strategy['params']['ma_short']}"]
+            long_ma = data[f"MA_{strategy['params']['ma_long']}"]
+            rsi = data['RSI']
+            
+            ma_signal = short_ma > long_ma
+            rsi_oversold = rsi < strategy['params']['rsi_oversold']
+            rsi_overbought = rsi > strategy['params']['rsi_overbought']
+            
+            signals = np.where(ma_signal & rsi_oversold, 1, np.where(~ma_signal | rsi_overbought, -1, 0))
+        
+        elif strategy['type'] == 'triple_ma':
+            fast_ma = data[f"MA_{strategy['params']['fast']}"]
+            medium_ma = data[f"MA_{strategy['params']['medium']}"]
+            slow_ma = data[f"MA_{strategy['params']['slow']}"]
+            
+            signals = np.where((fast_ma > medium_ma) & (medium_ma > slow_ma), 1,
+                             np.where((fast_ma < medium_ma) & (medium_ma < slow_ma), -1, 0))
+        
+        return pd.Series(signals, index=data.index)
+    
+    def _calculate_strategy_returns(self, data, signals):
+        """Calculate strategy returns with transaction costs"""
+        if len(signals) == 0:
+            return None
+        
+        # Position changes (entry/exit points)
+        positions = signals.diff().fillna(0)
+        
+        # Daily returns
+        daily_returns = data['Close'].pct_change()
+        
+        # Strategy returns (assuming we follow signals)
+        strategy_returns = daily_returns * signals.shift(1)  # Lag signals by 1 day
+        
+        # Apply transaction costs (0.1% per trade)
+        transaction_costs = 0.001
+        trade_costs = abs(positions) * transaction_costs
+        strategy_returns = strategy_returns - trade_costs
+        
+        return strategy_returns.dropna()
+    
+    def _calculate_performance_metrics(self, returns, data):
+        """Calculate comprehensive performance metrics with detailed calculations"""
+        if len(returns) == 0 or returns.std() == 0:
+            return None
+        
+        # Basic calculations
+        total_return = (1 + returns).prod() - 1
+        total_days = len(returns)
+        annual_return = (1 + total_return) ** (252 / total_days) - 1
+        
+        # Risk metrics
+        daily_mean = returns.mean()
+        daily_std = returns.std()
+        sharpe_ratio = (daily_mean * 252) / (daily_std * np.sqrt(252)) if daily_std > 0 else 0
+        
+        # Drawdown calculation
+        cumulative_returns = (1 + returns).cumprod()
+        running_max = cumulative_returns.expanding().max()
+        drawdown = (cumulative_returns - running_max) / running_max
+        max_drawdown = drawdown.min()
+        
+        # Find peak and trough for max drawdown
+        max_dd_idx = drawdown.idxmin()
+        peak_idx = running_max[:max_dd_idx].idxmax()
+        peak_value = cumulative_returns.loc[peak_idx] * 10000  # Assuming $10k initial
+        trough_value = cumulative_returns.loc[max_dd_idx] * 10000
+        
+        # Calmar ratio
+        calmar_ratio = annual_return / abs(max_drawdown) if max_drawdown != 0 else 0
+        
+        # Store detailed calculations
+        calculation_details = {
+            'total_days': total_days,
+            'total_return': total_return,
+            'mean_daily_return': daily_mean,
+            'daily_return_std': daily_std,
+            'peak_value': peak_value,
+            'trough_value': trough_value,
+            'cumulative_returns': cumulative_returns,
+            'drawdown_series': drawdown
+        }
+        
+        return {
+            'annual_return': annual_return,
+            'sharpe_ratio': sharpe_ratio,
+            'max_drawdown': max_drawdown,
+            'calmar_ratio': calmar_ratio,
+            'calculation_details': calculation_details
+        }
+    
+    def _analyze_trades(self, data, signals):
+        """Analyze individual trades for win rate calculation"""
+        # Find position changes
+        positions = signals.diff().fillna(0)
+        entry_points = positions[positions != 0].index
+        
+        if len(entry_points) < 2:
+            return {'total_trades': 0, 'win_rate': 0, 'winning_trades': 0, 'losing_trades': 0}
+        
+        # Calculate trade returns
+        trade_returns = []
+        current_position = 0
+        entry_price = 0
+        
+        for i, date in enumerate(data.index):
+            if date in entry_points:
+                if current_position != 0:  # Close existing position
+                    exit_price = data.loc[date, 'Close']
+                    trade_return = (exit_price - entry_price) / entry_price * current_position
+                    trade_returns.append(trade_return)
+                
+                # Open new position
+                current_position = signals.loc[date]
+                entry_price = data.loc[date, 'Close']
+        
+        if len(trade_returns) == 0:
+            return {'total_trades': 0, 'win_rate': 0, 'winning_trades': 0, 'losing_trades': 0}
+        
+        # Calculate win rate
+        winning_trades = sum(1 for ret in trade_returns if ret > 0)
+        losing_trades = sum(1 for ret in trade_returns if ret <= 0)
+        total_trades = len(trade_returns)
+        win_rate = (winning_trades / total_trades) * 100 if total_trades > 0 else 0
+        
+        return {
+            'total_trades': total_trades,
+            'win_rate': win_rate,
+            'winning_trades': winning_trades,
+            'losing_trades': losing_trades,
+            'trade_returns': trade_returns
+        }
+    
+    def _calculate_annual_volatility(self):
+        """Calculate annual volatility of the underlying asset"""
+        daily_returns = self.data['Close'].pct_change().dropna()
+        return daily_returns.std() * np.sqrt(252)
+    
+    def _get_period_analysis(self, strategy):
+        """Analyze strategy performance across different time periods"""
+        periods = {}
+        
+        # Split data into different periods for analysis
+        data_length = len(self.data)
+        
+        if data_length > 504:  # At least 2 years
+            # Recent 1 year
+            recent_data = self.data.tail(252)
+            recent_perf = self._backtest_strategy_on_data(strategy, recent_data)
+            if recent_perf:
+                periods['Recent Year'] = recent_perf
+        
+        if data_length > 756:  # At least 3 years
+            # Middle period
+            middle_data = self.data.iloc[-756:-252]
+            middle_perf = self._backtest_strategy_on_data(strategy, middle_data)
+            if middle_perf:
+                periods['Previous Year'] = middle_perf
+        
+        return periods
+    
+    def _backtest_strategy_on_data(self, strategy, data):
+        """Backtest strategy on specific data subset"""
+        try:
+            prepared_data = self._prepare_data_subset(data)
+            signals = self._generate_signals(prepared_data, strategy)
+            returns = self._calculate_strategy_returns(prepared_data, signals)
+            performance = self._calculate_performance_metrics(returns, prepared_data)
+            return performance
+        except:
+            return None
+    
+    def _prepare_data_subset(self, data):
+        """Prepare subset of data with indicators"""
+        # Similar to _prepare_data but for subset
+        subset = data.copy()
+        
+        for period in [5, 10, 15, 20, 30, 50]:
+            if len(subset) > period:
+                subset[f'MA_{period}'] = subset['Close'].rolling(window=period).mean()
+        
+        subset['RSI'] = self._calculate_rsi_full(subset['Close'])
+        subset['BB_Upper'], subset['BB_Lower'] = self.calculate_bollinger_bands(subset['Close'])
+        
+        return subset.dropna()
+    
+    def _monte_carlo_analysis(self, strategy):
+        """Perform Monte Carlo analysis on strategy returns"""
+        try:
+            # Get strategy returns
+            data = self._prepare_data()
+            signals = self._generate_signals(data, strategy)
+            returns = self._calculate_strategy_returns(data, signals)
+            
+            if returns is None or len(returns) < 50:
+                return None
+            
+            # Monte Carlo simulation
+            n_simulations = 1000
+            annual_returns = []
+            
+            for _ in range(n_simulations):
+                # Bootstrap sample returns
+                simulated_returns = np.random.choice(returns.values, size=252, replace=True)
+                annual_return = (1 + simulated_returns).prod() - 1
+                annual_returns.append(annual_return)
+            
+            annual_returns = np.array(annual_returns)
+            
+            return {
+                'ci_lower': np.percentile(annual_returns, 2.5),
+                'ci_upper': np.percentile(annual_returns, 97.5),
+                'prob_loss': np.sum(annual_returns < 0) / len(annual_returns) * 100,
+                'var_5': np.percentile(annual_returns, 5)
+            }
+        except:
+            return None
+    
+    def get_strategy_signals(self, strategy):
+        """Get detailed signals for visualization"""
+        data = self._prepare_data()
+        signals = self._generate_signals(data, strategy)
+        
+        # Find entry and exit points
+        position_changes = signals.diff().fillna(0)
+        entry_points = data[position_changes > 0]['Close']  # Buy signals
+        exit_points = data[position_changes < 0]['Close']   # Sell signals
+        
+        return {
+            'entry_points': entry_points,
+            'exit_points': exit_points,
+            'all_signals': signals
+        }
+    
+    def backtest_strategy(self, strategy):
+        """Get detailed backtesting results for visualization"""
+        data = self._prepare_data()
+        signals = self._generate_signals(data, strategy)
+        returns = self._calculate_strategy_returns(data, signals)
+        
+        if returns is None:
+            return {}
+        
+        # Equity curve
+        equity_curve = (1 + returns).cumprod() * 10000  # Assume $10k starting
+        
+        # Benchmark (buy and hold)
+        benchmark_returns = data['Close'].pct_change().dropna()
+        benchmark_equity = (1 + benchmark_returns).cumprod() * 10000
+        
+        # Monthly returns for heatmap
+        monthly_returns = self._calculate_monthly_returns(returns)
+        
+        return {
+            'equity_curve': equity_curve,
+            'benchmark': benchmark_equity,
+            'monthly_returns': monthly_returns,
+            'daily_returns': returns
+        }
+    
+    def _calculate_monthly_returns(self, returns):
+        """Calculate monthly returns for heatmap visualization"""
+        monthly_data = returns.resample('M').apply(lambda x: (1 + x).prod() - 1)
+        monthly_data.index = monthly_data.index.to_period('M')
+        
+        # Create year-month matrix
+        years = monthly_data.index.year.unique()
+        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        
+        heatmap_data = pd.DataFrame(index=years, columns=months)
+        
+        for date, return_val in monthly_data.items():
+            year = date.year
+            month = months[date.month - 1]
+            heatmap_data.loc[year, month] = return_val * 100  # Convert to percentage
+        
+        return heatmap_data.fillna(0)
     
     def calculate_macd(self, prices, fast=12, slow=26, signal=9):
         """Calculate MACD"""
