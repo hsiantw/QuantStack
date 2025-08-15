@@ -738,9 +738,9 @@ def create_feature_card(icon, title, desc, button_text, page):
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button(f"{button_text} {title}", key=f"card_{title.replace(' ', '_')}", use_container_width=True):
+    if st.button(f"{button_text} {title}", key=f"card_{title.replace(' ', '_').replace('&', 'and')}", use_container_width=True):
         st.switch_page(page)
-    
+
     # Strategy Templates Section - QuantConnect Style
     st.markdown("---")
     st.markdown("### 📋 Strategy Templates")
@@ -855,7 +855,7 @@ def create_feature_card(icon, title, desc, button_text, page):
     # Quick analysis section
     st.header("⚡ Quick Analysis")
     
-    ticker = st.text_input("Enter a stock ticker for quick analysis:", value="SPY").upper()
+    ticker = st.text_input("Enter a stock ticker for quick analysis:", value="SPY", key="main_dashboard_ticker").upper()
     
     if ticker:
         try:
