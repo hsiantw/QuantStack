@@ -559,131 +559,187 @@ def main_dashboard():
     
     st.markdown("---")
     
-    # Strategy Explorer Section
-    st.markdown("### 🎯 Strategy Explorer")
+    # Organized Module Categories
+    st.markdown("### 🎯 Platform Modules")
     
     st.markdown("""
     <p style="color: #b0b0b0; font-size: 1.1rem; margin-bottom: 2rem;">
-    A collection of advanced quantitative strategies and analysis tools. Choose from our comprehensive suite 
-    of financial modeling capabilities to enhance your investment decision-making.
+    Professional-grade quantitative finance tools organized by category for optimal workflow efficiency.
     </p>
     """, unsafe_allow_html=True)
     
-    # Define platform features
-    features = [
-        {
-            "icon": "📊",
-            "title": "Portfolio Optimization",
-            "desc": "Modern Portfolio Theory implementation with efficient frontier calculation and Markowitz optimization for risk-adjusted returns.",
-            "page": "pages/portfolio_optimization.py"
-        },
-        {
-            "icon": "🔗",
-            "title": "Statistical Arbitrage",
-            "desc": "Detect arbitrage opportunities through correlation analysis and pair trading strategies with cointegration testing.",
-            "page": "pages/statistical_arbitrage.py"
-        },
-        {
-            "icon": "📈",
-            "title": "Time Series Analysis",
-            "desc": "Advanced time series analysis with ARIMA modeling, trend identification and seasonality detection.",
-            "page": "pages/time_series_analysis.py"
-        },
-        {
-            "icon": "⚡",
-            "title": "Trading Strategies",
-            "desc": "Backtest and optimize various trading strategies with comprehensive performance metrics and risk analysis.",
-            "page": "pages/trading_strategies.py"
-        },
-        {
-            "icon": "🤖",
-            "title": "AI Analysis",
-            "desc": "AI-powered price prediction and pattern recognition using machine learning models with feature engineering.",
-            "page": "pages/ai_analysis.py"
-        },
-        {
-            "icon": "🎯",
-            "title": "AI Pairs Trading",
-            "desc": "Comprehensive pairs trading system with AI-optimized strategies, cointegration testing and mean reversion analysis.",
-            "page": "pages/ai_pairs_trading.py"
-        },
-        {
-            "icon": "🔍",
-            "title": "Advanced Market Analysis",
-            "desc": "Money flow, liquidity analysis, dark pool detection, crypto analysis and institutional trading secrets.",
-            "page": "pages/advanced_market_analysis.py"
-        },
-        {
-            "icon": "₿",
-            "title": "Crypto Analysis",
-            "desc": "Comprehensive cryptocurrency analysis with DeFi metrics, on-chain data, fear & greed index and correlation analysis.",
-            "page": "pages/crypto_analysis.py"
-        },
-        {
-            "icon": "📰",
-            "title": "Live News & Economic Data",
-            "desc": "Real-time market intelligence with news analysis, economic calendar, Fed updates and trading-relevant data sources.",
-            "page": "pages/news_and_economic_data.py"
-        },
-        {
-            "icon": "🌾",
-            "title": "Commodities, Forex & Futures",
-            "desc": "Comprehensive analysis of commodity markets, foreign exchange pairs, futures contracts with correlations and trading sessions.",
-            "page": "pages/commodities_forex_futures.py"
-        },
-        {
-            "icon": "📁",
-            "title": "Portfolio Manager",
-            "desc": "Save, manage, and analyze custom investment portfolios with performance tracking and asset allocation tools.",
-            "page": "pages/portfolio_manager.py"
-        },
-        {
-            "icon": "🔍",
-            "title": "Fundamental Analysis",
-            "desc": "Comprehensive financial ratios, technical analysis, health assessment and future predictions for individual companies.",
-            "page": "pages/fundamental_analysis.py"
-        },
-        {
-            "icon": "📊",
-            "title": "Trading Account Monitor",
-            "desc": "Real-time portfolio tracking with Webull integration, live account monitoring, position analysis, and strategy performance validation.",
-            "page": "pages/trading_monitor.py"
-        }
+    # Create tabs for the three main categories
+    portfolio_tab, insights_tab, best_features_tab = st.tabs([
+        "💼 Portfolio & Trading", 
+        "🧠 AI Insights & Analysis", 
+        "⭐ Platform Highlights"
+    ])
+    
+    with portfolio_tab:
+        st.markdown("#### Portfolio Management & Trading Tools")
+        portfolio_features = [
+            {
+                "icon": "💼",
+                "title": "Portfolio Optimization",
+                "desc": "Modern Portfolio Theory with efficient frontier calculation and risk-adjusted returns optimization.",
+                "page": "pages/portfolio_optimization.py"
+            },
+            {
+                "icon": "📋",
+                "title": "Portfolio Manager", 
+                "desc": "Comprehensive portfolio tracking, rebalancing, and performance monitoring with real-time analytics.",
+                "page": "pages/portfolio_manager.py"
+            },
+            {
+                "icon": "📊",
+                "title": "Trading Account Monitor",
+                "desc": "Live trading account integration with Webull, real-time P&L tracking, and position analysis.",
+                "page": "pages/trading_monitor.py"
+            },
+            {
+                "icon": "⚡",
+                "title": "Trading Strategy Backtesting",
+                "desc": "Comprehensive strategy backtesting with 15+ algorithms, AI optimization, and performance metrics.",
+                "page": "pages/trading_strategies.py"
+            },
+            {
+                "icon": "🎯",
+                "title": "Strategy Comparison & Optimization",
+                "desc": "Advanced multi-strategy comparison with parameter optimization and risk-return analysis.",
+                "page": "pages/strategy_comparison.py"
+            }
+        ]
+        
+        cols = st.columns(2)
+        for i, feature in enumerate(portfolio_features):
+            with cols[i % 2]:
+                create_feature_card(feature["icon"], feature["title"], feature["desc"], "Launch", feature["page"])
+    
+    with insights_tab:
+        st.markdown("#### AI-Powered Analysis & Market Intelligence")
+        insights_features = [
+            {
+                "icon": "🤖",
+                "title": "AI Financial Analysis",
+                "desc": "Machine learning price predictions with Random Forest, Gradient Boosting, and neural networks.",
+                "page": "pages/ai_analysis.py"
+            },
+            {
+                "icon": "📈",
+                "title": "Statistical Arbitrage",
+                "desc": "Pair trading with cointegration testing, spread analysis, and automated opportunity detection.",
+                "page": "pages/statistical_arbitrage.py"
+            },
+            {
+                "icon": "🔗",
+                "title": "AI Pairs Trading",
+                "desc": "Advanced AI-optimized pairs trading with 6 mean reversion strategies and real-time monitoring.",
+                "page": "pages/ai_pairs_trading.py"
+            },
+            {
+                "icon": "📊",
+                "title": "Time Series Analysis",
+                "desc": "ARIMA modeling, seasonality detection, trend analysis, and advanced econometric tools.",
+                "page": "pages/time_series_analysis.py"
+            },
+            {
+                "icon": "🧬",
+                "title": "Advanced Market Analysis",
+                "desc": "Dark pool detection, liquidity analysis, money flow, and institutional trading insights.",
+                "page": "pages/advanced_market_analysis.py"
+            },
+            {
+                "icon": "📰",
+                "title": "News & Economic Intelligence",
+                "desc": "Real-time news analysis, economic calendar, Fed updates, and sentiment-driven market intelligence.",
+                "page": "pages/news_and_economic_data.py"
+            },
+            {
+                "icon": "🏢",
+                "title": "Fundamental Analysis",
+                "desc": "Company valuation, financial ratio analysis, earnings forecasts, and DCF modeling.",
+                "page": "pages/fundamental_analysis.py"
+            },
+            {
+                "icon": "📚",
+                "title": "Market Intelligence Sources",
+                "desc": "Comprehensive data sources, APIs, and market intelligence aggregation platform.",
+                "page": "pages/market_information_sources.py"
+            }
+        ]
+        
+        cols = st.columns(2)
+        for i, feature in enumerate(insights_features):
+            with cols[i % 2]:
+                create_feature_card(feature["icon"], feature["title"], feature["desc"], "Analyze", feature["page"])
+    
+    with best_features_tab:
+        st.markdown("#### Platform Highlights - My Top Recommendations")
+        st.markdown("""
+        <p style="color: #00d4ff; font-size: 1rem; margin-bottom: 1.5rem;">
+        These are the standout features that provide exceptional value for quantitative analysis and trading.
+        </p>
+        """, unsafe_allow_html=True)
+        
+        best_features = [
+            {
+                "icon": "🔗",
+                "title": "AI Pairs Trading",
+                "desc": "★ EXCEPTIONAL: 6 mathematical mean reversion strategies with AI optimization. Best-in-class cointegration analysis.",
+                "page": "pages/ai_pairs_trading.py"
+            },
+            {
+                "icon": "⚡",
+                "title": "Trading Strategy Backtesting",
+                "desc": "★ COMPREHENSIVE: 15+ strategies with AI optimization, extensive performance metrics, and PineScript generation.",
+                "page": "pages/trading_strategies.py"
+            },
+            {
+                "icon": "📊",
+                "title": "Trading Account Monitor",
+                "desc": "★ INNOVATIVE: Live Webull integration with QR authentication, real-time portfolio sync, and strategy validation.",
+                "page": "pages/trading_monitor.py"
+            },
+            {
+                "icon": "🧬",
+                "title": "Advanced Market Analysis",
+                "desc": "★ INSTITUTIONAL-GRADE: Dark pool detection, volume profile analysis, and professional liquidity metrics.",
+                "page": "pages/advanced_market_analysis.py"
+            },
+            {
+                "icon": "₿",
+                "title": "Cryptocurrency Analysis",
+                "desc": "★ SPECIALIZED: Complete crypto ecosystem analysis with DeFi metrics, on-chain data, and Fear & Greed index.",
+                "page": "pages/crypto_analysis.py"
+            },
+            {
+                "icon": "🌍",
+                "title": "Multi-Asset Analysis",
+                "desc": "★ DIVERSIFIED: Commodities, forex, futures analysis with cross-asset correlation and global market insights.",
+                "page": "pages/commodities_forex_futures.py"
+            }
+        ]
+        
+        cols = st.columns(2)
+        for i, feature in enumerate(best_features):
+            with cols[i % 2]:
+                create_feature_card(feature["icon"], feature["title"], feature["desc"], "Explore", feature["page"])
 
-    ]
+def create_feature_card(icon, title, desc, button_text, page):
+    """Create a feature navigation card with QuantConnect styling"""
+    st.markdown(f"""
+    <div class="nav-card">
+        <div class="nav-card-icon" style="font-size: 2.5rem; margin-bottom: 1rem; text-align: center;">{icon}</div>
+        <div class="nav-card-title" style="color: #00d4ff; font-size: 1.3rem; font-weight: 600; margin-bottom: 0.8rem; text-align: center;">{title}</div>
+        <div class="nav-card-desc" style="color: #b0b0b0; font-size: 0.9rem; line-height: 1.4; text-align: center;">{desc}</div>
+        <div style="margin-top: 1rem; text-align: center;">
+            <span style="color: #00d4ff; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Click to {button_text} →</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Display features in grid layout (adjusted for 13 features)
-    # First row: 3 features
-    cols1 = st.columns(3)
-    # Second row: 3 features  
-    cols2 = st.columns(3)
-    # Third row: 3 features
-    cols3 = st.columns(3)
-    # Fourth row: 3 features
-    cols4 = st.columns(3)
-    # Fifth row: 1 feature centered
-    cols5 = st.columns([1, 1, 1])
-    
-    all_cols = list(cols1) + list(cols2) + list(cols3) + list(cols4) + [cols5[1]]
-    
-    for i, feature in enumerate(features):
-        with all_cols[i]:
-            # QuantConnect-style strategy card
-            with st.container():
-                st.markdown(f"""
-                <div class="nav-card">
-                    <div class="nav-card-icon" style="font-size: 2.5rem; margin-bottom: 1rem; text-align: center;">{feature['icon']}</div>
-                    <div class="nav-card-title" style="color: #00d4ff; font-size: 1.3rem; font-weight: 600; margin-bottom: 0.8rem; text-align: center;">{feature['title']}</div>
-                    <div class="nav-card-desc" style="color: #b0b0b0; font-size: 0.9rem; line-height: 1.4; text-align: center;">{feature['desc']}</div>
-                    <div style="margin-top: 1rem; text-align: center;">
-                        <span style="color: #00d4ff; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Click to Launch →</span>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Strategy access button
-                if st.button(f"Launch {feature['title']}", key=f"strategy_{i}", use_container_width=True):
-                    st.switch_page(feature['page'])
+    if st.button(f"{button_text} {title}", key=f"card_{title.replace(' ', '_')}", use_container_width=True):
+        st.switch_page(page)
     
     # Strategy Templates Section - QuantConnect Style
     st.markdown("---")

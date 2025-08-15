@@ -3,6 +3,11 @@
 ## Overview
 This comprehensive quantitative finance platform, built with Streamlit, offers advanced financial analysis tools for quantitative analysts, traders, and researchers. It integrates AI-powered predictions, portfolio optimization (Modern Portfolio Theory), statistical arbitrage including AI-powered pairs trading with cointegration testing, extensive mean reversion strategies, time series analysis, and trading strategy backtesting. The platform also provides advanced market analysis, comprehensive cryptocurrency analysis, live news and economic data intelligence, multi-asset class analysis (commodities, forex, futures), and an investment portfolio manager. A key ambition is to provide sophisticated capabilities through an intuitive web interface, complemented by a live trading account monitor for real-time integration.
 
+**Navigation Structure:** The platform is now organized into three logical categories:
+- **Portfolio & Trading:** Portfolio optimization, portfolio manager, trading account monitor, strategy backtesting, and strategy comparison
+- **AI Insights & Analysis:** AI financial analysis, statistical arbitrage, AI pairs trading, time series analysis, advanced market analysis, news intelligence, fundamental analysis, and market sources  
+- **Platform Highlights:** Top recommended features including AI pairs trading, strategy backtesting, trading account monitor, advanced market analysis, crypto analysis, and multi-asset analysis
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
