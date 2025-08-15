@@ -613,7 +613,7 @@ def main_dashboard():
         cols = st.columns(2)
         for i, feature in enumerate(portfolio_features):
             with cols[i % 2]:
-                create_feature_card(feature["icon"], feature["title"], feature["desc"], "Launch", feature["page"])
+                create_feature_card(feature["icon"], feature["title"], feature["desc"], "Launch", feature["page"], "portfolio")
     
     with insights_tab:
         st.markdown("#### AI-Powered Analysis & Market Intelligence")
@@ -671,7 +671,7 @@ def main_dashboard():
         cols = st.columns(2)
         for i, feature in enumerate(insights_features):
             with cols[i % 2]:
-                create_feature_card(feature["icon"], feature["title"], feature["desc"], "Analyze", feature["page"])
+                create_feature_card(feature["icon"], feature["title"], feature["desc"], "Analyze", feature["page"], "insights")
     
     with best_features_tab:
         st.markdown("#### Platform Highlights - My Top Recommendations")
@@ -723,7 +723,7 @@ def main_dashboard():
         cols = st.columns(2)
         for i, feature in enumerate(best_features):
             with cols[i % 2]:
-                create_feature_card(feature["icon"], feature["title"], feature["desc"], "Explore", feature["page"])
+                create_feature_card(feature["icon"], feature["title"], feature["desc"], "Explore", feature["page"], "highlights")
 
     # Strategy Templates Section - QuantConnect Style  
     st.markdown("---")
@@ -892,7 +892,7 @@ def main_dashboard():
         except Exception as e:
             st.error(f"Error analyzing ticker {ticker}: {str(e)}")
 
-def create_feature_card(icon, title, desc, button_text, page):
+def create_feature_card(icon, title, desc, button_text, page, context="default"):
     """Create a feature navigation card with QuantConnect styling"""
     st.markdown(f"""
     <div class="nav-card">
@@ -905,7 +905,9 @@ def create_feature_card(icon, title, desc, button_text, page):
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button(f"{button_text} {title}", key=f"card_{title.replace(' ', '_').replace('&', 'and')}", use_container_width=True):
+    # Create unique key with context to avoid duplicates
+    unique_key = f"card_{context}_{title.replace(' ', '_').replace('&', 'and')}"
+    if st.button(f"{button_text} {title}", key=unique_key, use_container_width=True):
         st.switch_page(page)
 
 # Sidebar navigation
