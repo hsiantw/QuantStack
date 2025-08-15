@@ -72,6 +72,16 @@ This is a comprehensive quantitative finance platform built with Streamlit that 
   - Import/export functionality with JSON format for portfolio backup and sharing
   - Bulk portfolio operations including cloning and management tools
   - Template library including Conservative (60/40), Aggressive Growth, Dividend Income, and Global Diversified portfolios
+- **Fundamental Analysis & Health Assessment**: Comprehensive company analysis system featuring:
+  - Complete financial ratios analysis including profitability, liquidity, leverage, efficiency, and valuation metrics
+  - Technical analysis with RSI, MACD, Bollinger Bands, moving averages, and volatility measurements
+  - AI-powered financial health scoring system with 100-point scale across 6 key categories
+  - Future predictions including 1-year price targets, earnings forecasts, and revenue outlook
+  - Risk factor identification and growth catalyst analysis
+  - Investment recommendations based on comprehensive health assessment
+  - Visual dashboard with radar charts, metric cards, and performance indicators
+  - Educational tooltips explaining financial ratios and technical indicators
+  - Real-time data integration with Yahoo Finance for current market information
 
 
 ## User Preferences
