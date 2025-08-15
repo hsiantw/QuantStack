@@ -12,7 +12,20 @@ This guide walks you through setting up live trading account monitoring with you
 
 ## 🔧 Setup Options
 
-### Option 1: Unofficial API (Quick Setup) ⚡
+### Option 1: QR Code Login (Easiest) 📱
+
+**What it would be:**
+- Scan QR code with Webull mobile app
+- No password typing required  
+- Built-in multi-factor authentication
+- Most secure authentication method
+
+**Current Status:**
+⚠️ **Not yet supported** - Official Webull API doesn't offer QR authentication as of 2025. We've built the interface ready for when this feature becomes available.
+
+**For now, use Options 2 or 3 below.**
+
+### Option 2: Unofficial API (Quick Setup) ⚡
 
 **Pros:** 
 - No application process
@@ -30,7 +43,7 @@ This guide walks you through setting up live trading account monitoring with you
 4. Enter your 6-digit trading PIN (for order placement)
 5. Click "🔴 Connect Live Account"
 
-### Option 2: Official API (Recommended) 🛡️
+### Option 3: Official API (Recommended) 🛡️
 
 **Pros:**
 - Official Webull support

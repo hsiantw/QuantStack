@@ -11,6 +11,9 @@ from typing import Dict, List, Optional, Union
 import pandas as pd
 import numpy as np
 import streamlit as st
+import base64
+import io
+import requests
 
 class WebullConnector:
     """
@@ -41,6 +44,91 @@ class WebullConnector:
             time.sleep(self.rate_limit_delay - time_since_last_request)
         
         self.last_request_time = time.time()
+    
+    def connect_qr_code(self) -> Optional[str]:
+        """
+        Initialize QR code authentication
+        
+        Returns:
+            str: QR code data URL or None if failed
+        """
+        try:
+            # Import unofficial webull library
+            try:
+                from webull import webull
+            except ImportError:
+                st.error("Webull library not installed. Run: pip install webull")
+                return None
+            
+            self.wb = webull()
+            
+            # Get QR code for authentication
+            qr_code_data = self.wb.get_qr()
+            
+            if qr_code_data and 'qrCode' in qr_code_data:
+                # The QR code is typically returned as a base64 encoded image
+                qr_code_img = qr_code_data['qrCode']
+                
+                # Store QR session details for polling
+                self.qr_session = {
+                    'qr_id': qr_code_data.get('qrId', ''),
+                    'expires_at': datetime.now() + timedelta(minutes=5),  # QR codes typically expire in 5 minutes
+                    'polling_active': True
+                }
+                
+                return qr_code_img
+            else:
+                st.error("Failed to generate QR code")
+                return None
+                
+        except Exception as e:
+            st.error(f"QR code generation failed: {str(e)}")
+            return None
+    
+    def check_qr_status(self) -> Optional[bool]:
+        """
+        Check if QR code has been scanned and authentication completed
+        
+        Returns:
+            bool: True if authenticated, False if still waiting, None if error/expired
+        """
+        if not hasattr(self, 'qr_session') or not self.qr_session['polling_active']:
+            return None
+            
+        try:
+            # Check if QR code has expired
+            if datetime.now() > self.qr_session['expires_at']:
+                self.qr_session['polling_active'] = False
+                return None
+            
+            # Poll QR code status
+            qr_id = self.qr_session['qr_id']
+            status_result = self.wb.check_qr_status(qr_id)
+            
+            if status_result:
+                if status_result.get('status') == 'SUCCESS':
+                    # QR code scanned successfully
+                    self.is_connected = True
+                    self.connection_details = {
+                        'api_type': 'qr_code',
+                        'connected_at': datetime.now(),
+                        'qr_authenticated': True
+                    }
+                    self.qr_session['polling_active'] = False
+                    return True
+                elif status_result.get('status') == 'WAITING':
+                    # Still waiting for scan
+                    return False
+                else:
+                    # QR code expired or failed
+                    self.qr_session['polling_active'] = False
+                    return None
+            
+            return False
+            
+        except Exception as e:
+            st.error(f"QR status check failed: {str(e)}")
+            return None
     
     def connect_unofficial(self, email: str, password: str, trade_pin: Optional[str] = None) -> bool:
         """

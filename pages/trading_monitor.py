@@ -111,6 +111,8 @@ class TradingAccountMonitor:
             st.session_state.trading_connected = False
         if 'trading_mode' not in st.session_state:
             st.session_state.trading_mode = 'demo'
+        if 'qr_demo_active' not in st.session_state:
+            st.session_state.qr_demo_active = False
         if 'webull_credentials' not in st.session_state:
             st.session_state.webull_credentials = {}
         if 'demo_account' not in st.session_state:
@@ -250,6 +252,12 @@ if st.session_state.trading_connected:
             ✅ Connected to Live Webull Account
         </div>
         """, unsafe_allow_html=True)
+    elif st.session_state.trading_mode == 'qr_demo':
+        st.markdown("""
+        <div class="connection-status status-connected">
+            ✅ Connected via QR Code (Demo)
+        </div>
+        """, unsafe_allow_html=True)
     else:
         st.markdown("""
         <div class="connection-status status-demo">
@@ -277,7 +285,7 @@ with tabs[0]:
         
         connection_type = st.radio(
             "Choose connection type:",
-            ["🎯 Demo Mode (Paper Trading)", "🔴 Live Trading (Webull API)"],
+            ["🎯 Demo Mode (Paper Trading)", "📱 QR Code Login (Easiest)", "🔴 Live Trading (Webull API)"],
             index=0 if st.session_state.trading_mode == 'demo' else 1
         )
         
@@ -288,6 +296,93 @@ with tabs[0]:
                 st.session_state.trading_connected = True
                 st.session_state.trading_mode = 'demo'
                 st.rerun()
+                
+        elif "QR Code" in connection_type:
+            st.success("📱 QR Code Login - Most secure and convenient method!")
+            
+            col_qr1, col_qr2 = st.columns([1, 1])
+            
+            with col_qr1:
+                st.markdown("#### How QR Code Login Works:")
+                st.markdown("""
+                1. **Generate QR Code** - Click button below
+                2. **Open Webull App** - Use your mobile phone
+                3. **Scan QR Code** - Use app's scan feature  
+                4. **Automatic Login** - No passwords needed
+                5. **Secure Connection** - Encrypted authentication
+                """)
+                
+                if st.button("📱 Generate QR Code", type="primary", use_container_width=True):
+                    # Initialize QR code session
+                    if 'qr_connector' not in st.session_state:
+                        from utils.webull_connector import WebullConnector
+                        st.session_state.qr_connector = WebullConnector()
+                    
+                    with st.spinner("Generating QR code..."):
+                        # Note: This is a conceptual implementation
+                        # The actual QR code generation would depend on Webull API support
+                        st.info("⚠️ QR Code Authentication Implementation Note:")
+                        st.markdown("""
+                        Based on current Webull API documentation (2025), **official QR code authentication 
+                        is not supported** in the public API. However, here are the available options:
+                        
+                        **Current Status:**
+                        - Official API: Uses App Key/Secret only
+                        - Unofficial API: May have QR workarounds (limited support)
+                        
+                        **Recommended Alternative:**
+                        Use the **Official API** method below for secure, reliable connection.
+                        """)
+                        
+                        # For demo purposes, show what QR authentication would look like
+                        st.session_state.qr_demo_active = True
+                        
+                if st.session_state.get('qr_demo_active', False):
+                    st.markdown("#### QR Code Authentication Demo")
+                    st.info("This shows how QR authentication would work when supported by Webull API:")
+                    
+                    # Create a demo QR code placeholder
+                    st.markdown("""
+                    ```
+                    ████ ▄▄▄▄▄ █▀█ █▄█▄█▄▄▄█ ▄▄▄▄▄ ████
+                    ████ █   █ █▀▀▀█ ▀ █▀▀█ █   █ ████
+                    ████ █▄▄▄█ █▀ ▀▀▄▄▄ ▀█▀█ █▄▄▄█ ████
+                    ████▄▄▄▄▄▄▄█▄▀ ▀▄█ █▄█ █▄▄▄▄▄▄▄████
+                    ████▄▄  ▄▀▄   ▄▄█▄▄▄▄ ▀    ▄█ ████
+                    ████ ▄ █▀▀▄▄▀█▀▀▄  ▄▄▄▄▀██ ▀▄▄ ████
+                    ████▄███ ▄▄ ▄▀▀ █▀▄▄▄ ▀█ ▀▄█▀ ▄████
+                    ████ ▄▄▄▄▄ █▄█  ▀█▄ ▄ ▄ ▄  ▄▀ ▀████
+                    ████ █   █ █  █▀▀ ▄▄▄▄▄▀██▀▀▀▀▄████
+                    ████ █▄▄▄█ █  ▀▀▄▄▄▄▄▄▀█▀▀▀▀█▀▄████
+                    ████▄▄▄▄▄▄▄█▄▄██▄█▄██▄█▄█▄██▄█▄████
+                    ```
+                    **Demo QR Code** - Scan with Webull app
+                    """)
+                    
+                    if st.button("✅ Simulate Successful Scan", use_container_width=True):
+                        st.session_state.trading_connected = True
+                        st.session_state.trading_mode = 'qr_demo'
+                        st.session_state.qr_demo_active = False
+                        st.success("✅ QR Code authentication successful! (Demo)")
+                        st.rerun()
+            
+            with col_qr2:
+                st.markdown("#### Benefits of QR Code Login:")
+                st.markdown("""
+                ✅ **No Password Entry** - More secure than typing passwords
+                
+                ✅ **Multi-Factor Built-In** - Uses your phone as second factor
+                
+                ✅ **Faster Connection** - One scan and you're connected
+                
+                ✅ **Session Management** - App controls login sessions
+                
+                ✅ **Encrypted** - Secure token-based authentication
+                
+                ⚠️ **Current Limitation**: Official Webull API doesn't support QR authentication yet
+                """)
+                
+                st.info("💡 **For Now**: Use the Official API method below for the most secure and reliable connection.")
                 
         else:
             st.warning("⚠️ Live trading requires Webull API credentials and involves real money.")
