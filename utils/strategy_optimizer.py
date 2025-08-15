@@ -297,11 +297,26 @@ class StrategyOptimizer:
         """Calculate comprehensive performance metrics."""
         returns = returns.dropna()
         
-        # Basic metrics
+        # Basic metrics with safe calculations
+        if len(returns) == 0:
+            return {
+                'Total Return': 0.0,
+                'Annualized Return': 0.0,
+                'Volatility': 0.0,
+                'Sharpe Ratio': 0.0,
+                'Max Drawdown': 0.0,
+                'Calmar Ratio': 0.0,
+                'Sortino Ratio': 0.0,
+                'Information Ratio': 0.0,
+                'Win Rate': 0.0,
+                'Total Trades': 0.0,
+                'Avg Return per Trade': 0.0
+            }
+        
         total_return = (1 + returns).prod() - 1
-        annualized_return = (1 + total_return) ** (252 / len(returns)) - 1
-        volatility = returns.std() * np.sqrt(252)
-        sharpe_ratio = (annualized_return - 0.02) / volatility if volatility != 0 else 0
+        annualized_return = (1 + total_return) ** (252 / len(returns)) - 1 if len(returns) > 0 else 0
+        volatility = returns.std() * np.sqrt(252) if not returns.empty else 0
+        sharpe_ratio = (annualized_return - 0.02) / volatility if volatility > 1e-10 else 0
         
         # Drawdown analysis
         cumulative_returns = (1 + returns).cumprod()
@@ -319,16 +334,17 @@ class StrategyOptimizer:
         else:
             win_rate = 0
         
-        # Calmar ratio
-        calmar_ratio = annualized_return / abs(max_drawdown) if max_drawdown != 0 else 0
+        # Calmar ratio with safe division
+        calmar_ratio = annualized_return / abs(max_drawdown) if abs(max_drawdown) > 1e-10 else 0
         
-        # Information ratio (assuming benchmark is 0)
-        information_ratio = returns.mean() / returns.std() * np.sqrt(252) if returns.std() != 0 else 0
+        # Information ratio (assuming benchmark is 0) with safe division
+        returns_std = returns.std()
+        information_ratio = returns.mean() / returns_std * np.sqrt(252) if returns_std > 1e-10 else 0
         
-        # Sortino ratio
+        # Sortino ratio with safe division
         downside_returns = returns[returns < 0]
         downside_volatility = downside_returns.std() * np.sqrt(252) if len(downside_returns) > 0 else 0
-        sortino_ratio = (annualized_return - 0.02) / downside_volatility if downside_volatility != 0 else 0
+        sortino_ratio = (annualized_return - 0.02) / downside_volatility if downside_volatility > 1e-10 else 0
         
         return {
             'Total Return': total_return,
@@ -340,8 +356,8 @@ class StrategyOptimizer:
             'Sortino Ratio': sortino_ratio,
             'Information Ratio': information_ratio,
             'Win Rate': win_rate,
-            'Total Trades': trades,
-            'Avg Return per Trade': total_return / trades if trades > 0 else 0
+            'Total Trades': max(trades, 0),
+            'Avg Return per Trade': total_return / trades if trades > 1e-10 else 0
         }
     
     def optimize_strategies(self) -> pd.DataFrame:
