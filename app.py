@@ -16,72 +16,78 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for enhanced UI/UX
+# Custom CSS for QuantConnect-style UI
 st.markdown("""
 <style>
-    /* Global Styling */
+    /* Global Styling - QuantConnect Dark Theme */
+    .stApp {
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #0e1117 100%);
+        color: #ffffff;
+    }
+    
     .main {
         padding-top: 1rem;
     }
     
-    /* Header Styling */
-    .main-header {
-        background: linear-gradient(90deg, #1f77b4, #17becf);
-        padding: 2rem;
-        border-radius: 15px;
-        margin-bottom: 2rem;
-        color: white;
-        text-align: center;
-        box-shadow: 0 4px 20px rgba(31, 119, 180, 0.3);
-        backdrop-filter: blur(10px);
+    /* QuantConnect-style buttons */
+    .stButton > button {
+        background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+        color: #000000;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
     }
     
-    .main-header h1 {
-        margin: 0;
-        font-size: 2.8rem;
-        font-weight: 700;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        background: linear-gradient(45deg, #ffffff, #e3f2fd);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #0099cc 0%, #006699 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
     }
     
-    .main-header p {
-        margin: 1rem 0 0 0;
-        font-size: 1.3rem;
-        opacity: 0.95;
-        font-weight: 300;
+    /* Professional metric cards */
+    [data-testid="metric-container"] {
+        background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
+        border: 1px solid #333344;
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     
-    /* Navigation Cards */
+    /* QuantConnect Strategy Cards */
     .nav-card {
-        background: linear-gradient(135deg, #262730, #3d3d5c);
-        padding: 2rem;
-        border-radius: 15px;
-        margin: 1rem 0;
-        border: 1px solid #404040;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
+        border: 1px solid #333344;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 0.5rem 0;
+        transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
-        text-decoration: none;
-        display: block;
+        cursor: pointer;
     }
     
     .nav-card::before {
         content: '';
         position: absolute;
         top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(31, 119, 180, 0.1), transparent);
-        transition: left 0.6s;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #00d4ff, #0099cc, #006699);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .nav-card:hover {
+        border-color: #00d4ff;
+        box-shadow: 0 8px 25px rgba(0, 212, 255, 0.2);
+        transform: translateY(-2px);
     }
     
     .nav-card:hover::before {
-        left: 100%;
+        opacity: 1;
     }
     
     .nav-card:hover {
@@ -518,8 +524,50 @@ st.set_page_config(
 
 # Main dashboard
 def main_dashboard():
-    # Platform features with modern card design (moved to top)
-    st.markdown("### 🚀 Platform Features")
+    # Hero Section - QuantConnect Style
+    st.markdown("""
+    <div style="text-align: center; margin: 2rem 0 3rem 0;">
+        <h1 style="color: #00d4ff; font-size: 3.5rem; font-weight: 700; margin-bottom: 1rem; text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);">
+            Algorithm Lab
+        </h1>
+        <h2 style="color: #ffffff; font-size: 1.8rem; font-weight: 300; margin-bottom: 2rem;">
+            Advanced Quantitative Finance Platform
+        </h2>
+        <p style="color: #b0b0b0; font-size: 1.2rem; max-width: 800px; margin: 0 auto; line-height: 1.6;">
+            We are dedicated to providing investors with a cutting-edge platform for rapidly creating quant investment strategies. 
+            Build, backtest, and deploy sophisticated trading algorithms with institutional-grade tools and real-time market data.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Quick Actions Section
+    st.markdown("### 🚀 Quick Start")
+    
+    quick_cols = st.columns(4)
+    with quick_cols[0]:
+        if st.button("📊 New Analysis", use_container_width=True, type="primary"):
+            st.switch_page("pages/portfolio_optimization.py")
+    with quick_cols[1]:
+        if st.button("🤖 AI Strategies", use_container_width=True, type="secondary"):
+            st.switch_page("pages/ai_analysis.py")
+    with quick_cols[2]:
+        if st.button("📈 Trading Signals", use_container_width=True, type="secondary"):
+            st.switch_page("pages/trading_strategies.py")
+    with quick_cols[3]:
+        if st.button("📰 Market Intel", use_container_width=True, type="secondary"):
+            st.switch_page("pages/news_and_economic_data.py")
+    
+    st.markdown("---")
+    
+    # Strategy Explorer Section
+    st.markdown("### 🎯 Strategy Explorer")
+    
+    st.markdown("""
+    <p style="color: #b0b0b0; font-size: 1.1rem; margin-bottom: 2rem;">
+    A collection of advanced quantitative strategies and analysis tools. Choose from our comprehensive suite 
+    of financial modeling capabilities to enhance your investment decision-making.
+    </p>
+    """, unsafe_allow_html=True)
     
     # Define platform features
     features = [
@@ -600,20 +648,44 @@ def main_dashboard():
     
     for i, feature in enumerate(features):
         with all_cols[i]:
-            # Create clickable navigation using streamlit button styled as card
+            # QuantConnect-style strategy card
             with st.container():
-                # Display the card visually
                 st.markdown(f"""
                 <div class="nav-card">
-                    <div class="nav-card-icon">{feature['icon']}</div>
-                    <div class="nav-card-title">{feature['title']}</div>
-                    <div class="nav-card-desc">{feature['desc']}</div>
+                    <div class="nav-card-icon" style="font-size: 2.5rem; margin-bottom: 1rem; text-align: center;">{feature['icon']}</div>
+                    <div class="nav-card-title" style="color: #00d4ff; font-size: 1.3rem; font-weight: 600; margin-bottom: 0.8rem; text-align: center;">{feature['title']}</div>
+                    <div class="nav-card-desc" style="color: #b0b0b0; font-size: 0.9rem; line-height: 1.4; text-align: center;">{feature['desc']}</div>
+                    <div style="margin-top: 1rem; text-align: center;">
+                        <span style="color: #00d4ff; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Click to Launch →</span>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Invisible full-width button overlay for navigation
-                if st.button(f"Access {feature['title']}", key=f"card_{i}", use_container_width=True):
+                # Strategy access button
+                if st.button(f"Launch {feature['title']}", key=f"strategy_{i}", use_container_width=True):
                     st.switch_page(feature['page'])
+    
+    # Strategy Templates Section - QuantConnect Style
+    st.markdown("---")
+    st.markdown("### 📋 Strategy Templates")
+    
+    template_cols = st.columns(3)
+    
+    templates = [
+        {"name": "US Equity", "desc": "ETF Basket Pairs Trading, Momentum Strategies", "count": "25+"},
+        {"name": "Alternative Data", "desc": "Sentiment Analysis, News-based Trading", "count": "12+"},
+        {"name": "Futures", "desc": "All-Weather Portfolio, Volatility Trading", "count": "18+"} 
+    ]
+    
+    for i, template in enumerate(templates):
+        with template_cols[i]:
+            st.markdown(f"""
+            <div class="strategy-template">
+                <h4 style="color: #00d4ff; margin: 0 0 0.5rem 0;">{template['name']}</h4>
+                <p style="color: #b0b0b0; margin: 0 0 0.5rem 0; font-size: 0.9rem;">{template['desc']}</p>
+                <span style="color: #00d4ff; font-size: 0.8rem; font-weight: 600;">{template['count']} strategies</span>
+            </div>
+            """, unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -826,6 +898,68 @@ def sidebar_navigation():
     - AI-Powered Analysis
     """)
 
+def create_quantconnect_sidebar():
+    """Create QuantConnect-style sidebar navigation"""
+    with st.sidebar:
+        # Logo/Brand section
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h2 style="color: #00d4ff; margin: 0; font-weight: 700;">Algorithm Lab</h2>
+            <p style="color: #888; font-size: 0.9rem; margin: 0.5rem 0;">v3.0</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Quick Start section
+        st.markdown("#### 🚀 Start")
+        if st.button("📊 New Analysis", key="sidebar_analysis", use_container_width=True):
+            st.switch_page("pages/portfolio_optimization.py")
+        if st.button("🔍 Open Project", key="sidebar_open", use_container_width=True):
+            st.switch_page("pages/trading_strategies.py")
+        if st.button("🎯 Explore Strategies", key="sidebar_explore", use_container_width=True):
+            st.switch_page("pages/ai_pairs_trading.py")
+        
+        st.markdown("---")
+        
+        # Resources section
+        st.markdown("#### 📚 Resources")
+        st.markdown("""
+        - [📖 Learning Center](#)
+        - [👥 Community](#)
+        - [📊 Documentation](#)
+        - [🏆 Quant League](#)
+        """)
+        
+        st.markdown("---")
+        
+        # Account section
+        st.markdown("#### 👤 Your Account")
+        
+        # Account metrics
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Projects", "10")
+        with col2:
+            st.metric("Backtests", "247")
+        
+        # Progress indicators
+        st.markdown("##### 📈 Progress")
+        st.progress(0.8, text="Platform Mastery: 80%")
+        
+        st.markdown("---")
+        
+        # Market status
+        st.markdown("#### 🌍 Market Status")
+        
+        # Simple market indicators
+        market_cols = st.columns(2)
+        with market_cols[0]:
+            st.metric("S&P 500", "5,870", "+0.5%")
+        with market_cols[1]:
+            st.metric("VIX", "14.2", "-2.1%")
+
 if __name__ == "__main__":
-    sidebar_navigation()
+    # Create QuantConnect-style layout
+    create_quantconnect_sidebar()
     main_dashboard()
