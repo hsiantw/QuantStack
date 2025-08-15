@@ -365,43 +365,94 @@ class AIModels:
             scaler = model_result['scaler']
             
             # Use the stored training feature columns for consistency
-            feature_cols = model_result.get('feature_columns', self.get_feature_columns(self.prediction_features))
+            training_feature_cols = model_result.get('feature_columns', [])
             
-            # Ensure we use prediction_features which contains the calculated features
-            # Only use features that exist in both training and prediction data
-            available_features = [col for col in feature_cols if col in self.prediction_features.columns]
-            if not available_features:
+            if not training_feature_cols:
+                raise ValueError("No training feature columns found in model result")
+            
+            # Get prediction features and ensure alignment with training features
+            prediction_feature_cols = self.get_feature_columns(self.prediction_features)
+            
+            # Find common features between training and prediction
+            common_features = [col for col in training_feature_cols if col in prediction_feature_cols]
+            
+            if len(common_features) != len(training_feature_cols):
+                st.warning(f"Feature mismatch detected. Training: {len(training_feature_cols)}, "
+                          f"Prediction: {len(prediction_feature_cols)}, Common: {len(common_features)}")
+                
+                # If there's a significant mismatch, recalculate features to match training
+                if len(common_features) < len(training_feature_cols) * 0.8:  # Less than 80% match
+                    st.info("Recalculating features to match training data...")
+                    self._align_prediction_features_with_training(training_feature_cols)
+                    prediction_feature_cols = self.get_feature_columns(self.prediction_features)
+                    common_features = [col for col in training_feature_cols if col in prediction_feature_cols]
+            
+            # Use only common features for consistency
+            feature_cols = common_features
+            
+            if not feature_cols:
                 raise ValueError("No matching features available between training and prediction data")
             
-            prediction_data = self.prediction_features[available_features].dropna()
-            if prediction_data.empty:
-                raise ValueError("No valid prediction features available")
+            # Get recent data for prediction
+            recent_data = self.prediction_features.dropna()
+            if recent_data.empty:
+                return None
                 
-            last_features = prediction_data.iloc[-1:].values
-            last_features_scaled = scaler.transform(last_features)
+            # Select features in the same order as training
+            X_recent = recent_data[feature_cols].iloc[-1:].values
             
-            # Generate predictions
-            predictions = []
-            current_features = last_features_scaled.copy()
+            # Ensure we have the right number of features
+            if X_recent.shape[1] != len(feature_cols):
+                raise ValueError(f"Feature count mismatch: expected {len(feature_cols)}, got {X_recent.shape[1]}")
             
-            for _ in range(prediction_days):
-                pred = model.predict(current_features)[0]
-                predictions.append(pred)
-                
-                # Update features for next prediction (simplified approach)
-                # In practice, you'd want more sophisticated feature updating
-                current_features = current_features.copy()
+            # Scale features if needed
+            try:
+                # Try to use the scaler if it was fitted during training
+                X_recent_scaled = scaler.transform(X_recent)
+            except Exception:
+                # If scaling fails, use unscaled data
+                X_recent_scaled = X_recent
             
-            # Create prediction series
-            last_date = self.prediction_features.index[-1]
-            prediction_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), 
-                                           periods=prediction_days, freq='D')
+            # Generate prediction
+            prediction = model.predict(X_recent_scaled)[0]
             
-            return pd.Series(predictions, index=prediction_dates)
+            return prediction
             
         except Exception as e:
-            st.error(f"Error generating predictions: {str(e)}")
+            # More specific error information
+            error_details = f"Feature columns error: {str(e)}"
+            if 'feature_columns' in model_result:
+                training_feature_count = len(model_result['feature_columns'])
+                prediction_feature_count = len(self.get_feature_columns(self.prediction_features))
+                error_details += f" (Training features: {training_feature_count}, "
+                error_details += f"Prediction features: {prediction_feature_count})"
+            st.error(f"Error generating predictions: {error_details}")
             return None
+    
+    def _align_prediction_features_with_training(self, training_feature_cols):
+        """
+        Align prediction features with training features by recalculating missing features
+        
+        Args:
+            training_feature_cols (list): List of feature columns from training
+        """
+        try:
+            # Recalculate features for prediction data
+            self.prediction_features = self._calculate_features(self.data.copy())
+            
+            # Check which training features are still missing
+            missing_features = [col for col in training_feature_cols if col not in self.prediction_features.columns]
+            
+            if missing_features:
+                st.warning(f"Still missing features after recalculation: {missing_features}")
+                
+                # Add missing features with default values (zeros) to maintain shape
+                for feature in missing_features:
+                    self.prediction_features[feature] = 0.0
+                    
+        except Exception as e:
+            st.error(f"Error aligning features: {str(e)}")
+
     
     def plot_model_performance(self, model_result, model_name="Model"):
         """
