@@ -463,7 +463,7 @@ def get_most_recent_price(ticker, periods=["2d", "5d", "1mo", "3mo"]):
     for period in periods:
         try:
             data = yf.download(ticker, period=period, interval="1d", progress=False)
-            if not data.empty and len(data) >= 1:
+            if data is not None and not data.empty and len(data) >= 1:
                 current_price = data['Close'].iloc[-1]
                 
                 # Try to get previous price for change calculation
@@ -474,7 +474,7 @@ def get_most_recent_price(ticker, periods=["2d", "5d", "1mo", "3mo"]):
                     try:
                         ticker_obj = yf.Ticker(ticker)
                         info = ticker_obj.info
-                        if 'previousClose' in info and info['previousClose']:
+                        if info and 'previousClose' in info and info['previousClose']:
                             previous_price = info['previousClose']
                         else:
                             previous_price = current_price  # No change calculation possible
@@ -814,7 +814,7 @@ def main_dashboard():
             for period in periods_to_try:
                 try:
                     hist = yf.download(ticker, period=period, progress=False)
-                    if not hist.empty:
+                    if hist is not None and not hist.empty:
                         break
                 except:
                     continue
@@ -843,35 +843,74 @@ def main_dashboard():
                     st.plotly_chart(fig, use_container_width=True)
                 
                 with col2:
-                    # Metrics
+                    # Metrics with better error handling
                     try:
-                        current_price = hist['Close'].iloc[-1]
-                        previous_price = hist['Close'].iloc[-2] if len(hist) > 1 else hist['Close'].iloc[0]
-                        
-                        change = current_price - previous_price
-                        change_pct = (change / previous_price) * 100 if previous_price != 0 else 0
-                        
-                        st.metric(
-                            label="Current Price",
-                            value=f"${current_price:.2f}",
-                            delta=f"{change:.2f} ({change_pct:+.2f}%)"
-                        )
-                        
-                        # Additional metrics
-                        high_52w = hist['High'].rolling(window=252).max().iloc[-1] if len(hist) >= 252 else hist['High'].max()
-                        low_52w = hist['Low'].rolling(window=252).min().iloc[-1] if len(hist) >= 252 else hist['Low'].min()
-                        
-                        st.metric("52W High", f"${high_52w:.2f}")
-                        st.metric("52W Low", f"${low_52w:.2f}")
-                        
-                        if len(hist) >= 20:
-                            volatility = hist['Close'].pct_change().rolling(window=20).std().iloc[-1] * (252**0.5)
-                            st.metric("Annualized Volatility", f"{volatility:.1%}")
+                        if hist is not None and not hist.empty and len(hist) > 0:
+                            current_price = float(hist['Close'].iloc[-1])
+                            previous_price = float(hist['Close'].iloc[-2]) if len(hist) > 1 else float(hist['Close'].iloc[0])
+                            
+                            change = current_price - previous_price
+                            change_pct = (change / previous_price) * 100 if previous_price != 0 else 0
+                            
+                            st.metric(
+                                label="Current Price",
+                                value=f"${current_price:.2f}",
+                                delta=f"{change:.2f} ({change_pct:+.2f}%)"
+                            )
+                            
+                            # Additional metrics with safety checks
+                            try:
+                                high_period = float(hist['High'].max())
+                                low_period = float(hist['Low'].min())
+                                
+                                st.metric("Period High", f"${high_period:.2f}")
+                                st.metric("Period Low", f"${low_period:.2f}")
+                                
+                                # Volume metric
+                                if 'Volume' in hist.columns:
+                                    avg_volume = hist['Volume'].mean()
+                                    if not pd.isna(avg_volume):
+                                        st.metric("Avg Volume", f"{avg_volume:,.0f}")
+                                    else:
+                                        st.metric("Avg Volume", "N/A")
+                                else:
+                                    st.metric("Avg Volume", "N/A")
+                                
+                                # Volatility calculation with proper error handling
+                                if len(hist) >= 20:
+                                    returns = hist['Close'].pct_change().dropna()
+                                    if len(returns) > 1:
+                                        volatility = returns.std() * (252**0.5)
+                                        if not pd.isna(volatility):
+                                            st.metric("Annualized Volatility", f"{volatility:.1%}")
+                                        else:
+                                            st.metric("Annualized Volatility", "N/A")
+                                    else:
+                                        st.metric("Annualized Volatility", "N/A")
+                                else:
+                                    st.metric("Annualized Volatility", "N/A")
+                                    
+                            except Exception as metric_error:
+                                st.metric("Period High", "N/A")
+                                st.metric("Period Low", "N/A") 
+                                st.metric("Avg Volume", "N/A")
+                                st.metric("Annualized Volatility", "N/A")
                         else:
+                            # Fallback metrics
+                            st.metric("Current Price", "N/A")
+                            st.metric("Period High", "N/A")
+                            st.metric("Period Low", "N/A")
+                            st.metric("Avg Volume", "N/A")
                             st.metric("Annualized Volatility", "N/A")
                             
                     except Exception as e:
-                        st.error("Unable to calculate some metrics")
+                        st.error(f"Error calculating metrics: {str(e)}")
+                        # Show basic placeholder metrics
+                        st.metric("Current Price", "N/A")
+                        st.metric("Period High", "N/A")
+                        st.metric("Period Low", "N/A")
+                        st.metric("Avg Volume", "N/A")
+                        st.metric("Annualized Volatility", "N/A")
                     
             else:
                 # Try to get basic price info even if historical data fails
