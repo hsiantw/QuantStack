@@ -41,7 +41,7 @@ Preferred communication style: Simple, everyday language.
 - **Portfolio Optimization**: Modern Portfolio Theory with efficient frontier calculation.
 - **Statistical Arbitrage**: Cointegration analysis and pair trading opportunity identification, including AI-optimized strategy application for cointegrated pairs.
 - **Time Series Analysis**: ARIMA modeling, seasonality detection, and stationarity testing.
-- **Trading Strategies**: Multiple strategy implementations with comprehensive backtesting capabilities and systematic comparison of 15+ trading strategies.
+- **Trading Strategies**: Multiple strategy implementations with comprehensive backtesting capabilities and systematic comparison of 15+ trading strategies, now supporting intraday backtesting with 1-hour and 4-hour intervals in addition to daily timeframes.
 - **Mean Reversion Strategies**: Professional-grade implementation featuring 6 mathematical approaches: Bollinger Bands, RSI, Ornstein-Uhlenbeck, Kalman Filter, Ensemble, and Adaptive strategies.
 - **Market Analysis**: Includes Money Flow Index, Accumulation/Distribution Line, On-Balance Volume, liquidity metrics, dark pool activity detection, and volume profile analysis.
 - **Cryptocurrency Analysis**: Fear & Greed index, on-chain metrics, DeFi ecosystem analysis, correlation analysis, and specialized crypto trading strategies.

@@ -60,19 +60,36 @@ if selected_category:
     if st.sidebar.button(f"Analyze {selected_ticker}"):
         ticker_input = selected_ticker
 
-# Time period selection
-period_options = {
-    "1 Year": "1y",
-    "2 Years": "2y",
-    "3 Years": "3y",
-    "5 Years": "5y"
+# Time period and interval selection
+st.sidebar.subheader("📊 Timeframe Configuration")
+
+# Timeframe selection with interval support
+timeframe_options = {
+    "1 Hour (30 days)": {"period": "30d", "interval": "1h"},
+    "4 Hours (60 days)": {"period": "60d", "interval": "4h"}, 
+    "Daily (1 Year)": {"period": "1y", "interval": "1d"},
+    "Daily (2 Years)": {"period": "2y", "interval": "1d"},
+    "Daily (3 Years)": {"period": "3y", "interval": "1d"},
+    "Daily (5 Years)": {"period": "5y", "interval": "1d"}
 }
 
-selected_period = st.sidebar.selectbox(
-    "Backtest Period",
-    list(period_options.keys()),
-    index=2
+selected_timeframe = st.sidebar.selectbox(
+    "Backtest Timeframe",
+    list(timeframe_options.keys()),
+    index=2,
+    help="Choose timeframe - intraday (1h, 4h) or daily backtesting"
 )
+
+# Extract period and interval from selection
+period_config = timeframe_options[selected_timeframe]
+selected_period = period_config["period"]
+selected_interval = period_config["interval"]
+
+# Display timeframe info
+if selected_interval in ["1h", "4h"]:
+    st.sidebar.info(f"📈 Intraday backtesting: {selected_interval} bars over {selected_period}")
+else:
+    st.sidebar.info(f"📊 Daily backtesting: {selected_interval} bars over {selected_period}")
 
 # Analysis Mode Selection
 st.sidebar.subheader("Analysis Mode")
@@ -195,9 +212,8 @@ with st.spinner(f"Fetching data for {ticker_input}..."):
             st.error(f"Invalid ticker: {ticker_input}")
             st.stop()
         
-        # Fetch OHLCV data
-        period = period_options[selected_period]
-        price_data = DataFetcher.get_stock_data(ticker_input, period=period)
+        # Fetch OHLCV data with interval support
+        price_data = DataFetcher.get_stock_data(ticker_input, period=selected_period, interval=selected_interval)
         
         if price_data.empty:
             st.error(f"Unable to fetch data for {ticker_input}")
@@ -248,15 +264,28 @@ if stock_info:
         st.metric("Current Price", f"${current_price:.2f}")
     
     with col2:
-        daily_change = (ohlcv_data['Close'].iloc[-1] - ohlcv_data['Close'].iloc[-2]) / ohlcv_data['Close'].iloc[-2]
-        st.metric("Daily Change", f"{daily_change:.2%}")
+        recent_change = (ohlcv_data['Close'].iloc[-1] - ohlcv_data['Close'].iloc[-2]) / ohlcv_data['Close'].iloc[-2]
+        if selected_interval in ["1h", "4h"]:
+            st.metric(f"Last {selected_interval} Change", f"{recent_change:.2%}")
+        else:
+            st.metric("Daily Change", f"{recent_change:.2%}")
     
     with col3:
         period_return = (ohlcv_data['Close'].iloc[-1] - ohlcv_data['Close'].iloc[0]) / ohlcv_data['Close'].iloc[0]
-        st.metric(f"{selected_period} Return", f"{period_return:.2%}")
+        st.metric(f"Period Return", f"{period_return:.2%}")
     
     with col4:
-        volatility = ohlcv_data['Close'].pct_change().std() * np.sqrt(252)
+        # Adjust volatility calculation based on interval
+        returns = ohlcv_data['Close'].pct_change().dropna()
+        if selected_interval == "1h":
+            # 24 hours * 365 days for 1h data (approximate)
+            volatility = returns.std() * np.sqrt(24 * 365)
+        elif selected_interval == "4h":
+            # 6 periods * 365 days for 4h data (approximate)
+            volatility = returns.std() * np.sqrt(6 * 365)
+        else:
+            # Standard daily volatility (252 trading days)
+            volatility = returns.std() * np.sqrt(252)
         st.metric("Annualized Volatility", f"{volatility:.2%}")
 
 # Main Analysis Section
@@ -559,15 +588,29 @@ if analysis_mode == "📊 Traditional Backtesting":
     if strategy_results:
         comparison_data = []
         
-        # Add Buy & Hold baseline
+        # Add Buy & Hold baseline - adjusted for different intervals
         buy_hold_return = (ohlcv_data['Close'].iloc[-1] - ohlcv_data['Close'].iloc[0]) / ohlcv_data['Close'].iloc[0]
-        buy_hold_volatility = ohlcv_data['Close'].pct_change().std() * np.sqrt(252)
-        buy_hold_sharpe = (buy_hold_return * 252/len(ohlcv_data) - 0.02) / buy_hold_volatility if buy_hold_volatility != 0 else 0
+        
+        # Adjust volatility and annualization based on interval
+        returns = ohlcv_data['Close'].pct_change().dropna()
+        if selected_interval == "1h":
+            scaling_factor = 24 * 365  # 24 hours * 365 days
+            periods_per_year = 24 * 365
+        elif selected_interval == "4h":
+            scaling_factor = 6 * 365  # 6 periods * 365 days
+            periods_per_year = 6 * 365
+        else:
+            scaling_factor = 252  # Standard daily
+            periods_per_year = 252
+            
+        buy_hold_volatility = returns.std() * np.sqrt(scaling_factor)
+        buy_hold_annualized_return = buy_hold_return * periods_per_year / len(ohlcv_data)
+        buy_hold_sharpe = (buy_hold_annualized_return - 0.02) / buy_hold_volatility if buy_hold_volatility != 0 else 0
         
         comparison_data.append({
             "Strategy": "Buy & Hold",
             "Total Return": f"{buy_hold_return:.2%}",
-            "Annualized Return": f"{buy_hold_return * 252/len(ohlcv_data):.2%}",
+            "Annualized Return": f"{buy_hold_annualized_return:.2%}",
             "Volatility": f"{buy_hold_volatility:.2%}",
             "Sharpe Ratio": f"{buy_hold_sharpe:.3f}",
             "Max Drawdown": "N/A",
