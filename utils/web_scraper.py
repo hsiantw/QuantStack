@@ -14,4 +14,4 @@ def get_website_text_content(url: str) -> str:
     # Send a request to the website
     downloaded = trafilatura.fetch_url(url)
     text = trafilatura.extract(downloaded)
-    return text
+    return text or ""  # Return empty string if None

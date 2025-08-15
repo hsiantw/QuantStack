@@ -115,10 +115,15 @@ class AIModels:
             bb_width = data['BB_Upper'] - data['BB_Lower']
             data['BB_Position'] = (data['Close'] - data['BB_Lower']) / np.where(bb_width != 0, bb_width, 1e-6)
         
-            # Volume indicators
-            if 'Volume' in data.columns:
+            # Volume indicators (always include to maintain consistent features)
+            if 'Volume' in data.columns and not data['Volume'].isna().all():
                 data['Volume_MA_10'] = data['Volume'].rolling(window=10).mean()
                 data['Volume_Ratio'] = data['Volume'] / np.where(data['Volume_MA_10'] != 0, data['Volume_MA_10'], 1e-6)
+            else:
+                # Add dummy volume features for consistency if volume data is missing
+                avg_price = data['Close'].mean()
+                data['Volume_MA_10'] = avg_price * 1000  # Dummy volume based on price
+                data['Volume_Ratio'] = 1.0  # Neutral ratio
             
             # Lag features
             for lag in range(1, 6):
@@ -151,12 +156,19 @@ class AIModels:
         feature_cols = [col for col in data.columns if col not in excluded_cols]
         
         # Validate that we have the expected feature columns
+        # Build expected features list dynamically
         expected_features = [
             'Returns', 'Log_Returns', 'High_Low_Ratio', 'Close_Open_Ratio',
             'MA_5', 'MA_Ratio_5', 'MA_10', 'MA_Ratio_10', 'MA_20', 'MA_Ratio_20', 'MA_50', 'MA_Ratio_50',
             'Volatility_5', 'Volatility_10', 'Volatility_20', 'RSI',
             'BB_Upper', 'BB_Lower', 'BB_Position', 'Volume_MA_10', 'Volume_Ratio'
         ]
+        
+        # Add lag features to expected list
+        for lag in range(1, 6):
+            expected_features.extend([f'Return_Lag_{lag}', f'Price_Lag_{lag}'])
+            
+        expected_features = list(set(expected_features))  # Remove duplicates
         
         # Check if key features exist
         missing_features = [f for f in expected_features if f not in data.columns]
@@ -423,6 +435,54 @@ class AIModels:
             error_details = f"Feature columns error: {str(e)}"
             if 'feature_columns' in model_result:
                 training_feature_count = len(model_result['feature_columns'])
+                prediction_feature_count = len(self.get_feature_columns(self.prediction_features))
+                error_details += f" (Training features: {training_feature_count}, Prediction features: {prediction_feature_count})"
+            
+            st.error(f"Error generating predictions: {error_details}")
+            return None
+    
+    def _align_prediction_features_with_training(self, training_feature_cols):
+        """Ensure prediction features match training features exactly"""
+        try:
+            # Get current prediction features
+            current_features = self.get_feature_columns(self.prediction_features)
+            
+            # Find missing features in prediction data
+            missing_features = [col for col in training_feature_cols if col not in current_features]
+            
+            if missing_features:
+                st.info(f"Adding missing features: {missing_features}")
+                
+                # Add missing volume features if needed
+                if 'Volume_MA_10' in missing_features or 'Volume_Ratio' in missing_features:
+                    if 'Volume' not in self.prediction_features.columns:
+                        # Add dummy volume if missing
+                        self.prediction_features['Volume'] = self.prediction_features['Close'] * 1000
+                    
+                    if 'Volume_MA_10' not in self.prediction_features.columns:
+                        self.prediction_features['Volume_MA_10'] = self.prediction_features['Volume'].rolling(window=10).mean()
+                    if 'Volume_Ratio' not in self.prediction_features.columns:
+                        volume_ma = self.prediction_features['Volume_MA_10']
+                        self.prediction_features['Volume_Ratio'] = self.prediction_features['Volume'] / np.where(volume_ma != 0, volume_ma, 1e-6)
+                
+                # Add missing lag features
+                for missing_col in missing_features:
+                    if missing_col.startswith('Return_Lag_'):
+                        lag = int(missing_col.split('_')[-1])
+                        if 'Returns' in self.prediction_features.columns:
+                            self.prediction_features[missing_col] = self.prediction_features['Returns'].shift(lag)
+                    elif missing_col.startswith('Price_Lag_'):
+                        lag = int(missing_col.split('_')[-1])
+                        self.prediction_features[missing_col] = self.prediction_features['Close'].shift(lag)
+                    elif missing_col not in self.prediction_features.columns:
+                        # Fill with zeros or calculated values for other missing features
+                        self.prediction_features[missing_col] = 0
+                
+                # Replace infinite values
+                self.prediction_features = self.prediction_features.replace([np.inf, -np.inf], np.nan)
+                
+        except Exception as e:
+            st.error(f"Error aligning features: {str(e)}")
                 prediction_feature_count = len(self.get_feature_columns(self.prediction_features))
                 error_details += f" (Training features: {training_feature_count}, "
                 error_details += f"Prediction features: {prediction_feature_count})"
