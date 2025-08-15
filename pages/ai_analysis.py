@@ -883,22 +883,52 @@ Result = {best_strategy['win_rate']:.1f}%
                     periods = optimization_results['backtest_periods']
                     st.write("**Testing Periods:**")
                     for period_name, metrics in periods.items():
-                        st.write(f"• **{period_name}:** Sharpe {metrics.get('sharpe', 'N/A'):.2f}, Drawdown {metrics.get('max_dd', 'N/A'):.1%}")
+                        sharpe_val = metrics.get('sharpe', 0)
+                        dd_val = metrics.get('max_dd', 0)
+                        if isinstance(sharpe_val, (int, float)) and isinstance(dd_val, (int, float)):
+                            st.write(f"• **{period_name}:** Sharpe {sharpe_val:.2f}, Drawdown {dd_val:.1%}")
+                        else:
+                            st.write(f"• **{period_name}:** Sharpe {sharpe_val}, Drawdown {dd_val}")
                 
                 st.markdown("### 🎲 Risk Assessment")
                 
                 st.write("**Monte Carlo Analysis Results:**")
                 if 'monte_carlo' in optimization_results:
                     mc_results = optimization_results['monte_carlo']
-                    st.write(f"• **95% Confidence Interval:** {mc_results.get('ci_lower', 'N/A'):.1%} to {mc_results.get('ci_upper', 'N/A'):.1%} annual return")
-                    st.write(f"• **Probability of Loss:** {mc_results.get('prob_loss', 'N/A'):.1%}")
-                    st.write(f"• **Value at Risk (5%):** {mc_results.get('var_5', 'N/A'):.1%}")
+                    ci_lower = mc_results.get('ci_lower', 0)
+                    ci_upper = mc_results.get('ci_upper', 0)
+                    prob_loss = mc_results.get('prob_loss', 0)
+                    var_5 = mc_results.get('var_5', 0)
+                    
+                    if isinstance(ci_lower, (int, float)) and isinstance(ci_upper, (int, float)):
+                        st.write(f"• **95% Confidence Interval:** {ci_lower:.1%} to {ci_upper:.1%} annual return")
+                    else:
+                        st.write(f"• **95% Confidence Interval:** {ci_lower} to {ci_upper} annual return")
+                    
+                    if isinstance(prob_loss, (int, float)):
+                        st.write(f"• **Probability of Loss:** {prob_loss:.1%}")
+                    else:
+                        st.write(f"• **Probability of Loss:** {prob_loss}")
+                    
+                    if isinstance(var_5, (int, float)):
+                        st.write(f"• **Value at Risk (5%):** {var_5:.1%}")
+                    else:
+                        st.write(f"• **Value at Risk (5%):** {var_5}")
                 else:
                     # Calculate basic risk metrics
                     annual_vol = optimization_results.get('annual_volatility', 0.2)
-                    st.write(f"• **Annual Volatility:** {annual_vol:.1%}")
-                    st.write(f"• **Estimated VaR (5%):** {-1.645 * annual_vol:.1%} (normal distribution assumption)")
-                    st.write(f"• **Risk-Adjusted Return:** {best_strategy['annual_return'] / annual_vol:.2f}x return-to-risk ratio")
+                    if isinstance(annual_vol, (int, float)):
+                        st.write(f"• **Annual Volatility:** {annual_vol:.1%}")
+                        st.write(f"• **Estimated VaR (5%):** {-1.645 * annual_vol:.1%} (normal distribution assumption)")
+                        annual_return = best_strategy.get('annual_return', 0)
+                        if isinstance(annual_return, (int, float)) and annual_vol != 0:
+                            st.write(f"• **Risk-Adjusted Return:** {annual_return / annual_vol:.2f}x return-to-risk ratio")
+                        else:
+                            st.write(f"• **Risk-Adjusted Return:** N/A")
+                    else:
+                        st.write(f"• **Annual Volatility:** {annual_vol}")
+                        st.write(f"• **Estimated VaR (5%):** N/A")
+                        st.write(f"• **Risk-Adjusted Return:** N/A")
             
             # Show comparison with other tested strategies
             if 'all_strategies' in optimization_results and len(optimization_results['all_strategies']) > 1:
