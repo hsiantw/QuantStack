@@ -299,15 +299,24 @@ class RiskMetrics:
         
         # Rolling Maximum Drawdown
         rolling_max_dd = []
-        for i in range(window, len(returns_series)):
+        for i in range(window, len(returns_series) + 1):  # Include the last point
             period_returns = returns_series.iloc[i-window:i]
             cumulative = (1 + period_returns).cumprod()
             rolling_max = cumulative.expanding().max()
             drawdown = (cumulative - rolling_max) / rolling_max
             rolling_max_dd.append(drawdown.min())
         
-        # Pad with NaN for the initial period
+        # Pad with NaN for the initial period to match index length
         rolling_max_dd = [np.nan] * (window - 1) + rolling_max_dd
+        
+        # Ensure the length matches the index
+        if len(rolling_max_dd) != len(rolling_metrics.index):
+            # Truncate or pad as needed
+            if len(rolling_max_dd) > len(rolling_metrics.index):
+                rolling_max_dd = rolling_max_dd[:len(rolling_metrics.index)]
+            else:
+                rolling_max_dd.extend([np.nan] * (len(rolling_metrics.index) - len(rolling_max_dd)))
+                
         rolling_metrics['Rolling_Max_Drawdown'] = rolling_max_dd
         
         return rolling_metrics.dropna()
@@ -402,27 +411,36 @@ class RiskMetrics:
             vertical_spacing=0.1
         )
         
-        fig_dd.add_trace(
-            go.Scatter(
-                x=dd_metrics['Cumulative_Returns'].index,
-                y=dd_metrics['Cumulative_Returns'],
-                mode='lines',
-                name='Cumulative Returns'
-            ),
-            row=1, col=1
-        )
+        # Use the correct keys from the actual method return
+        cumulative_returns = dd_metrics.get('Cumulative_Returns', dd_metrics.get('cumulative_returns', pd.Series()))
+        drawdown_series = dd_metrics.get('Drawdown_Series', dd_metrics.get('drawdown_series', pd.Series()))
         
-        fig_dd.add_trace(
-            go.Scatter(
-                x=dd_metrics['Drawdown_Series'].index,
-                y=dd_metrics['Drawdown_Series'] * 100,
-                mode='lines',
-                name='Drawdown (%)',
-                fill='tonexty',
-                line=dict(color='red')
-            ),
-            row=2, col=1
-        )
+        if not cumulative_returns.empty and not drawdown_series.empty:
+            fig_dd.add_trace(
+                go.Scatter(
+                    x=cumulative_returns.index,
+                    y=cumulative_returns,
+                    mode='lines',
+                    name='Cumulative Returns'
+                ),
+                row=1, col=1
+            )
+            
+            fig_dd.add_trace(
+                go.Scatter(
+                    x=drawdown_series.index,
+                    y=drawdown_series * 100,
+                    mode='lines',
+                    name='Drawdown (%)',
+                    fill='tonexty',
+                    line=dict(color='red')
+                ),
+                row=2, col=1
+            )
+        else:
+            # Add empty traces if data is missing
+            fig_dd.add_trace(go.Scatter(x=[], y=[], mode='lines', name='Cumulative Returns'), row=1, col=1)
+            fig_dd.add_trace(go.Scatter(x=[], y=[], mode='lines', name='Drawdown (%)'), row=2, col=1)
         
         fig_dd.update_layout(
             title='Drawdown Analysis',
@@ -434,36 +452,49 @@ class RiskMetrics:
         
         # 3. Rolling risk metrics
         if len(returns_series) > 252:
-            rolling_metrics = self.rolling_risk_metrics()
-            
-            fig_rolling = make_subplots(
-                rows=3, cols=1,
-                subplot_titles=['Rolling Volatility', 'Rolling VaR (95%)', 'Rolling Sharpe Ratio'],
-                vertical_spacing=0.08
-            )
-            
-            fig_rolling.add_trace(
-                go.Scatter(x=rolling_metrics.index, y=rolling_metrics['Rolling_Volatility'], name='Volatility'),
-                row=1, col=1
-            )
-            
-            fig_rolling.add_trace(
-                go.Scatter(x=rolling_metrics.index, y=rolling_metrics['Rolling_VaR_95'], name='VaR 95%'),
-                row=2, col=1
-            )
-            
-            fig_rolling.add_trace(
-                go.Scatter(x=rolling_metrics.index, y=rolling_metrics['Rolling_Sharpe'], name='Sharpe Ratio'),
-                row=3, col=1
-            )
-            
-            fig_rolling.update_layout(
-                title='Rolling Risk Metrics',
-                height=700,
-                showlegend=False
-            )
-            
-            plots['rolling_metrics'] = fig_rolling
+            try:
+                rolling_metrics = self.rolling_risk_metrics()
+                
+                if not rolling_metrics.empty:
+                    fig_rolling = make_subplots(
+                        rows=3, cols=1,
+                        subplot_titles=['Rolling Volatility', 'Rolling VaR (95%)', 'Rolling Sharpe Ratio'],
+                        vertical_spacing=0.08
+                    )
+                    
+                    # Add traces with error handling for length mismatches
+                    if 'Rolling_Volatility' in rolling_metrics.columns:
+                        vol_data = rolling_metrics['Rolling_Volatility'].dropna()
+                        fig_rolling.add_trace(
+                            go.Scatter(x=vol_data.index, y=vol_data.values, name='Volatility'),
+                            row=1, col=1
+                        )
+                    
+                    if 'Rolling_VaR_95' in rolling_metrics.columns:
+                        var_data = rolling_metrics['Rolling_VaR_95'].dropna()
+                        fig_rolling.add_trace(
+                            go.Scatter(x=var_data.index, y=var_data.values, name='VaR 95%'),
+                            row=2, col=1
+                        )
+                    
+                    if 'Rolling_Sharpe' in rolling_metrics.columns:
+                        sharpe_data = rolling_metrics['Rolling_Sharpe'].dropna()
+                        fig_rolling.add_trace(
+                            go.Scatter(x=sharpe_data.index, y=sharpe_data.values, name='Sharpe Ratio'),
+                            row=3, col=1
+                        )
+                    
+                    fig_rolling.update_layout(
+                        title='Rolling Risk Metrics',
+                        height=700,
+                        showlegend=False
+                    )
+                    
+                    plots['rolling_metrics'] = fig_rolling
+                    
+            except Exception as e:
+                st.error(f"Error creating rolling metrics plot: {str(e)}")
+                # Continue without this plot
         
         # 4. Correlation heatmap (for multi-asset portfolios)
         if not isinstance(self.returns, pd.Series):
