@@ -725,23 +725,7 @@ def main_dashboard():
             with cols[i % 2]:
                 create_feature_card(feature["icon"], feature["title"], feature["desc"], "Explore", feature["page"])
 
-def create_feature_card(icon, title, desc, button_text, page):
-    """Create a feature navigation card with QuantConnect styling"""
-    st.markdown(f"""
-    <div class="nav-card">
-        <div class="nav-card-icon" style="font-size: 2.5rem; margin-bottom: 1rem; text-align: center;">{icon}</div>
-        <div class="nav-card-title" style="color: #00d4ff; font-size: 1.3rem; font-weight: 600; margin-bottom: 0.8rem; text-align: center;">{title}</div>
-        <div class="nav-card-desc" style="color: #b0b0b0; font-size: 0.9rem; line-height: 1.4; text-align: center;">{desc}</div>
-        <div style="margin-top: 1rem; text-align: center;">
-            <span style="color: #00d4ff; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Click to {button_text} →</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if st.button(f"{button_text} {title}", key=f"card_{title.replace(' ', '_').replace('&', 'and')}", use_container_width=True):
-        st.switch_page(page)
-
-    # Strategy Templates Section - QuantConnect Style
+    # Strategy Templates Section - QuantConnect Style  
     st.markdown("---")
     st.markdown("### 📋 Strategy Templates")
     
@@ -780,48 +764,12 @@ def create_feature_card(icon, title, desc, button_text, page):
         "DAX": "^GDAXI"
     }
     
-    # Display in two rows of 4 columns each
-    st.subheader("🇺🇸 US Markets")
-    col1, col2, col3, col4 = st.columns(4)
-    us_indices = list(indices.items())[:4]
-    
+    # Display indices in a responsive grid
     try:
-        for i, (name, ticker) in enumerate(us_indices):
-            with [col1, col2, col3, col4][i]:
-                current_price, prev_price, success = get_most_recent_price(ticker)
-                
-                if success and current_price is not None:
-                    try:
-                        change = current_price - prev_price
-                        change_pct = (change / prev_price) * 100 if prev_price != 0 else 0
-                        
-                        st.metric(
-                            label=name,
-                            value=f"{current_price:.2f}",
-                            delta=f"{change_pct:+.2f}%"
-                        )
-                    except:
-                        st.metric(
-                            label=name,
-                            value=f"{current_price:.2f}",
-                            delta="N/A"
-                        )
-                else:
-                    st.metric(
-                        label=name,
-                        value="N/A",
-                        delta="Data unavailable"
-                    )
-    except Exception as e:
-        st.error(f"Error loading US market data: {str(e)}")
-    
-    st.subheader("🌍 International Markets")  
-    col5, col6, col7, col8 = st.columns(4)
-    intl_indices = list(indices.items())[4:]
-    
-    try:
-        for i, (name, ticker) in enumerate(intl_indices):
-            with [col5, col6, col7, col8][i]:
+        cols = st.columns(4)
+        
+        for i, (name, ticker) in enumerate(indices.items()):
+            with cols[i % 4]:
                 current_price, prev_price, success = get_most_recent_price(ticker)
                 
                 if success and current_price is not None:
@@ -895,29 +843,30 @@ def create_feature_card(icon, title, desc, button_text, page):
                     st.plotly_chart(fig, use_container_width=True)
                 
                 with col2:
-                    # Key metrics using most recent data
-                    current_price, prev_price, price_success = get_most_recent_price(ticker)
-                    
-                    if price_success and current_price:
-                        st.metric("Current Price", f"${current_price:.2f}")
-                    else:
-                        st.metric("Current Price", "N/A")
-                    
-                    # Calculate metrics from available historical data
+                    # Metrics
                     try:
-                        year_high = hist['High'].max()
-                        year_low = hist['Low'].min()
-                        avg_volume = hist['Volume'].mean()
+                        current_price = hist['Close'].iloc[-1]
+                        previous_price = hist['Close'].iloc[-2] if len(hist) > 1 else hist['Close'].iloc[0]
                         
-                        st.metric("Period High", f"${year_high:.2f}")
-                        st.metric("Period Low", f"${year_low:.2f}")
-                        st.metric("Avg Volume", f"{avg_volume:,.0f}")
+                        change = current_price - previous_price
+                        change_pct = (change / previous_price) * 100 if previous_price != 0 else 0
                         
-                        # Calculate volatility
-                        returns = hist['Close'].pct_change().dropna()
-                        if len(returns) > 1:
-                            volatility = returns.std() * np.sqrt(252) * 100
-                            st.metric("Annualized Volatility", f"{volatility:.2f}%")
+                        st.metric(
+                            label="Current Price",
+                            value=f"${current_price:.2f}",
+                            delta=f"{change:.2f} ({change_pct:+.2f}%)"
+                        )
+                        
+                        # Additional metrics
+                        high_52w = hist['High'].rolling(window=252).max().iloc[-1] if len(hist) >= 252 else hist['High'].max()
+                        low_52w = hist['Low'].rolling(window=252).min().iloc[-1] if len(hist) >= 252 else hist['Low'].min()
+                        
+                        st.metric("52W High", f"${high_52w:.2f}")
+                        st.metric("52W Low", f"${low_52w:.2f}")
+                        
+                        if len(hist) >= 20:
+                            volatility = hist['Close'].pct_change().rolling(window=20).std().iloc[-1] * (252**0.5)
+                            st.metric("Annualized Volatility", f"{volatility:.1%}")
                         else:
                             st.metric("Annualized Volatility", "N/A")
                             
@@ -942,6 +891,22 @@ def create_feature_card(icon, title, desc, button_text, page):
                 
         except Exception as e:
             st.error(f"Error analyzing ticker {ticker}: {str(e)}")
+
+def create_feature_card(icon, title, desc, button_text, page):
+    """Create a feature navigation card with QuantConnect styling"""
+    st.markdown(f"""
+    <div class="nav-card">
+        <div class="nav-card-icon" style="font-size: 2.5rem; margin-bottom: 1rem; text-align: center;">{icon}</div>
+        <div class="nav-card-title" style="color: #00d4ff; font-size: 1.3rem; font-weight: 600; margin-bottom: 0.8rem; text-align: center;">{title}</div>
+        <div class="nav-card-desc" style="color: #b0b0b0; font-size: 0.9rem; line-height: 1.4; text-align: center;">{desc}</div>
+        <div style="margin-top: 1rem; text-align: center;">
+            <span style="color: #00d4ff; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;">Click to {button_text} →</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button(f"{button_text} {title}", key=f"card_{title.replace(' ', '_').replace('&', 'and')}", use_container_width=True):
+        st.switch_page(page)
 
 # Sidebar navigation
 def sidebar_navigation():
