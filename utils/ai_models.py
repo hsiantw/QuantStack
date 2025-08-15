@@ -73,60 +73,96 @@ class AIModels:
     def _calculate_features(self, data):
         """Calculate features for a given dataset"""
         
-        # Price-based features
-        data['Returns'] = data['Close'].pct_change()
-        data['Log_Returns'] = np.log(data['Close'] / data['Close'].shift(1))
-        data['High_Low_Ratio'] = data['High'] / data['Low']
-        data['Close_Open_Ratio'] = data['Close'] / data['Open']
+        try:
+            # Validate input data
+            if data is None or data.empty:
+                raise ValueError("Input data is empty or None")
+                
+            # Check required columns
+            required_cols = ['Open', 'High', 'Low', 'Close']
+            missing_cols = [col for col in required_cols if col not in data.columns]
+            if missing_cols:
+                raise ValueError(f"Missing required columns: {missing_cols}")
+            
+            # Price-based features
+            data['Returns'] = data['Close'].pct_change()
+            data['Log_Returns'] = np.log(data['Close'] / data['Close'].shift(1))
+            data['High_Low_Ratio'] = data['High'] / data['Low']
+            data['Close_Open_Ratio'] = data['Close'] / data['Open']
         
-        # Technical indicators
-        # Moving averages
-        for window in [5, 10, 20, 50]:
-            data[f'MA_{window}'] = data['Close'].rolling(window=window).mean()
-            data[f'MA_Ratio_{window}'] = data['Close'] / data[f'MA_{window}']
+            # Technical indicators
+            # Moving averages
+            for window in [5, 10, 20, 50]:
+                data[f'MA_{window}'] = data['Close'].rolling(window=window).mean()
+                data[f'MA_Ratio_{window}'] = data['Close'] / data[f'MA_{window}']
+            
+            # Volatility
+            for window in [5, 10, 20]:
+                data[f'Volatility_{window}'] = data['Returns'].rolling(window=window).std()
+            
+            # RSI
+            delta = data['Close'].diff()
+            gain = delta.where(delta > 0, 0).rolling(window=14).mean()
+            loss = -delta.where(delta < 0, 0).rolling(window=14).mean()
+            rs = gain / np.where(loss != 0, loss, 1e-6)
+            data['RSI'] = 100 - (100 / (1 + rs))
+            
+            # Bollinger Bands
+            ma_20 = data['Close'].rolling(window=20).mean()
+            std_20 = data['Close'].rolling(window=20).std()
+            data['BB_Upper'] = ma_20 + (2 * std_20)
+            data['BB_Lower'] = ma_20 - (2 * std_20)
+            bb_width = data['BB_Upper'] - data['BB_Lower']
+            data['BB_Position'] = (data['Close'] - data['BB_Lower']) / np.where(bb_width != 0, bb_width, 1e-6)
         
-        # Volatility
-        for window in [5, 10, 20]:
-            data[f'Volatility_{window}'] = data['Returns'].rolling(window=window).std()
-        
-        # RSI
-        delta = data['Close'].diff()
-        gain = delta.where(delta > 0, 0).rolling(window=14).mean()
-        loss = -delta.where(delta < 0, 0).rolling(window=14).mean()
-        rs = gain / np.where(loss != 0, loss, 1e-6)
-        data['RSI'] = 100 - (100 / (1 + rs))
-        
-        # Bollinger Bands
-        ma_20 = data['Close'].rolling(window=20).mean()
-        std_20 = data['Close'].rolling(window=20).std()
-        data['BB_Upper'] = ma_20 + (2 * std_20)
-        data['BB_Lower'] = ma_20 - (2 * std_20)
-        bb_width = data['BB_Upper'] - data['BB_Lower']
-        data['BB_Position'] = (data['Close'] - data['BB_Lower']) / np.where(bb_width != 0, bb_width, 1e-6)
-        
-        # Volume indicators
-        if 'Volume' in data.columns:
-            data['Volume_MA_10'] = data['Volume'].rolling(window=10).mean()
-            data['Volume_Ratio'] = data['Volume'] / np.where(data['Volume_MA_10'] != 0, data['Volume_MA_10'], 1e-6)
-        
-        # Lag features
-        for lag in range(1, 6):
-            data[f'Return_Lag_{lag}'] = data['Returns'].shift(lag)
-            data[f'Price_Lag_{lag}'] = data['Close'].shift(lag)
-        
-        # Future returns (targets)
-        for horizon in [1, 5, 10]:
-            data[f'Future_Return_{horizon}'] = data['Returns'].shift(-horizon)
-            data[f'Future_Price_{horizon}'] = data['Close'].shift(-horizon)
-        
-        return data
+            # Volume indicators
+            if 'Volume' in data.columns:
+                data['Volume_MA_10'] = data['Volume'].rolling(window=10).mean()
+                data['Volume_Ratio'] = data['Volume'] / np.where(data['Volume_MA_10'] != 0, data['Volume_MA_10'], 1e-6)
+            
+            # Lag features
+            for lag in range(1, 6):
+                data[f'Return_Lag_{lag}'] = data['Returns'].shift(lag)
+                data[f'Price_Lag_{lag}'] = data['Close'].shift(lag)
+            
+            # Future returns (targets)
+            for horizon in [1, 5, 10]:
+                data[f'Future_Return_{horizon}'] = data['Returns'].shift(-horizon)
+                data[f'Future_Price_{horizon}'] = data['Close'].shift(-horizon)
+            
+            # Replace infinite values with NaN
+            data = data.replace([np.inf, -np.inf], np.nan)
+            
+            return data
+            
+        except Exception as e:
+            print(f"Error calculating features: {str(e)}")
+            # Return original data if feature calculation fails
+            return data
     
     def get_feature_columns(self, data):
         """Get list of feature columns from given dataset"""
+        if data is None or data.empty:
+            return []
+            
         excluded_cols = ['Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close'] + \
                        [col for col in data.columns if col.startswith('Future_')]
         
         feature_cols = [col for col in data.columns if col not in excluded_cols]
+        
+        # Validate that we have the expected feature columns
+        expected_features = [
+            'Returns', 'Log_Returns', 'High_Low_Ratio', 'Close_Open_Ratio',
+            'MA_5', 'MA_Ratio_5', 'MA_10', 'MA_Ratio_10', 'MA_20', 'MA_Ratio_20', 'MA_50', 'MA_Ratio_50',
+            'Volatility_5', 'Volatility_10', 'Volatility_20', 'RSI',
+            'BB_Upper', 'BB_Lower', 'BB_Position', 'Volume_MA_10', 'Volume_Ratio'
+        ]
+        
+        # Check if key features exist
+        missing_features = [f for f in expected_features if f not in data.columns]
+        if missing_features:
+            print(f"Warning: Missing expected features: {missing_features}")
+        
         return feature_cols
     
     def prepare_data_for_training(self, target_horizon=1, test_size=0.2):

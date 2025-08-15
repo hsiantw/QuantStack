@@ -17,12 +17,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.ui_components import (
     apply_custom_css, 
-    create_metric_card, 
     create_enhanced_metric_card,
-    create_info_box,
-    display_success_box,
-    display_warning_box,
-    display_error_box,
+    display_success_message,
+    display_warning_message,
+    display_error_message,
     display_info_box
 )
 
@@ -676,13 +674,13 @@ def display_financial_dashboard(ticker: str, financial_ratios: Dict, technical_r
     st.markdown("#### 💡 Investment Recommendation")
     for recommendation in health_assessment.get('recommendations', []):
         if "Strong Buy" in recommendation:
-            display_success_box("Investment Recommendation", recommendation)
+            display_success_message("Investment Recommendation", recommendation)
         elif "Buy" in recommendation:
             display_info_box("Investment Recommendation", recommendation)
         elif "Hold" in recommendation:
-            display_warning_box("Investment Recommendation", recommendation)
+            display_warning_message("Investment Recommendation", recommendation)
         else:
-            display_error_box("Investment Recommendation", recommendation)
+            display_error_message("Investment Recommendation", recommendation)
     
     st.markdown("---")
     
