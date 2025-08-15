@@ -14,7 +14,7 @@ import json
 # Add the parent directory to the path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.ui_components import apply_custom_css, create_metric_card, create_info_box
+from utils.ui_components import create_enhanced_metric_card, display_info_box, display_success_message, display_warning_message, display_error_message
 
 # Page configuration
 st.set_page_config(
@@ -24,7 +24,69 @@ st.set_page_config(
 )
 
 # Apply custom styling
-apply_custom_css()
+st.markdown("""
+<style>
+    .metric-card {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5aa0 100%);
+        padding: 1.5rem;
+        border-radius: 10px;
+        border: 1px solid #4a90e2;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #ffffff;
+        margin: 0.5rem 0;
+    }
+    .metric-label {
+        color: #b3d9ff;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .info-box {
+        background: linear-gradient(135deg, #1a472a 0%, #2d5016 100%);
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #4caf50;
+        margin: 1rem 0;
+        color: white;
+    }
+    .success-box {
+        background: linear-gradient(135deg, #1a472a 0%, #2d5016 100%);
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #4caf50;
+        margin: 1rem 0;
+        color: white;
+        animation: slideIn 0.3s ease-out;
+    }
+    .warning-box {
+        background: linear-gradient(135deg, #5d4037 0%, #8d6e63 100%);
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #ff9800;
+        margin: 1rem 0;
+        color: white;
+        animation: slideIn 0.3s ease-out;
+    }
+    .error-box {
+        background: linear-gradient(135deg, #c62828 0%, #d32f2f 100%);
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #f44336;
+        margin: 1rem 0;
+        color: white;
+        animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+""", unsafe_allow_html=True)
 
 def initialize_portfolio_storage():
     """Initialize session state for portfolio storage"""
