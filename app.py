@@ -630,21 +630,27 @@ def main_dashboard():
             "title": "Commodities, Forex & Futures",
             "desc": "Comprehensive analysis of commodity markets, foreign exchange pairs, futures contracts with correlations and trading sessions.",
             "page": "pages/commodities_forex_futures.py"
+        },
+        {
+            "icon": "📁",
+            "title": "Portfolio Manager",
+            "desc": "Save, manage, and analyze custom investment portfolios with performance tracking and asset allocation tools.",
+            "page": "pages/portfolio_manager.py"
         }
 
     ]
     
-    # Display features in grid layout (adjusted for 10 features)
+    # Display features in grid layout (adjusted for 11 features)
     # First row: 3 features
     cols1 = st.columns(3)
     # Second row: 3 features  
     cols2 = st.columns(3)
     # Third row: 3 features
     cols3 = st.columns(3)
-    # Fourth row: 1 feature centered
-    cols4 = st.columns([1, 2, 1])
+    # Fourth row: 2 features centered
+    cols4 = st.columns([1, 1, 1, 1, 1])
     
-    all_cols = list(cols1) + list(cols2) + list(cols3) + [cols4[1]]
+    all_cols = list(cols1) + list(cols2) + list(cols3) + [cols4[1], cols4[3]]
     
     for i, feature in enumerate(features):
         with all_cols[i]:

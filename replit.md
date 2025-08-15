@@ -63,6 +63,15 @@ This is a comprehensive quantitative finance platform built with Streamlit that 
   - Global trading sessions calendar with optimal trading times for different asset classes
   - Comprehensive coverage of gold, silver, oil, natural gas, copper, wheat, corn, soybeans
   - Technical analysis with candlestick charts and price trend visualization
+- **Portfolio Manager**: Investment portfolio management system featuring:
+  - Save and manage multiple custom portfolios with names and instrument compositions
+  - Manual instrument entry, CSV upload, and pre-built portfolio templates
+  - Portfolio performance analysis with returns, volatility, Sharpe ratio, and drawdown metrics
+  - Asset allocation visualization with pie charts and composition breakdowns
+  - Portfolio comparison and individual asset performance tracking
+  - Import/export functionality with JSON format for portfolio backup and sharing
+  - Bulk portfolio operations including cloning and management tools
+  - Template library including Conservative (60/40), Aggressive Growth, Dividend Income, and Global Diversified portfolios
 
 
 ## User Preferences
