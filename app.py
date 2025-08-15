@@ -649,6 +649,12 @@ def main_dashboard():
                 "page": "pages/advanced_market_analysis.py"
             },
             {
+                "icon": "💧",
+                "title": "Liquidity Analysis",
+                "desc": "CoinGlass-style liquidation heat maps, order book depth, volume profiles, and market microstructure analysis.",
+                "page": "pages/liquidity_analysis.py"
+            },
+            {
                 "icon": "📰",
                 "title": "News & Economic Intelligence",
                 "desc": "Real-time news analysis, economic calendar, Fed updates, and sentiment-driven market intelligence.",
