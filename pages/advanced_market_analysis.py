@@ -245,7 +245,7 @@ def main():
                 # Money flow chart
                 fig_mf = make_subplots(
                     rows=3, cols=1,
-                    shared_xaxis=True,
+                    shared_xaxes=True,
                     subplot_titles=('Money Flow Index', 'Accumulation/Distribution Line', 'On-Balance Volume'),
                     vertical_spacing=0.05
                 )
@@ -325,7 +325,7 @@ def main():
                 # Dark pool chart
                 fig_dp = make_subplots(
                     rows=3, cols=1,
-                    shared_xaxis=True,
+                    shared_xaxes=True,
                     subplot_titles=('Price vs VWAP', 'Volume', 'Dark Pool Activity Indicator'),
                     vertical_spacing=0.05
                 )
@@ -434,7 +434,7 @@ def main():
                 # Institutional activity chart
                 fig_inst = make_subplots(
                     rows=2, cols=1,
-                    shared_xaxis=True,
+                    shared_xaxes=True,
                     subplot_titles=('Price with Institutional Activity', 'Volume Analysis'),
                     vertical_spacing=0.1
                 )

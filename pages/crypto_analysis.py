@@ -192,7 +192,7 @@ def main():
                 # Price chart with volume
                 fig_overview = make_subplots(
                     rows=2, cols=1,
-                    shared_xaxis=True,
+                    shared_xaxes=True,
                     subplot_titles=(f'{selected_crypto} Price', 'Volume'),
                     vertical_spacing=0.1,
                     row_heights=[0.7, 0.3]
@@ -324,7 +324,7 @@ def main():
                 # On-chain metrics chart
                 fig_onchain = make_subplots(
                     rows=3, cols=1,
-                    shared_xaxis=True,
+                    shared_xaxes=True,
                     subplot_titles=('Network Activity', 'HODL Strength', 'Accumulation/Distribution'),
                     vertical_spacing=0.05
                 )
@@ -444,7 +444,7 @@ def main():
                 # Technical analysis chart
                 fig_tech = make_subplots(
                     rows=2, cols=1,
-                    shared_xaxis=True,
+                    shared_xaxes=True,
                     subplot_titles=('Price with Moving Averages', 'RSI'),
                     vertical_spacing=0.1,
                     row_heights=[0.7, 0.3]
