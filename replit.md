@@ -1,159 +1,76 @@
 # Quantitative Finance Platform
 
 ## Overview
-
-This is a comprehensive quantitative finance platform built with Streamlit that provides advanced financial analysis tools. The application offers multiple analytical modules including AI-powered predictions, portfolio optimization using Modern Portfolio Theory, statistical arbitrage analysis, AI-powered pairs trading with cointegration testing, time series analysis, and trading strategy backtesting. The platform is designed for quantitative analysts, traders, and researchers who need sophisticated financial analysis capabilities with an intuitive web interface.
-
-## Recent Changes (August 2025)
-
-- **Major UI/UX Redesign**: Complete modern interface overhaul with professional dark theme, gradient styling, and enhanced user experience
-  - Custom CSS framework with animated components, hover effects, and smooth transitions
-  - Consistent header styling across all pages with gradient backgrounds and professional typography
-  - Enhanced metric cards with gradient values, trend indicators, and interactive hover effects
-  - Modern button styling with glow effects, animations, and professional appearance
-  - Improved navigation cards with shimmer effects and enhanced visual feedback
-  - Professional alert boxes (success, warning, error, info) with slide-in animations
-  - Enhanced tab styling with smooth transitions and active state indicators
-  - Custom scrollbars and mobile-responsive design patterns
-  - UI components utility module for consistent styling across all pages
-- **AI Pairs Trading Module**: Complete statistical arbitrage system with cointegration analysis, AI strategy optimization for pair components, and comprehensive trading signal generation
-- **Enhanced AI Strategy Optimization**: Detailed methodology explanations showing exact mathematical calculations and decision-making process
-- **Pairs Discovery Algorithm**: Sector-based candidate selection with trading score ranking system (0-100 scale)
-- **Comprehensive Backtesting**: Full pairs trading strategy backtesting with performance metrics and visualization
-- **Live Trading Signals**: Real-time Z-score analysis and trading recommendations for cointegrated pairs
-- **Extensive Mean Reversion Strategy Module**: Comprehensive implementation featuring 6 advanced techniques:
-  - Bollinger Bands reversion with dynamic bandwidth analysis
-  - RSI-based mean reversion with adaptive thresholds
-  - Ornstein-Uhlenbeck process modeling for statistical mean reversion
-  - Kalman Filter for dynamic mean estimation and noise filtering
-  - Ensemble strategy combining multiple approaches with weighted signals
-  - Adaptive strategy with market regime detection and parameter adjustment
-- **Advanced Signal Execution**: Detailed trading instructions with specific entry/exit rules, position sizing formulas, and risk management protocols
-- **Professional Backtesting Suite**: Complete performance analysis including Sharpe ratio, Calmar ratio, drawdown analysis, and trade-by-trade breakdown
-- **Advanced Market Analysis Module**: Comprehensive trading secrets analysis including:
-  - Money Flow Index, Accumulation/Distribution Line, On-Balance Volume analysis
-  - Liquidity metrics with spread proxy, volume rate, and turnover analysis
-  - Dark pool activity detection using volume and price pattern analysis
-  - Volume profile analysis and institutional activity detection
-  - Advanced trading strategies for dark pool breakouts, liquidity scalping, and money flow reversals
-- **Comprehensive Cryptocurrency Analysis**: Full crypto ecosystem analysis featuring:
-  - Fear & Greed index calculation with market sentiment analysis
-  - On-chain metrics proxy including network activity, HODL strength, and accumulation patterns
-  - DeFi ecosystem analysis with TVL proxy, yield opportunities, and liquidity scoring
-  - Cryptocurrency correlation analysis across major digital assets
-  - Specialized crypto trading strategies including DCA, swing trading, DeFi farming, and momentum strategies
-- **Live News & Economic Data Intelligence System**: Real-time market intelligence platform featuring:
-  - Automated web scraping of Federal Reserve news, BLS releases, and Treasury announcements
-  - High-impact stock news from MarketWatch, Reuters Business, and CNBC Markets
-  - Economic calendar with daily, weekly, and monthly event tracking
-  - FOMC meeting schedule with countdown timers and press conference indicators
-  - Major earnings calendar with high-impact company releases and key metrics tracking
-  - Breaking news alert categories for earnings, M&A, FDA approvals, and analyst changes
-  - Sector-specific news analysis covering Technology, Healthcare, Financial, Energy, Consumer, and Industrial sectors
-  - News sentiment analysis with ticker extraction and market impact assessment
-  - Market intelligence summary dashboard with sentiment distribution charts and earnings metrics
-  - Comprehensive economic data sources including over 30 critical indicators plus stock market news sources
-  - Banking sector health monitoring with interest rates, credit spreads, and yield curves
-- **Commodities, Forex & Futures Analysis**: Complete multi-asset class trading platform featuring:
-  - Real-time commodity prices for precious metals, energy, industrial metals, and agricultural products
-  - Major forex pairs analysis including EUR/USD, GBP/USD, USD/JPY and commodity currencies
-  - Futures contracts tracking for equity indices, fixed income, volatility, and crypto futures
-  - Advanced correlation analysis between commodities with interactive heatmaps
-  - Market drivers and economic indicators specific to commodity and forex markets
-  - Global trading sessions calendar with optimal trading times for different asset classes
-  - Comprehensive coverage of gold, silver, oil, natural gas, copper, wheat, corn, soybeans
-  - Technical analysis with candlestick charts and price trend visualization
-- **Portfolio Manager**: Investment portfolio management system featuring:
-  - Save and manage multiple custom portfolios with names and instrument compositions
-  - Manual instrument entry, CSV upload, and pre-built portfolio templates
-  - Portfolio performance analysis with returns, volatility, Sharpe ratio, and drawdown metrics
-  - Asset allocation visualization with pie charts and composition breakdowns
-  - Portfolio comparison and individual asset performance tracking
-  - Import/export functionality with JSON format for portfolio backup and sharing
-  - Bulk portfolio operations including cloning and management tools
-  - Template library including Conservative (60/40), Aggressive Growth, Dividend Income, and Global Diversified portfolios
-- **Fundamental Analysis & Health Assessment**: Comprehensive company analysis system featuring:
-  - Complete financial ratios analysis including profitability, liquidity, leverage, efficiency, and valuation metrics
-  - Technical analysis with RSI, MACD, Bollinger Bands, moving averages, and volatility measurements
-  - AI-powered financial health scoring system with 100-point scale across 6 key categories
-  - Future predictions including 1-year price targets, earnings forecasts, and revenue outlook
-  - Risk factor identification and growth catalyst analysis
-  - Investment recommendations based on comprehensive health assessment
-  - Visual dashboard with radar charts, metric cards, and performance indicators
-  - Educational tooltips explaining financial ratios and technical indicators
-  - Real-time data integration with Yahoo Finance for current market information
-
+This comprehensive quantitative finance platform, built with Streamlit, offers advanced financial analysis tools for quantitative analysts, traders, and researchers. It integrates AI-powered predictions, portfolio optimization (Modern Portfolio Theory), statistical arbitrage including AI-powered pairs trading with cointegration testing, extensive mean reversion strategies, time series analysis, and trading strategy backtesting. The platform also provides advanced market analysis, comprehensive cryptocurrency analysis, live news and economic data intelligence, multi-asset class analysis (commodities, forex, futures), and an investment portfolio manager. A key ambition is to provide sophisticated capabilities through an intuitive web interface, complemented by a live trading account monitor for real-time integration.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
 ### Frontend Architecture
-- **Framework**: Streamlit-based web application with multi-page architecture
-- **Layout**: Wide layout with expandable sidebar for consistent navigation
-- **Modern UI Design**: Professional dark theme with gradient styling, custom CSS framework, and enhanced user experience
-- **Component System**: Reusable UI components utility module for consistent styling and interactive elements
-- **Visualization**: Plotly integration for interactive financial charts with custom dark theme styling
-- **Page Structure**: Modular page system with dedicated modules and consistent header styling across all pages
-- **Responsive Design**: Mobile-optimized layouts with adaptive components and custom scrollbars
-- **Animation System**: Smooth transitions, hover effects, shimmer animations, and loading indicators
-- **Caching**: Streamlit caching decorators for performance optimization on data fetching
+- **Framework**: Streamlit-based web application with a multi-page, 13-module architecture.
+- **Layout**: Wide layout with an expandable sidebar for consistent navigation.
+- **Modern UI Design**: Professional dark theme with gradient styling, custom CSS framework, animated components, hover effects, and smooth transitions for an enhanced user experience. Features include consistent header styling, gradient metric cards, modern button styling, shimmer effects for navigation, professional alert boxes, and enhanced tab styling.
+- **Component System**: Reusable UI components utility module for consistent styling and interactive elements.
+- **Visualization**: Plotly integration for interactive financial charts with custom dark theme styling.
+- **Responsive Design**: Mobile-optimized layouts with adaptive components and custom scrollbars.
+- **Caching**: Streamlit caching decorators for performance optimization on data fetching.
+- **Trading Integration**: Real-time account monitoring interface with Webull API connectivity.
 
 ### Backend Architecture
-- **Core Structure**: Utility-based architecture with specialized classes for different financial operations
-- **Data Processing**: Pandas and NumPy for efficient financial data manipulation
-- **Mathematical Computing**: SciPy for statistical analysis and optimization algorithms
-- **Machine Learning**: Scikit-learn integration for AI-powered financial predictions
-- **Time Series Analysis**: Statsmodels for advanced econometric analysis
+- **Core Structure**: Utility-based architecture with specialized classes for financial operations.
+- **Data Processing**: Pandas and NumPy for efficient financial data manipulation.
+- **Mathematical Computing**: SciPy for statistical analysis and optimization algorithms.
+- **Machine Learning**: Scikit-learn for AI-powered financial predictions.
+- **Time Series Analysis**: Statsmodels for advanced econometric analysis.
 
 ### Data Management
-- **Data Source**: Yahoo Finance API through yfinance library for real-time market data
-- **Data Caching**: Time-based caching (5 minutes for price data, 1 hour for metadata)
-- **Data Processing**: Automated feature engineering for technical indicators and risk metrics
-- **Data Validation**: Error handling for invalid tickers and missing data scenarios
+- **Data Source**: Yahoo Finance API via the `yfinance` library for real-time market data.
+- **Data Caching**: Time-based caching (5 minutes for price data, 1 hour for metadata).
+- **Data Processing**: Automated feature engineering for technical indicators and risk metrics.
+- **Data Validation**: Error handling for invalid tickers and missing data scenarios.
 
 ### Core Analytical Modules
-- **AI Models**: Machine learning models for price prediction using Random Forest, Gradient Boosting, and Linear Regression with configurable 10-20 year historical training data
-- **Portfolio Optimization**: Modern Portfolio Theory implementation with efficient frontier calculation
-- **Statistical Arbitrage**: Cointegration analysis and pair trading opportunity identification
-- **Time Series Analysis**: ARIMA modeling, seasonality detection, and stationarity testing
-- **Trading Strategies**: Multiple strategy implementations with comprehensive backtesting capabilities
-- **Advanced Strategy Optimization**: Systematic comparison of 15+ trading strategies with different indicator combinations
-- **AI Pairs Trading**: Comprehensive pairs trading system with AI-optimized strategy application to cointegrated pairs
-- **Extensive Mean Reversion Strategies**: Professional-grade mean reversion implementation with 6 mathematical approaches including Ornstein-Uhlenbeck modeling, Kalman filtering, ensemble methods, and adaptive regime-based parameter adjustment
-- **Market Information Sources**: Comprehensive guide to critical data sources (SEC filings, economic indicators, Fed data)
-- **Live News & Economic Intelligence**: Real-time market news sourcing with automated scraping, sentiment analysis, economic calendar tracking, and comprehensive market impact assessment
-- **Risk Management**: Value at Risk (VaR), Expected Shortfall, and comprehensive risk metrics
-- **Educational Tooltips**: Interactive help system with formulas and definitions for complex financial terms
+- **AI Models**: Machine learning models (Random Forest, Gradient Boosting, Linear Regression) for price prediction, configurable with 10-20 years of historical training data.
+- **Portfolio Optimization**: Modern Portfolio Theory with efficient frontier calculation.
+- **Statistical Arbitrage**: Cointegration analysis and pair trading opportunity identification, including AI-optimized strategy application for cointegrated pairs.
+- **Time Series Analysis**: ARIMA modeling, seasonality detection, and stationarity testing.
+- **Trading Strategies**: Multiple strategy implementations with comprehensive backtesting capabilities and systematic comparison of 15+ trading strategies.
+- **Mean Reversion Strategies**: Professional-grade implementation featuring 6 mathematical approaches: Bollinger Bands, RSI, Ornstein-Uhlenbeck, Kalman Filter, Ensemble, and Adaptive strategies.
+- **Market Analysis**: Includes Money Flow Index, Accumulation/Distribution Line, On-Balance Volume, liquidity metrics, dark pool activity detection, and volume profile analysis.
+- **Cryptocurrency Analysis**: Fear & Greed index, on-chain metrics, DeFi ecosystem analysis, correlation analysis, and specialized crypto trading strategies.
+- **Live News & Economic Intelligence**: Automated web scraping of financial news and economic data (Fed, BLS, Treasury, MarketWatch, Reuters, CNBC), economic calendar, FOMC schedule, earnings calendar, news sentiment analysis, and market intelligence summary dashboard.
+- **Trading Account Integration**: Live account monitoring with Webull API for balance, P&L, position analysis, order management, and strategy performance validation in demo or live modes.
+- **Risk Management**: Value at Risk (VaR), Expected Shortfall, and comprehensive risk metrics.
+- **Educational Tooltips**: Interactive help system with formulas and definitions for complex financial terms.
 
 ### Design Patterns
-- **Utility Classes**: Modular utility classes for specific financial operations
-- **Strategy Pattern**: Implemented for different trading strategies and analysis methods
-- **Factory Pattern**: Used for creating different types of financial models
-- **Observer Pattern**: Implicit through Streamlit's reactive programming model
-- **Educational Design**: Comprehensive tooltip system with formulas and definitions for user education
+- **Utility Classes**: Modular utility classes for specific financial operations.
+- **Strategy Pattern**: Implemented for different trading strategies and analysis methods.
+- **Factory Pattern**: Used for creating various financial models.
+- **Observer Pattern**: Implicit through Streamlit's reactive programming model.
+- **Educational Design**: Comprehensive tooltip system for user education.
 
 ## External Dependencies
 
 ### Core Data Services
-- **Yahoo Finance (yfinance)**: Primary data source for stock prices, market indices, and financial metadata
-- **Real-time Market Data**: Major indices (S&P 500, NASDAQ, Dow Jones, VIX) for market overview
+- **Yahoo Finance (yfinance)**: Primary data source for stock prices, market indices, and financial metadata.
+- **Webull API (`webull`, `webull-python-sdk`)**: Trading account integration for live portfolio monitoring and order management.
 
 ### Scientific Computing Stack
-- **NumPy**: Numerical computing and array operations
-- **Pandas**: Data manipulation and analysis
-- **SciPy**: Statistical analysis and optimization functions
-- **Scikit-learn**: Machine learning algorithms and preprocessing tools
-- **Statsmodels**: Advanced statistical modeling and econometric analysis
+- **NumPy**: Numerical computing and array operations.
+- **Pandas**: Data manipulation and analysis.
+- **SciPy**: Statistical analysis and optimization functions.
+- **Scikit-learn**: Machine learning algorithms and preprocessing tools.
+- **Statsmodels**: Advanced statistical modeling and econometric analysis.
 
 ### Visualization and UI
-- **Plotly**: Interactive charting and visualization library
-- **Streamlit**: Web application framework and UI components
+- **Plotly**: Interactive charting and visualization library.
+- **Streamlit**: Web application framework and UI components.
 
 ### Financial Analysis Libraries
-- **yfinance**: Yahoo Finance API wrapper for market data retrieval
-- **scipy.optimize**: Portfolio optimization and constraint solving
-- **sklearn preprocessing**: Data scaling and feature engineering
-- **statsmodels.tsa**: Time series analysis and forecasting models
+- **scipy.optimize**: For portfolio optimization and constraint solving.
+- **sklearn.preprocessing**: For data scaling and feature engineering.
+- **statsmodels.tsa**: For time series analysis and forecasting models.
+- **asyncio-throttle**: For rate limiting API requests.

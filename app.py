@@ -638,15 +638,21 @@ def main_dashboard():
             "page": "pages/portfolio_manager.py"
         },
         {
-            "icon": "📊",
+            "icon": "🔍",
             "title": "Fundamental Analysis",
             "desc": "Comprehensive financial ratios, technical analysis, health assessment and future predictions for individual companies.",
             "page": "pages/fundamental_analysis.py"
+        },
+        {
+            "icon": "📊",
+            "title": "Trading Account Monitor",
+            "desc": "Real-time portfolio tracking with Webull integration, live account monitoring, position analysis, and strategy performance validation.",
+            "page": "pages/trading_monitor.py"
         }
 
     ]
     
-    # Display features in grid layout (adjusted for 12 features)
+    # Display features in grid layout (adjusted for 13 features)
     # First row: 3 features
     cols1 = st.columns(3)
     # Second row: 3 features  
@@ -655,8 +661,10 @@ def main_dashboard():
     cols3 = st.columns(3)
     # Fourth row: 3 features
     cols4 = st.columns(3)
+    # Fifth row: 1 feature centered
+    cols5 = st.columns([1, 1, 1])
     
-    all_cols = list(cols1) + list(cols2) + list(cols3) + list(cols4)
+    all_cols = list(cols1) + list(cols2) + list(cols3) + list(cols4) + [cols5[1]]
     
     for i, feature in enumerate(features):
         with all_cols[i]:
