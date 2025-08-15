@@ -273,7 +273,8 @@ class AIModels:
                     'y_pred_test': y_pred_test
                 },
                 'feature_importance': feature_importance,
-                'scaler': self.scaler
+                'scaler': self.scaler,
+                'feature_columns': feature_cols  # Store training feature columns
             }
             
         except Exception as e:
@@ -337,7 +338,8 @@ class AIModels:
                     'y_pred_test': y_pred_test
                 },
                 'feature_importance': feature_importance,
-                'scaler': self.scaler
+                'scaler': self.scaler,
+                'feature_columns': feature_cols  # Store training feature columns
             }
             
         except Exception as e:
@@ -362,9 +364,20 @@ class AIModels:
             model = model_result['model']
             scaler = model_result['scaler']
             
-            # Use the last available data point for prediction
-            feature_cols = self.get_feature_columns(self.prediction_features)
-            last_features = self.data[feature_cols].dropna().iloc[-1:].values
+            # Use the stored training feature columns for consistency
+            feature_cols = model_result.get('feature_columns', self.get_feature_columns(self.prediction_features))
+            
+            # Ensure we use prediction_features which contains the calculated features
+            # Only use features that exist in both training and prediction data
+            available_features = [col for col in feature_cols if col in self.prediction_features.columns]
+            if not available_features:
+                raise ValueError("No matching features available between training and prediction data")
+            
+            prediction_data = self.prediction_features[available_features].dropna()
+            if prediction_data.empty:
+                raise ValueError("No valid prediction features available")
+                
+            last_features = prediction_data.iloc[-1:].values
             last_features_scaled = scaler.transform(last_features)
             
             # Generate predictions
@@ -380,7 +393,7 @@ class AIModels:
                 current_features = current_features.copy()
             
             # Create prediction series
-            last_date = self.data.index[-1]
+            last_date = self.prediction_features.index[-1]
             prediction_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), 
                                            periods=prediction_days, freq='D')
             
