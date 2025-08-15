@@ -824,20 +824,31 @@ def main_dashboard():
                 
                 with col1:
                     # Price chart
+                    st.subheader(f"📈 {ticker} Price Chart")
+                    
+                    # Debug info
+                    st.write(f"Data points: {len(hist)}")
+                    st.write(f"Date range: {hist.index[0]} to {hist.index[-1]}")
+                    
                     fig = go.Figure()
                     fig.add_trace(go.Scatter(
                         x=hist.index,
                         y=hist['Close'],
                         mode='lines',
                         name='Close Price',
-                        line=dict(color='#1f77b4', width=2)
+                        line=dict(color='#00d4ff', width=3)
                     ))
                     
                     fig.update_layout(
                         title=f"{ticker} - Price Chart",
                         xaxis_title="Date",
                         yaxis_title="Price ($)",
-                        height=400
+                        height=400,
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        font=dict(color='white'),
+                        xaxis=dict(gridcolor='rgba(128,128,128,0.2)'),
+                        yaxis=dict(gridcolor='rgba(128,128,128,0.2)')
                     )
                     
                     st.plotly_chart(fig, use_container_width=True)
