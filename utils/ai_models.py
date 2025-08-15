@@ -483,11 +483,6 @@ class AIModels:
                 
         except Exception as e:
             st.error(f"Error aligning features: {str(e)}")
-                prediction_feature_count = len(self.get_feature_columns(self.prediction_features))
-                error_details += f" (Training features: {training_feature_count}, "
-                error_details += f"Prediction features: {prediction_feature_count})"
-            st.error(f"Error generating predictions: {error_details}")
-            return None
     
     def _align_prediction_features_with_training(self, training_feature_cols):
         """
