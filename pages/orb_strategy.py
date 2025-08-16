@@ -71,16 +71,16 @@ class ORBStrategy:
                 opening_range = daily_range * 0.20
                 
                 # First candle direction based on daily close vs open
-                if close_price > open_price:
+                if float(close_price) > float(open_price):
                     # Up day - simulate bullish opening
-                    first_candle_close = open_price + opening_range * np.random.uniform(0.3, 0.8)
-                    first_candle_high = max(open_price, first_candle_close) + opening_range * 0.1
-                    first_candle_low = min(open_price, first_candle_close) - opening_range * 0.1
+                    first_candle_close = float(open_price) + opening_range * np.random.uniform(0.3, 0.8)
+                    first_candle_high = max(float(open_price), first_candle_close) + opening_range * 0.1
+                    first_candle_low = min(float(open_price), first_candle_close) - opening_range * 0.1
                 else:
                     # Down day - simulate bearish opening
-                    first_candle_close = open_price - opening_range * np.random.uniform(0.3, 0.8)
-                    first_candle_high = max(open_price, first_candle_close) + opening_range * 0.1
-                    first_candle_low = min(open_price, first_candle_close) - opening_range * 0.1
+                    first_candle_close = float(open_price) - opening_range * np.random.uniform(0.3, 0.8)
+                    first_candle_high = max(float(open_price), first_candle_close) + opening_range * 0.1
+                    first_candle_low = min(float(open_price), first_candle_close) - opening_range * 0.1
                 
                 # Second candle opens where first candle closed
                 second_candle_open = first_candle_close
@@ -301,7 +301,7 @@ class ORBStrategy:
         # Calculate annualized return
         start_date = results_df['Date'].min()
         end_date = results_df['Date'].max()
-        years = (end_date - start_date).days / 365.25
+        years = float((end_date - start_date).days) / 365.25
         annual_return = (final_value / initial_value) ** (1 / years) - 1 if years > 0 else 0
         
         # Drawdown calculation
@@ -526,9 +526,10 @@ if st.button("🚀 Run ORB Strategy Backtest", type="primary"):
                 st.subheader("📈 Strategy vs Buy-and-Hold Comparison")
                 
                 # Get buy-and-hold benchmark
+                benchmark_data = None
                 try:
                     benchmark_data = yf.download(ticker, start=start_date, end=end_date, progress=False)
-                    if not benchmark_data.empty:
+                    if benchmark_data is not None and not benchmark_data.empty:
                         benchmark_return = (benchmark_data['Close'].iloc[-1] - benchmark_data['Close'].iloc[0]) / benchmark_data['Close'].iloc[0]
                         benchmark_final_value = initial_capital * (1 + benchmark_return)
                         
@@ -580,7 +581,7 @@ if st.button("🚀 Run ORB Strategy Backtest", type="primary"):
                 
                 # Add buy-and-hold benchmark if available
                 try:
-                    if not benchmark_data.empty:
+                    if benchmark_data is not None and not benchmark_data.empty:
                         benchmark_curve = initial_capital * (benchmark_data['Close'] / benchmark_data['Close'].iloc[0])
                         fig.add_trace(go.Scatter(
                             x=benchmark_data.index,
@@ -612,9 +613,9 @@ if st.button("🚀 Run ORB Strategy Backtest", type="primary"):
                 # Monthly returns heatmap
                 trade_data = results[results['Trade_Type'].isin(['Long', 'Short'])].copy()
                 if not trade_data.empty:
-                    trade_data['Month'] = trade_data['Date'].dt.to_period('M')
+                    trade_data.loc[:, 'Month'] = pd.to_datetime(trade_data['Date']).dt.to_period('M')
                     monthly_returns = trade_data.groupby('Month')['Net_PnL'].sum()
-                    monthly_returns_pct = monthly_returns / initial_capital * 100
+                    monthly_returns_pct = monthly_returns / float(initial_capital) * 100
                     
                     col1, col2 = st.columns(2)
                     
@@ -641,7 +642,7 @@ if st.button("🚀 Run ORB Strategy Backtest", type="primary"):
                     
                     with col2:
                         st.markdown("**Exit Reasons:**")
-                        exit_reasons = trade_data['Exit_Reason'].value_counts()
+                        exit_reasons = pd.Series(trade_data['Exit_Reason']).value_counts()
                         fig_exits = go.Figure(data=[
                             go.Pie(
                                 labels=exit_reasons.index,
@@ -676,7 +677,8 @@ if st.button("🚀 Run ORB Strategy Backtest", type="primary"):
                     st.write(f"• **Risk per Trade:** {risk_per_trade:.1%}")
                     st.write(f"• **Maximum Leverage:** {max_leverage}x")
                     st.write(f"• **Backtest Period:** {metrics['years']:.1f} years")
-                    st.write(f"• **Trades per Year:** {metrics['total_trades']/metrics['years']:.0f}")
+                    trades_per_year = float(metrics['total_trades']) / float(metrics['years']) if metrics['years'] > 0 else 0
+                    st.write(f"• **Trades per Year:** {trades_per_year:.0f}")
                     st.write(f"• **Profit Factor:** {metrics['profit_factor']:.2f}")
                 
                 # Download trade log

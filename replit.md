@@ -42,6 +42,7 @@ Preferred communication style: Simple, everyday language.
 - **Statistical Arbitrage**: Cointegration analysis and pair trading opportunity identification, including AI-optimized strategy application for cointegrated pairs.
 - **Time Series Analysis**: ARIMA modeling, seasonality detection, and stationarity testing.
 - **Trading Strategies**: Multiple strategy implementations with comprehensive backtesting capabilities and systematic comparison of 15+ trading strategies, now supporting intraday backtesting with 1-hour and 4-hour intervals in addition to daily timeframes.
+- **Opening Range Breakout (ORB)**: Research-backed day trading strategy implementation based on peer-reviewed paper showing 675% returns vs 169% buy-and-hold from 2016-2023, with professional risk management and position sizing.
 - **Mean Reversion Strategies**: Professional-grade implementation featuring 6 mathematical approaches: Bollinger Bands, RSI, Ornstein-Uhlenbeck, Kalman Filter, Ensemble, and Adaptive strategies.
 - **Market Analysis**: Includes Money Flow Index, Accumulation/Distribution Line, On-Balance Volume, liquidity metrics, dark pool activity detection, and volume profile analysis.
 - **Liquidity Analysis**: CoinGlass-inspired liquidation heat maps, order book depth visualization, volume profile analysis, and comprehensive market microstructure insights with Amihud illiquidity metrics.

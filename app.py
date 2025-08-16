@@ -607,6 +607,12 @@ def main_dashboard():
                 "title": "Strategy Comparison & Optimization",
                 "desc": "Advanced multi-strategy comparison with parameter optimization and risk-return analysis.",
                 "page": "pages/strategy_comparison.py"
+            },
+            {
+                "icon": "🌅",
+                "title": "Opening Range Breakout (ORB)",
+                "desc": "Research-backed day trading strategy with 675% returns vs 169% buy-and-hold (2016-2023).",
+                "page": "pages/orb_strategy.py"
             }
         ]
         
