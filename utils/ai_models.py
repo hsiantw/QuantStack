@@ -483,30 +483,6 @@ class AIModels:
                 
         except Exception as e:
             st.error(f"Error aligning features: {str(e)}")
-    
-    def _align_prediction_features_with_training(self, training_feature_cols):
-        """
-        Align prediction features with training features by recalculating missing features
-        
-        Args:
-            training_feature_cols (list): List of feature columns from training
-        """
-        try:
-            # Recalculate features for prediction data
-            self.prediction_features = self._calculate_features(self.data.copy())
-            
-            # Check which training features are still missing
-            missing_features = [col for col in training_feature_cols if col not in self.prediction_features.columns]
-            
-            if missing_features:
-                st.warning(f"Still missing features after recalculation: {missing_features}")
-                
-                # Add missing features with default values (zeros) to maintain shape
-                for feature in missing_features:
-                    self.prediction_features[feature] = 0.0
-                    
-        except Exception as e:
-            st.error(f"Error aligning features: {str(e)}")
 
     
     def plot_model_performance(self, model_result, model_name="Model"):

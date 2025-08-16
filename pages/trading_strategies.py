@@ -471,7 +471,23 @@ if analysis_mode == "🤖 AI Strategy Optimization":
                         st.markdown("4. ⏰ Implement position sizing based on market regime")
                 
             else:
-                st.error("Unable to generate AI recommendations. Please try with different parameters.")
+                st.warning("⚠️ AI recommendations could not be generated with current parameters.")
+                st.info("**Possible solutions:**")
+                st.markdown("• Try a different ticker with more trading history")
+                st.markdown("• Increase the time period for more data")
+                st.markdown("• Use a more liquid asset (e.g., SPY, QQQ, AAPL)")
+                
+                # Show what we tried to generate
+                if 'error' in recommendations:
+                    st.error(f"Error details: {recommendations['error']}")
+                
+                # Provide manual guidance
+                st.markdown("---")
+                st.markdown("**Manual Strategy Guidance:**")
+                st.markdown("• **Moving Average**: Try 20/50 day crossover for swing trading")
+                st.markdown("• **RSI**: Use 14-period RSI with 30/70 levels for mean reversion")
+                st.markdown("• **Risk Management**: Always use stop losses and position sizing")
+                st.markdown("• **Backtesting**: Test strategies on historical data before live trading")
                 
         except Exception as e:
             st.error(f"Error running AI optimization: {str(e)}")

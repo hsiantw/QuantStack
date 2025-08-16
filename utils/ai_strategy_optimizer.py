@@ -794,49 +794,89 @@ class AIStrategyOptimizer:
         """
         recommendations = {}
         
-        # Optimize individual strategies
-        ma_best, ma_results = self.optimize_moving_average_strategy(data)
-        rsi_best, rsi_results = self.optimize_rsi_strategy(data)
-        
-        # Create ensemble strategy
-        ensemble_metrics, ensemble_returns = self.create_ensemble_strategy(data)
-        
-        # Create risk-adjusted strategy
-        risk_adj_metrics, risk_adj_returns = self.optimize_risk_adjusted_strategy(data)
-        
-        recommendations['moving_average'] = {
-            'best': ma_best,
-            'all_results': ma_results[:5]  # Top 5 results
-        }
-        
-        recommendations['rsi'] = {
-            'best': rsi_best,
-            'all_results': rsi_results[:5]
-        }
-        
-        if ensemble_metrics:
-            recommendations['ensemble'] = ensemble_metrics
+        try:
+            # Optimize individual strategies with error handling
+            try:
+                ma_best, ma_results = self.optimize_moving_average_strategy(data)
+            except Exception as e:
+                st.warning(f"Moving Average optimization failed: {str(e)}")
+                ma_best, ma_results = None, []
             
-        if risk_adj_metrics:
-            recommendations['risk_adjusted'] = risk_adj_metrics
-        
-        # Overall recommendations
-        all_strategies = []
-        if ma_best:
-            all_strategies.append(('Moving Average', ma_best))
-        if rsi_best:
-            all_strategies.append(('RSI', rsi_best))
-        if ensemble_metrics:
-            all_strategies.append(('AI Ensemble', ensemble_metrics))
-        if risk_adj_metrics:
-            all_strategies.append(('Risk Adjusted', risk_adj_metrics))
-        
-        # Rank by Calmar ratio (return/max_drawdown)
-        ranked_strategies = sorted(all_strategies, 
-                                 key=lambda x: x[1].get('calmar_ratio', 0), 
-                                 reverse=True)
-        
-        recommendations['top_strategies'] = ranked_strategies[:3]
-        recommendations['feature_importance'] = self.feature_importance
-        
-        return recommendations
+            try:
+                rsi_best, rsi_results = self.optimize_rsi_strategy(data)
+            except Exception as e:
+                st.warning(f"RSI optimization failed: {str(e)}")
+                rsi_best, rsi_results = None, []
+            
+            # Create ensemble strategy with error handling
+            try:
+                ensemble_metrics, ensemble_returns = self.create_ensemble_strategy(data)
+            except Exception as e:
+                st.warning(f"Ensemble strategy creation failed: {str(e)}")
+                ensemble_metrics, ensemble_returns = None, None
+            
+            # Create risk-adjusted strategy with error handling
+            try:
+                risk_adj_metrics, risk_adj_returns = self.optimize_risk_adjusted_strategy(data)
+            except Exception as e:
+                st.warning(f"Risk-adjusted strategy optimization failed: {str(e)}")
+                risk_adj_metrics, risk_adj_returns = None, None
+            
+            # Add results to recommendations
+            recommendations['moving_average'] = {
+                'best': ma_best,
+                'all_results': ma_results[:5] if ma_results else []
+            }
+            
+            recommendations['rsi'] = {
+                'best': rsi_best,
+                'all_results': rsi_results[:5] if rsi_results else []
+            }
+            
+            if ensemble_metrics:
+                recommendations['ensemble'] = ensemble_metrics
+                
+            if risk_adj_metrics:
+                recommendations['risk_adjusted'] = risk_adj_metrics
+            
+            # Overall recommendations
+            all_strategies = []
+            if ma_best:
+                all_strategies.append(('Moving Average', ma_best))
+            if rsi_best:
+                all_strategies.append(('RSI', rsi_best))
+            if ensemble_metrics:
+                all_strategies.append(('AI Ensemble', ensemble_metrics))
+            if risk_adj_metrics:
+                all_strategies.append(('Risk Adjusted', risk_adj_metrics))
+            
+            # Rank by Calmar ratio (return/max_drawdown)
+            if all_strategies:
+                ranked_strategies = sorted(all_strategies, 
+                                         key=lambda x: x[1].get('calmar_ratio', 0), 
+                                         reverse=True)
+                recommendations['top_strategies'] = ranked_strategies[:3]
+            else:
+                recommendations['top_strategies'] = []
+            
+            # Feature importance (with fallback)
+            if hasattr(self, 'feature_importance') and self.feature_importance:
+                recommendations['feature_importance'] = self.feature_importance
+            else:
+                recommendations['feature_importance'] = {}
+            
+            # Add success flag
+            recommendations['success'] = len(all_strategies) > 0
+            
+            return recommendations
+            
+        except Exception as e:
+            st.error(f"Error in strategy recommendations generation: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'moving_average': {'best': None, 'all_results': []},
+                'rsi': {'best': None, 'all_results': []},
+                'feature_importance': {},
+                'top_strategies': []
+            }
