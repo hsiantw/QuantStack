@@ -498,21 +498,127 @@ def live_signals_tab():
                     """)
                 
                 with tab2:
-                    st.markdown(f"""
-                    **Position Sizing Formula:**
+                    # Get current prices for accurate calculations
+                    try:
+                        import yfinance as yf
+                        ticker_a_data = yf.Ticker(pair['ticker1'])
+                        ticker_b_data = yf.Ticker(pair['ticker2'])
+                        
+                        current_price_a = ticker_a_data.history(period="1d")['Close'].iloc[-1]
+                        current_price_b = ticker_b_data.history(period="1d")['Close'].iloc[-1]
+                        
+                        # Calculate exact position sizes for different portfolio allocations
+                        allocations = [5000, 10000, 25000, 50000]
+                        
+                        st.markdown("### 💰 Exact Position Sizing & Ratios")
+                        
+                        for allocation in allocations:
+                            st.markdown(f"**For ${allocation:,} Total Allocation:**")
+                            
+                            if direction == "BUY":  # Long A, Short B
+                                # Calculate shares for dollar-neutral spread
+                                shares_a = int(allocation / (2 * current_price_a))
+                                shares_b = int(shares_a * hedge_ratio)
+                                dollar_a = shares_a * current_price_a
+                                dollar_b = shares_b * current_price_b
+                                
+                                st.markdown(f"""
+                                - **LONG {pair['ticker1']}:** {shares_a:,} shares @ ${current_price_a:.2f} = ${dollar_a:,.2f}
+                                - **SHORT {pair['ticker2']}:** {shares_b:,} shares @ ${current_price_b:.2f} = ${dollar_b:,.2f}
+                                - **Hedge Ratio:** 1:{hedge_ratio:.4f} ({pair['ticker1']}:{pair['ticker2']})
+                                - **Dollar Ratio:** ${dollar_a:,.0f} LONG : ${dollar_b:,.0f} SHORT
+                                """)
+                            
+                            else:  # Short A, Long B
+                                shares_a = int(allocation / (2 * current_price_a))
+                                shares_b = int(shares_a * hedge_ratio)
+                                dollar_a = shares_a * current_price_a
+                                dollar_b = shares_b * current_price_b
+                                
+                                st.markdown(f"""
+                                - **SHORT {pair['ticker1']}:** {shares_a:,} shares @ ${current_price_a:.2f} = ${dollar_a:,.2f}
+                                - **LONG {pair['ticker2']}:** {shares_b:,} shares @ ${current_price_b:.2f} = ${dollar_b:,.2f}
+                                - **Hedge Ratio:** 1:{hedge_ratio:.4f} ({pair['ticker1']}:{pair['ticker2']})
+                                - **Dollar Ratio:** ${dollar_a:,.0f} SHORT : ${dollar_b:,.0f} LONG
+                                """)
+                            
+                            st.markdown("---")
+                        
+                        # Advanced ratio calculations
+                        st.markdown("### 📊 Advanced Ratio Analysis")
+                        
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.markdown(f"""
+                            **Hedge Effectiveness:**
+                            - Current hedge ratio: {hedge_ratio:.4f}
+                            - Beta coefficient: {pair.get('beta', 'N/A')}
+                            - Correlation: {pair['correlation']:.3f}
+                            - Cointegration strength: {'Strong' if pair['cointegration_pvalue'] < 0.01 else 'Moderate' if pair['cointegration_pvalue'] < 0.05 else 'Weak'}
+                            """)
+                        
+                        with col2:
+                            st.markdown(f"""
+                            **Risk Metrics:**
+                            - Portfolio allocation: 2-5% recommended
+                            - Maximum position: ${portfolio_value * 0.05:,.0f}
+                            - Stop loss ratio: ±3.0 Z-score
+                            - Expected holding period: {pair['half_life']:.1f} days
+                            """)
+                        
+                        # Real-time execution guide
+                        st.markdown("### ⚡ Real-Time Execution Commands")
+                        
+                        # For $10k allocation example
+                        allocation_example = 10000
+                        shares_a_ex = int(allocation_example / (2 * current_price_a))
+                        shares_b_ex = int(shares_a_ex * hedge_ratio)
+                        
+                        if direction == "BUY":
+                            st.code(f"""
+# Execution Commands (Example for ${allocation_example:,} allocation)
+# Step 1: Buy {pair['ticker1']} (Asset A)
+BUY {shares_a_ex} {pair['ticker1']} @ MARKET
+# Expected cost: ${shares_a_ex * current_price_a:,.2f}
+
+# Step 2: Short {pair['ticker2']} (Asset B) 
+SELL {shares_b_ex} {pair['ticker2']} @ MARKET
+# Expected proceeds: ${shares_b_ex * current_price_b:,.2f}
+
+# Net Position: LONG {shares_a_ex} {pair['ticker1']}, SHORT {shares_b_ex} {pair['ticker2']}
+# Hedge Ratio: 1:{hedge_ratio:.4f}
+# Target Exit: Z-score near 0.0 (current: {zscore:.2f})
+                            """, language="bash")
+                        else:
+                            st.code(f"""
+# Execution Commands (Example for ${allocation_example:,} allocation)
+# Step 1: Short {pair['ticker1']} (Asset A)
+SELL {shares_a_ex} {pair['ticker1']} @ MARKET  
+# Expected proceeds: ${shares_a_ex * current_price_a:,.2f}
+
+# Step 2: Buy {pair['ticker2']} (Asset B)
+BUY {shares_b_ex} {pair['ticker2']} @ MARKET
+# Expected cost: ${shares_b_ex * current_price_b:,.2f}
+
+# Net Position: SHORT {shares_a_ex} {pair['ticker1']}, LONG {shares_b_ex} {pair['ticker2']}
+# Hedge Ratio: 1:{hedge_ratio:.4f}
+# Target Exit: Z-score near 0.0 (current: {zscore:.2f})
+                            """, language="bash")
                     
-                    If trading $10,000 total:
-                    - **{pair['ticker1']} position:** $5,000 ({primary_action.split()[0]})
-                    - **{pair['ticker2']} position:** ${5000 * hedge_ratio:,.0f} ({secondary_action.split()[0]})
-                    
-                    **Alternative: Share-based calculation**
-                    - For every 100 shares of {pair['ticker1']}: {int(100 * hedge_ratio)} shares of {pair['ticker2']}
-                    - Hedge ratio ensures dollar-neutral position
-                    
-                    **Risk Allocation:**
-                    - Maximum position size: 2-5% of portfolio
-                    - Consider correlation with existing positions
-                    """)
+                    except Exception as e:
+                        st.error(f"Could not fetch current prices: {str(e)}")
+                        st.markdown(f"""
+                        **Basic Position Sizing Formula:**
+                        
+                        If trading $10,000 total:
+                        - **{pair['ticker1']} position:** $5,000 ({primary_action.split()[0]})
+                        - **{pair['ticker2']} position:** ${5000 * hedge_ratio:,.0f} ({secondary_action.split()[0]})
+                        
+                        **Share-based calculation:**
+                        - For every 100 shares of {pair['ticker1']}: {int(100 * hedge_ratio)} shares of {pair['ticker2']}
+                        - Hedge ratio: {hedge_ratio:.4f} ensures dollar-neutral position
+                        """)
                 
                 with tab3:
                     st.markdown(f"""
