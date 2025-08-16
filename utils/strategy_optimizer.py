@@ -497,11 +497,26 @@ class StrategyOptimizer:
         returns = result['returns']
         signals = result['signals']
         
-        # Monthly returns
-        monthly_returns = returns.resample('M').sum()
+        # Monthly returns analysis with proper error handling
+        try:
+            # Ensure returns is a proper time series with datetime index
+            if not isinstance(returns.index, pd.DatetimeIndex):
+                returns.index = pd.to_datetime(returns.index)
+            monthly_returns = returns.resample('M').sum()
+        except Exception as e:
+            # Fallback: group by month manually
+            returns_df = returns.reset_index()
+            if 'Date' in returns_df.columns:
+                returns_df['Month'] = pd.to_datetime(returns_df['Date']).dt.to_period('M')
+                monthly_returns = returns_df.groupby('Month')[returns.name or 'Returns'].sum()
+            else:
+                monthly_returns = pd.Series(dtype=float)
         
-        # Rolling performance
-        rolling_sharpe = returns.rolling(252).mean() / returns.rolling(252).std() * np.sqrt(252)
+        # Rolling performance with error handling
+        try:
+            rolling_sharpe = returns.rolling(252).mean() / returns.rolling(252).std() * np.sqrt(252)
+        except Exception:
+            rolling_sharpe = pd.Series(dtype=float)
         
         return {
             'metrics': result['metrics'],

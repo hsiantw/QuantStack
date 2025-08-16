@@ -434,8 +434,16 @@ with col1:
     """)
 
 with col2:
-    st.image("https://via.placeholder.com/300x200/1e1e1e/00d4ff?text=ORB+Strategy", 
-             caption="Opening Range Breakout Concept")
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%); 
+                padding: 20px; border-radius: 10px; text-align: center; color: #00d4ff;">
+        <h3>📈 ORB Strategy Visualization</h3>
+        <p>Opening Range: 9:30-9:35 AM<br>
+        Entry: 9:35 AM (2nd candle open)<br>
+        Stop: 1st candle low/high<br>
+        Target: 10R profit</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # Strategy rules info box
 st.info("""
