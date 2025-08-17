@@ -234,6 +234,62 @@ if not returns_data.empty:
     comparison_df = pd.DataFrame(comparison_data)
     st.dataframe(comparison_df, use_container_width=True)
     
+    # Add save functionality for authenticated users
+    if st.session_state.get('authenticated', False):
+        st.markdown("---")
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            portfolio_name = st.text_input(
+                "💾 Save optimized portfolio",
+                placeholder=f"Portfolio - {'-'.join(valid_tickers[:3])} - {datetime.now().strftime('%Y-%m-%d')}",
+                key="save_portfolio_name"
+            )
+        
+        with col2:
+            if st.button("💾 Save Portfolio", key="save_portfolio_btn", use_container_width=True):
+                if portfolio_name:
+                    # Import auth functions
+                    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    from utils.auth import save_user_data
+                    
+                    # Prepare portfolio data
+                    portfolio_data = {
+                        "tickers": valid_tickers,
+                        "time_period": selected_period,
+                        "risk_free_rate": risk_free_rate,
+                        "analysis_date": datetime.now().isoformat(),
+                        "max_sharpe_weights": max_sharpe_weights.tolist(),
+                        "min_var_weights": min_var_weights.tolist(),
+                        "equal_weights": equal_weights.tolist(),
+                        "rebalancing_frequency": rebalancing_freq
+                    }
+                    
+                    # Portfolio metrics
+                    portfolio_metrics = {
+                        "max_sharpe": portfolio_results['Maximum Sharpe'],
+                        "min_variance": portfolio_results['Minimum Variance'],
+                        "equal_weight": portfolio_results['Equal Weight']
+                    }
+                    
+                    # Save to user portfolios
+                    user = st.session_state.user
+                    auth_manager = st.session_state.auth_manager
+                    
+                    success = auth_manager.save_user_portfolio(
+                        user_id=user['id'],
+                        portfolio_name=portfolio_name,
+                        portfolio_data=portfolio_data,
+                        portfolio_metrics=portfolio_metrics
+                    )
+                    
+                    if success:
+                        st.success(f"✅ Portfolio '{portfolio_name}' saved successfully!")
+                    else:
+                        st.error("Failed to save portfolio. Please try again.")
+                else:
+                    st.warning("Please enter a portfolio name to save.")
+    
     # Portfolio composition charts
     st.subheader("Portfolio Allocations")
     

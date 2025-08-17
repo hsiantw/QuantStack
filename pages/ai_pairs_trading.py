@@ -102,6 +102,52 @@ def find_best_pairs_tab():
                 st.session_state['pairs_results'] = results
                 st.session_state['current_base_ticker'] = base_ticker
                 
+                # Add save functionality for authenticated users
+                if st.session_state.get('authenticated', False):
+                    st.markdown("---")
+                    col1, col2 = st.columns([3, 1])
+                    
+                    with col1:
+                        strategy_name = st.text_input(
+                            "💾 Save this pairs analysis",
+                            placeholder=f"Pairs Strategy - {base_ticker} - {datetime.now().strftime('%Y-%m-%d')}",
+                            key="save_pairs_strategy"
+                        )
+                    
+                    with col2:
+                        if st.button("💾 Save Strategy", key="save_pairs_btn", use_container_width=True):
+                            if strategy_name:
+                                # Import auth functions
+                                from utils.auth import save_user_data
+                                
+                                # Prepare strategy data
+                                strategy_config = {
+                                    "base_ticker": base_ticker,
+                                    "candidate_tickers": candidate_list,
+                                    "lookback_days": lookback_days,
+                                    "analysis_date": datetime.now().isoformat(),
+                                    "top_pairs": results['pairs'][:10],  # Save top 10 pairs
+                                    "total_pairs_tested": results['total_pairs_tested']
+                                }
+                                
+                                # Save to user strategies
+                                user = st.session_state.user
+                                auth_manager = st.session_state.auth_manager
+                                
+                                success = auth_manager.save_user_strategy(
+                                    user_id=user['id'],
+                                    strategy_name=strategy_name,
+                                    strategy_type="AI Pairs Trading",
+                                    strategy_config=strategy_config
+                                )
+                                
+                                if success:
+                                    st.success(f"✅ Strategy '{strategy_name}' saved successfully!")
+                                else:
+                                    st.error("Failed to save strategy. Please try again.")
+                            else:
+                                st.warning("Please enter a strategy name to save.")
+                
                 # Show analysis methodology
                 with st.expander("🧠 How AI Found These Pairs", expanded=False):
                     st.markdown("### AI Methodology for Pairs Discovery:")

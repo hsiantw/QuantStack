@@ -8,6 +8,15 @@ from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
+# Import authentication system
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from utils.auth import (
+    init_session_state, show_auth_page, show_user_menu, require_auth,
+    save_user_data, load_user_data
+)
+
 # Configure page
 st.set_page_config(
     page_title="Quantitative Finance Platform",
@@ -1038,19 +1047,37 @@ def create_quantconnect_sidebar():
         
         st.markdown("---")
         
-        # Account section
-        st.markdown("#### 👤 Your Account")
-        
-        # Account metrics
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Projects", "10")
-        with col2:
-            st.metric("Backtests", "247")
-        
-        # Progress indicators
-        st.markdown("##### 📈 Progress")
-        st.progress(0.8, text="Platform Mastery: 80%")
+        # Account section - show user-specific data
+        if st.session_state.get('authenticated', False) and st.session_state.get('user'):
+            user = st.session_state.user
+            st.markdown(f"#### 👤 {user['username']}")
+            
+            # Load user preferences and stats
+            saved_strategies = load_user_data('saved_strategies', [])
+            saved_portfolios = load_user_data('saved_portfolios', [])
+            
+            # Account metrics
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Portfolios", len(saved_portfolios))
+            with col2:
+                st.metric("Strategies", len(saved_strategies))
+            
+            # User tier and progress
+            tier = user.get('subscription_tier', 'free').title()
+            st.markdown(f"**Tier:** {tier}")
+            
+            # Progress indicators based on usage
+            usage_score = min((len(saved_strategies) + len(saved_portfolios)) * 10, 100)
+            if usage_score > 0:
+                st.progress(usage_score / 100, text=f"Usage Score: {usage_score}%")
+            else:
+                st.progress(0.1, text="Getting Started: 10%")
+        else:
+            # Fallback for non-authenticated users
+            st.markdown("#### 👤 Guest Account")
+            st.metric("Status", "Guest Mode")
+            st.info("Login to save your work")
         
         st.markdown("---")
         
@@ -1065,6 +1092,15 @@ def create_quantconnect_sidebar():
             st.metric("VIX", "14.2", "-2.1%")
 
 if __name__ == "__main__":
-    # Create QuantConnect-style layout
-    create_quantconnect_sidebar()
-    main_dashboard()
+    # Initialize authentication system
+    init_session_state()
+    
+    # Check if user is authenticated
+    if not st.session_state.get('authenticated', False):
+        # Show authentication page
+        show_auth_page()
+    else:
+        # User is authenticated, show main application
+        show_user_menu()  # Add user menu to sidebar
+        create_quantconnect_sidebar()
+        main_dashboard()
