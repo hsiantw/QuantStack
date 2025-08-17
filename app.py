@@ -622,6 +622,12 @@ def main_dashboard():
                 "title": "Opening Range Breakout (ORB)",
                 "desc": "Research-backed day trading strategy with 675% returns vs 169% buy-and-hold (2016-2023).",
                 "page": "pages/orb_strategy.py"
+            },
+            {
+                "icon": "⚠️",
+                "title": "Advanced Risk Management",
+                "desc": "Monte Carlo simulations, stress testing, VaR analysis, and comprehensive portfolio risk assessment.",
+                "page": "pages/risk_management.py"
             }
         ]
         

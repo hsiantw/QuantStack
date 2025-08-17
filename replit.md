@@ -44,12 +44,13 @@ Preferred communication style: Simple, everyday language.
 - **Trading Strategies**: Multiple strategy implementations with comprehensive backtesting capabilities and systematic comparison of 15+ trading strategies, now supporting intraday backtesting with 1-hour and 4-hour intervals in addition to daily timeframes.
 - **Opening Range Breakout (ORB)**: Research-backed day trading strategy implementation based on peer-reviewed paper showing 675% returns vs 169% buy-and-hold from 2016-2023, with professional risk management and position sizing.
 - **Mean Reversion Strategies**: Professional-grade implementation featuring 6 mathematical approaches: Bollinger Bands, RSI, Ornstein-Uhlenbeck, Kalman Filter, Ensemble, and Adaptive strategies.
+- **Advanced Risk Management**: Professional Monte Carlo simulation engine with portfolio path modeling, stress testing scenarios (2008 crash, COVID-19, interest rate shocks), Value at Risk analysis with multiple confidence levels, options pricing and Greeks calculation, efficient frontier generation, and comprehensive risk decomposition analysis.
 - **Market Analysis**: Includes Money Flow Index, Accumulation/Distribution Line, On-Balance Volume, liquidity metrics, dark pool activity detection, and volume profile analysis.
 - **Liquidity Analysis**: CoinGlass-inspired liquidation heat maps, order book depth visualization, volume profile analysis, and comprehensive market microstructure insights with Amihud illiquidity metrics.
 - **Cryptocurrency Analysis**: Fear & Greed index, on-chain metrics, DeFi ecosystem analysis, correlation analysis, and specialized crypto trading strategies.
 - **Live News & Economic Intelligence**: Automated web scraping of financial news and economic data (Fed, BLS, Treasury, MarketWatch, Reuters, CNBC), economic calendar, FOMC schedule, earnings calendar, news sentiment analysis, and market intelligence summary dashboard.
 - **Trading Account Integration**: Live account monitoring with Webull API for balance, P&L, position analysis, order management, and strategy performance validation in demo or live modes.
-- **Risk Management**: Value at Risk (VaR), Expected Shortfall, and comprehensive risk metrics.
+- **User Authentication System**: Secure login/signup with SQLite database storage for user preferences, saved strategies, portfolio configurations, and personalized platform settings with session management.
 - **Educational Tooltips**: Interactive help system with formulas and definitions for complex financial terms.
 
 ### Design Patterns
