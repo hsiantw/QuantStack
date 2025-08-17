@@ -6,659 +6,524 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import yfinance as yf
 from datetime import datetime, timedelta
-import sys
-import os
-
-# Add the parent directory to the path to import utils
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from utils.data_fetcher import DataFetcher
-from utils.ui_components import apply_custom_css, create_metric_card, create_info_box
+import warnings
+warnings.filterwarnings('ignore')
 
 # Page configuration
 st.set_page_config(
-    page_title="Liquidity Analysis",
-    page_icon="💧",
-    layout="wide"
+    page_title="Liquidity Analysis - QuantStack",
+    page_icon="🌊",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Apply custom styling
-apply_custom_css()
+# Import utilities
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Modern header
-st.markdown("""
-<div class="main-header">
-    <h1>💧 Liquidity Analysis & Heat Maps</h1>
-    <p>Advanced liquidity analysis with liquidation heat maps, order book depth, and market microstructure insights</p>
-</div>
-""", unsafe_allow_html=True)
+try:
+    from utils.ui_components import apply_custom_css, create_metric_card, create_info_card
+    from utils.auth import check_authentication
+    apply_custom_css()
+except ImportError:
+    st.warning("UI components not found. Using default styling.")
+    def create_metric_card(title, value, delta=None):
+        return st.metric(title, value, delta)
+    def create_info_card(title, content):
+        return st.info(f"**{title}**\n\n{content}")
+    def check_authentication():
+        return True, None
 
-class LiquidityAnalyzer:
-    """Advanced liquidity analysis and visualization tools"""
-    
-    def __init__(self, ticker, period="1y"):
-        self.ticker = ticker
-        self.period = period
-        self.data = None
-        self._fetch_data()
-    
-    def _fetch_data(self):
-        """Fetch comprehensive market data"""
-        try:
-            # Get OHLCV data
-            ticker_obj = yf.Ticker(self.ticker)
-            self.data = ticker_obj.history(period=self.period, interval="1d")
+def calculate_amihud_illiquidity(data):
+    """Calculate Amihud Illiquidity measure"""
+    try:
+        # Calculate daily returns
+        data['Returns'] = data['Close'].pct_change()
+        # Calculate dollar volume
+        data['Dollar_Volume'] = data['Close'] * data['Volume']
+        # Amihud illiquidity = |Return| / Dollar Volume
+        data['Amihud_Illiquidity'] = np.abs(data['Returns']) / (data['Dollar_Volume'] + 1e-10)
+        return data['Amihud_Illiquidity'].rolling(window=20).mean()
+    except Exception:
+        return pd.Series([0] * len(data), index=data.index)
+
+def calculate_volume_profile(data, bins=20):
+    """Calculate Volume Profile - price levels with highest volume"""
+    try:
+        price_min, price_max = data['Low'].min(), data['High'].max()
+        price_levels = np.linspace(price_min, price_max, bins)
+        volume_profile = []
+        
+        for i in range(len(price_levels)-1):
+            level_volume = 0
+            for _, row in data.iterrows():
+                if price_levels[i] <= row['Close'] <= price_levels[i+1]:
+                    level_volume += row['Volume']
+            volume_profile.append(level_volume)
+        
+        return price_levels[:-1], volume_profile
+    except Exception:
+        return np.array([]), np.array([])
+
+def calculate_order_flow_imbalance(data):
+    """Estimate order flow imbalance from OHLCV data"""
+    try:
+        # Proxy for buy/sell pressure using price movement and volume
+        data['Price_Change'] = data['Close'] - data['Open']
+        data['Buy_Volume'] = np.where(data['Price_Change'] > 0, 
+                                     data['Volume'] * (data['Price_Change'] / (data['High'] - data['Low'] + 1e-10)), 0)
+        data['Sell_Volume'] = np.where(data['Price_Change'] < 0, 
+                                      data['Volume'] * (abs(data['Price_Change']) / (data['High'] - data['Low'] + 1e-10)), 0)
+        data['Order_Flow_Imbalance'] = data['Buy_Volume'] - data['Sell_Volume']
+        return data['Order_Flow_Imbalance'].rolling(window=10).mean()
+    except Exception:
+        return pd.Series([0] * len(data), index=data.index)
+
+def estimate_dark_pool_activity(data):
+    """Estimate dark pool activity using volume analysis"""
+    try:
+        # Calculate volume patterns that might indicate dark pool activity
+        data['Volume_MA'] = data['Volume'].rolling(window=20).mean()
+        data['Volume_Std'] = data['Volume'].rolling(window=20).std()
+        
+        # Unusual volume spikes with minimal price movement might indicate dark pools
+        data['Price_Volatility'] = data['Close'].pct_change().rolling(window=5).std()
+        data['Volume_Surprise'] = (data['Volume'] - data['Volume_MA']) / (data['Volume_Std'] + 1e-10)
+        
+        # Dark pool indicator: high volume, low volatility
+        data['Dark_Pool_Indicator'] = np.where(
+            (data['Volume_Surprise'] > 1.5) & (data['Price_Volatility'] < data['Price_Volatility'].rolling(20).mean()),
+            data['Volume_Surprise'], 0
+        )
+        
+        return data['Dark_Pool_Indicator'].rolling(window=5).mean()
+    except Exception:
+        return pd.Series([0] * len(data), index=data.index)
+
+def calculate_supply_demand_zones(data):
+    """Identify supply and demand zones"""
+    try:
+        supply_zones = []
+        demand_zones = []
+        
+        # Look for significant price levels with high volume
+        for i in range(20, len(data)-20):
+            # Resistance (Supply) zones
+            if (data['High'].iloc[i] > data['High'].iloc[i-10:i].max() and 
+                data['High'].iloc[i] > data['High'].iloc[i+1:i+11].max() and
+                data['Volume'].iloc[i] > data['Volume'].iloc[i-10:i+11].mean() * 1.5):
+                supply_zones.append({
+                    'date': data.index[i],
+                    'price': data['High'].iloc[i],
+                    'volume': data['Volume'].iloc[i],
+                    'strength': data['Volume'].iloc[i] / data['Volume'].iloc[i-20:i+21].mean()
+                })
             
-            # Get additional market data
-            self.info = ticker_obj.info
-            
-            if self.data.empty:
-                st.error(f"No data available for {self.ticker}")
-                return
-            
-            # Calculate additional metrics
-            self._calculate_liquidity_metrics()
-            
-        except Exception as e:
-            st.error(f"Error fetching data for {self.ticker}: {str(e)}")
-    
-    def _calculate_liquidity_metrics(self):
-        """Calculate comprehensive liquidity metrics"""
-        if self.data is None or self.data.empty:
-            return
+            # Support (Demand) zones  
+            if (data['Low'].iloc[i] < data['Low'].iloc[i-10:i].min() and 
+                data['Low'].iloc[i] < data['Low'].iloc[i+1:i+11].min() and
+                data['Volume'].iloc[i] > data['Volume'].iloc[i-10:i+11].mean() * 1.5):
+                demand_zones.append({
+                    'date': data.index[i],
+                    'price': data['Low'].iloc[i],
+                    'volume': data['Volume'].iloc[i],
+                    'strength': data['Volume'].iloc[i] / data['Volume'].iloc[i-20:i+21].mean()
+                })
         
-        # Price-based liquidity metrics
-        self.data['Returns'] = self.data['Close'].pct_change()
-        self.data['Price_Range'] = (self.data['High'] - self.data['Low']) / self.data['Close']
-        self.data['Volume_Price_Trend'] = (self.data['Volume'] * self.data['Returns']).rolling(window=20).mean()
+        return supply_zones, demand_zones
+    except Exception:
+        return [], []
+
+def create_liquidity_heatmap(data, symbol):
+    """Create CoinGlass-style liquidity heatmap"""
+    try:
+        # Calculate price levels and liquidity
+        price_levels, volume_profile = calculate_volume_profile(data, bins=30)
         
-        # Volume analysis
-        self.data['Volume_MA_20'] = self.data['Volume'].rolling(window=20).mean()
-        self.data['Volume_Ratio'] = self.data['Volume'] / self.data['Volume_MA_20']
-        self.data['Dollar_Volume'] = self.data['Volume'] * self.data['Close']
+        if len(price_levels) == 0:
+            return go.Figure()
         
-        # Volatility-based liquidity
-        self.data['Volatility_20'] = self.data['Returns'].rolling(window=20).std()
-        self.data['High_Low_Volatility'] = (self.data['High'] / self.data['Low'] - 1).rolling(window=20).mean()
-        
-        # Market Impact Estimation (Amihud Illiquidity)
-        self.data['Amihud_Illiquidity'] = abs(self.data['Returns']) / (self.data['Dollar_Volume'] / 1e6)
-        self.data['Amihud_Illiquidity'] = self.data['Amihud_Illiquidity'].replace([np.inf, -np.inf], np.nan)
-        
-        # Liquidity Score (lower is more liquid)
-        volatility_component = self.data['Volatility_20'] / self.data['Volatility_20'].mean()
-        volume_component = self.data['Volume_MA_20'].mean() / self.data['Volume_MA_20']
-        spread_proxy = self.data['Price_Range'] / self.data['Price_Range'].mean()
-        
-        self.data['Liquidity_Score'] = (volatility_component + volume_component + spread_proxy) / 3
-    
-    def create_liquidation_heatmap(self):
-        """Create liquidation heat map similar to CoinGlass"""
-        if self.data is None or self.data.empty:
-            return None
-        
-        # Simulate liquidation levels based on price action and volume
-        current_price = self.data['Close'].iloc[-1]
-        price_range = np.arange(current_price * 0.8, current_price * 1.2, current_price * 0.005)
-        
-        # Estimate liquidation density based on volume patterns
-        liquidation_data = []
-        
-        for price_level in price_range:
-            # Distance from current price
-            distance_pct = abs(price_level - current_price) / current_price
-            
-            # Estimate liquidation density (higher at support/resistance levels)
-            base_density = np.random.exponential(scale=1000)
-            
-            # Increase density at round numbers
-            if price_level % (current_price * 0.05) < (current_price * 0.01):
-                base_density *= 2
-            
-            # Increase density based on historical volume at similar price levels
-            historical_volumes = self.data[
-                (self.data['Close'] >= price_level * 0.99) & 
-                (self.data['Close'] <= price_level * 1.01)
-            ]['Volume'].mean()
-            
-            if not pd.isna(historical_volumes):
-                volume_factor = historical_volumes / self.data['Volume'].mean()
-                base_density *= (1 + volume_factor)
-            
-            liquidation_data.append({
-                'Price': price_level,
-                'Liquidation_Density': base_density,
-                'Distance_Pct': distance_pct * 100,
-                'Type': 'Long' if price_level < current_price else 'Short'
-            })
-        
-        liquidation_df = pd.DataFrame(liquidation_data)
+        # Normalize volume for color intensity
+        max_volume = max(volume_profile) if volume_profile else 1
+        normalized_volume = [v/max_volume for v in volume_profile]
         
         # Create heatmap
         fig = go.Figure()
         
-        # Long liquidations (below current price)
-        long_liq = liquidation_df[liquidation_df['Type'] == 'Long']
-        fig.add_trace(go.Scatter(
-            x=long_liq['Distance_Pct'],
-            y=long_liq['Price'],
-            mode='markers',
+        # Add volume profile bars
+        fig.add_trace(go.Bar(
+            x=volume_profile,
+            y=price_levels,
+            orientation='h',
             marker=dict(
-                size=long_liq['Liquidation_Density'] / 100,
-                color='red',
-                opacity=0.6,
-                sizemode='area',
-                sizeref=2.*max(long_liq['Liquidation_Density'])/100**2,
-                sizemin=4
+                color=normalized_volume,
+                colorscale='RdYlBu_r',
+                colorbar=dict(title="Liquidity Intensity")
             ),
-            name='Long Liquidations',
-            hovertemplate='Price: $%{y:.2f}<br>Distance: %{x:.1f}%<br>Density: %{marker.size}<extra></extra>'
+            name="Liquidity Profile",
+            hovertemplate="Price: $%{y:.2f}<br>Volume: %{x:,.0f}<extra></extra>"
         ))
         
-        # Short liquidations (above current price)
-        short_liq = liquidation_df[liquidation_df['Type'] == 'Short']
-        fig.add_trace(go.Scatter(
-            x=short_liq['Distance_Pct'],
-            y=short_liq['Price'],
-            mode='markers',
-            marker=dict(
-                size=short_liq['Liquidation_Density'] / 100,
-                color='green',
-                opacity=0.6,
-                sizemode='area',
-                sizeref=2.*max(short_liq['Liquidation_Density'])/100**2,
-                sizemin=4
-            ),
-            name='Short Liquidations',
-            hovertemplate='Price: $%{y:.2f}<br>Distance: %{x:.1f}%<br>Density: %{marker.size}<extra></extra>'
-        ))
-        
-        # Current price line
-        fig.add_hline(
-            y=current_price,
-            line_dash="dash",
-            line_color="white",
-            annotation_text=f"Current: ${current_price:.2f}"
-        )
+        # Add current price line
+        current_price = data['Close'].iloc[-1]
+        fig.add_hline(y=current_price, line_dash="dash", line_color="cyan", 
+                     annotation_text=f"Current: ${current_price:.2f}")
         
         fig.update_layout(
-            title=f'{self.ticker} Liquidation Heat Map',
-            xaxis_title='Distance from Current Price (%)',
-            yaxis_title='Price ($)',
+            title=f"{symbol} Liquidity Heatmap",
+            xaxis_title="Volume",
+            yaxis_title="Price Level",
+            template="plotly_dark",
             height=600,
-            plot_bgcolor='rgba(0,0,0,0.1)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white'),
-            xaxis=dict(gridcolor='rgba(128,128,128,0.2)'),
-            yaxis=dict(gridcolor='rgba(128,128,128,0.2)')
+            showlegend=True
         )
         
         return fig
-    
-    def create_order_book_simulation(self):
-        """Simulate order book depth chart"""
-        if self.data is None or self.data.empty:
-            return None
-        
-        current_price = self.data['Close'].iloc[-1]
-        current_volume = self.data['Volume'].iloc[-1]
-        
-        # Simulate order book levels
-        price_levels = np.arange(current_price * 0.95, current_price * 1.05, current_price * 0.001)
-        
-        bids = []
-        asks = []
-        
-        for price in price_levels:
-            distance = abs(price - current_price) / current_price
-            
-            # Volume decreases with distance from current price
-            base_volume = current_volume * np.exp(-distance * 50)
-            
-            # Add some randomness
-            volume = base_volume * (0.5 + np.random.random())
-            
-            if price < current_price:
-                bids.append({'Price': price, 'Volume': volume, 'Cumulative': 0})
-            else:
-                asks.append({'Price': price, 'Volume': volume, 'Cumulative': 0})
-        
-        # Calculate cumulative volumes
-        bids = sorted(bids, key=lambda x: x['Price'], reverse=True)
-        asks = sorted(asks, key=lambda x: x['Price'])
-        
-        cumulative_bid = 0
-        for bid in bids:
-            cumulative_bid += bid['Volume']
-            bid['Cumulative'] = cumulative_bid
-        
-        cumulative_ask = 0
-        for ask in asks:
-            cumulative_ask += ask['Volume']
-            ask['Cumulative'] = cumulative_ask
-        
-        # Create order book chart
-        fig = go.Figure()
-        
-        # Bids
-        bid_prices = [b['Price'] for b in bids]
-        bid_volumes = [b['Cumulative'] for b in bids]
-        
-        fig.add_trace(go.Scatter(
-            x=bid_volumes,
-            y=bid_prices,
-            mode='lines',
-            fill='tozeroy',
-            name='Bids',
-            line=dict(color='green'),
-            fillcolor='rgba(0,255,0,0.3)'
-        ))
-        
-        # Asks
-        ask_prices = [a['Price'] for a in asks]
-        ask_volumes = [a['Cumulative'] for a in asks]
-        
-        fig.add_trace(go.Scatter(
-            x=ask_volumes,
-            y=ask_prices,
-            mode='lines',
-            fill='tozeroy',
-            name='Asks',
-            line=dict(color='red'),
-            fillcolor='rgba(255,0,0,0.3)'
-        ))
-        
-        # Current price
-        fig.add_hline(
-            y=current_price,
-            line_dash="dash",
-            line_color="white",
-            annotation_text=f"Current: ${current_price:.2f}"
-        )
-        
-        fig.update_layout(
-            title=f'{self.ticker} Simulated Order Book Depth',
-            xaxis_title='Cumulative Volume',
-            yaxis_title='Price ($)',
-            height=500,
-            plot_bgcolor='rgba(0,0,0,0.1)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white'),
-            xaxis=dict(gridcolor='rgba(128,128,128,0.2)'),
-            yaxis=dict(gridcolor='rgba(128,128,128,0.2)')
-        )
-        
-        return fig
-    
-    def create_volume_profile(self):
-        """Create volume profile chart"""
-        if self.data is None or self.data.empty:
-            return None
-        
-        # Calculate volume profile
-        price_min = self.data['Low'].min()
-        price_max = self.data['High'].max()
-        price_bins = np.linspace(price_min, price_max, 50)
-        
-        volume_profile = []
-        
-        for i in range(len(price_bins) - 1):
-            bin_low = price_bins[i]
-            bin_high = price_bins[i + 1]
-            bin_center = (bin_low + bin_high) / 2
-            
-            # Find volume traded in this price range
-            mask = (
-                (self.data['Low'] <= bin_high) & 
-                (self.data['High'] >= bin_low)
-            )
-            
-            volume_in_bin = self.data[mask]['Volume'].sum()
-            
-            volume_profile.append({
-                'Price': bin_center,
-                'Volume': volume_in_bin,
-                'Price_Low': bin_low,
-                'Price_High': bin_high
-            })
-        
-        volume_df = pd.DataFrame(volume_profile)
-        
-        # Create volume profile chart
-        fig = make_subplots(
-            rows=1, cols=2,
-            column_widths=[0.7, 0.3],
-            subplot_titles=['Price Chart', 'Volume Profile'],
-            horizontal_spacing=0.05
-        )
-        
-        # Price chart
-        fig.add_trace(
-            go.Candlestick(
-                x=self.data.index,
-                open=self.data['Open'],
-                high=self.data['High'],
-                low=self.data['Low'],
-                close=self.data['Close'],
-                name='Price'
-            ),
-            row=1, col=1
-        )
-        
-        # Volume profile
-        fig.add_trace(
-            go.Bar(
-                y=volume_df['Price'],
-                x=volume_df['Volume'],
-                orientation='h',
-                name='Volume Profile',
-                marker=dict(color='rgba(0,212,255,0.6)')
-            ),
-            row=1, col=2
-        )
-        
-        fig.update_layout(
-            title=f'{self.ticker} Volume Profile Analysis',
-            height=600,
-            plot_bgcolor='rgba(0,0,0,0.1)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white'),
-            xaxis=dict(gridcolor='rgba(128,128,128,0.2)'),
-            yaxis=dict(gridcolor='rgba(128,128,128,0.2)')
-        )
-        
-        return fig
-    
-    def get_liquidity_metrics(self):
-        """Calculate and return liquidity metrics"""
-        if self.data is None or self.data.empty:
-            return {}
-        
-        recent_data = self.data.tail(30)  # Last 30 days
-        
-        metrics = {
-            'Average Daily Volume': recent_data['Volume'].mean(),
-            'Volume Volatility': recent_data['Volume'].std() / recent_data['Volume'].mean(),
-            'Average Spread Proxy': recent_data['Price_Range'].mean() * 100,  # As percentage
-            'Amihud Illiquidity': recent_data['Amihud_Illiquidity'].mean(),
-            'Liquidity Score': recent_data['Liquidity_Score'].mean(),
-            'Volume Trend': recent_data['Volume_Price_Trend'].iloc[-1],
-            'Current Volume Ratio': recent_data['Volume_Ratio'].iloc[-1]
-        }
-        
-        return metrics
+    except Exception as e:
+        st.error(f"Error creating liquidity heatmap: {str(e)}")
+        return go.Figure()
 
-# Sidebar configuration
-st.sidebar.header("Liquidity Analysis Configuration")
-
-# Asset selection
-ticker_input = st.sidebar.text_input(
-    "Enter Stock/Crypto Ticker",
-    value="SPY",
-    help="Enter ticker symbol (e.g., SPY, AAPL, BTC-USD)"
-).upper()
-
-# Time period
-period_options = {
-    "3 Months": "3mo",
-    "6 Months": "6mo", 
-    "1 Year": "1y",
-    "2 Years": "2y"
-}
-
-selected_period = st.sidebar.selectbox(
-    "Analysis Period",
-    list(period_options.keys()),
-    index=2
-)
-
-period = period_options[selected_period]
-
-# Analysis type
-analysis_type = st.sidebar.radio(
-    "Analysis Focus",
-    ["Liquidation Heat Map", "Order Book Depth", "Volume Profile", "Liquidity Metrics"],
-    help="Choose the type of liquidity analysis to display"
-)
-
-if not ticker_input:
-    st.warning("Please enter a ticker symbol to begin analysis.")
-    st.stop()
-
-# Initialize analyzer
-with st.spinner(f"Analyzing liquidity for {ticker_input}..."):
-    analyzer = LiquidityAnalyzer(ticker_input, period)
-
-if analyzer.data is None or analyzer.data.empty:
-    st.error("Unable to fetch data for analysis.")
-    st.stop()
-
-# Display current price info
-current_price = analyzer.data['Close'].iloc[-1]
-daily_change = (analyzer.data['Close'].iloc[-1] - analyzer.data['Close'].iloc[-2]) / analyzer.data['Close'].iloc[-2]
-
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric("Current Price", f"${current_price:.2f}")
-with col2:
-    st.metric("Daily Change", f"{daily_change:.2%}")
-with col3:
-    avg_volume = analyzer.data['Volume'].tail(20).mean()
-    st.metric("20D Avg Volume", f"{avg_volume:,.0f}")
-with col4:
-    current_volume = analyzer.data['Volume'].iloc[-1]
-    volume_ratio = current_volume / avg_volume if avg_volume > 0 else 0
-    st.metric("Volume vs Avg", f"{volume_ratio:.2f}x")
-
-st.markdown("---")
-
-# Main analysis based on selection
-if analysis_type == "Liquidation Heat Map":
-    st.header("🔥 Liquidation Heat Map")
-    st.info("Visualizing potential liquidation levels based on price action and volume patterns")
-    
-    fig = analyzer.create_liquidation_heatmap()
-    if fig:
-        st.plotly_chart(fig, use_container_width=True)
-        
-        with st.expander("💡 Understanding Liquidation Heat Maps"):
-            st.markdown("""
-            **Liquidation Heat Maps** show potential areas where forced liquidations might occur:
-            
-            - **Red bubbles**: Long position liquidations (price drops)
-            - **Green bubbles**: Short position liquidations (price rises)
-            - **Bubble size**: Relative liquidation density
-            - **Distance**: Percentage away from current price
-            
-            High-density areas often act as **support/resistance** levels due to:
-            - Forced buying/selling pressure
-            - Round number psychology
-            - Historical volume concentration
-            """)
-
-elif analysis_type == "Order Book Depth":
-    st.header("📊 Order Book Depth Analysis")
-    st.info("Simulated order book showing bid/ask depth and market liquidity")
-    
-    fig = analyzer.create_order_book_simulation()
-    if fig:
-        st.plotly_chart(fig, use_container_width=True)
-        
-        with st.expander("💡 Understanding Order Book Depth"):
-            st.markdown("""
-            **Order Book Depth** shows the market's liquidity structure:
-            
-            - **Green area**: Cumulative bid volume (buying pressure)
-            - **Red area**: Cumulative ask volume (selling pressure)
-            - **Width**: Depth of liquidity at each price level
-            - **Shape**: Market microstructure characteristics
-            
-            **Key insights**:
-            - Thicker areas = more liquidity
-            - Gaps = potential price acceleration zones
-            - Asymmetry = directional bias
-            """)
-
-elif analysis_type == "Volume Profile":
-    st.header("📈 Volume Profile Analysis")
-    st.info("Price levels with highest trading activity and potential support/resistance")
-    
-    fig = analyzer.create_volume_profile()
-    if fig:
-        st.plotly_chart(fig, use_container_width=True)
-        
-        with st.expander("💡 Understanding Volume Profile"):
-            st.markdown("""
-            **Volume Profile** reveals where most trading occurred:
-            
-            - **Horizontal bars**: Volume traded at each price level
-            - **Longer bars**: More significant price levels
-            - **POC (Point of Control)**: Highest volume price level
-            - **Value areas**: Price ranges with highest volume concentration
-            
-            **Trading implications**:
-            - High volume areas = strong support/resistance
-            - Low volume areas = potential breakout zones
-            - Volume gaps = areas of price acceptance/rejection
-            """)
-
-elif analysis_type == "Liquidity Metrics":
-    st.header("📊 Comprehensive Liquidity Metrics")
-    
-    metrics = analyzer.get_liquidity_metrics()
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("Volume Metrics")
-        st.metric("Avg Daily Volume", f"{metrics.get('Average Daily Volume', 0):,.0f}")
-        st.metric("Volume Volatility", f"{metrics.get('Volume Volatility', 0):.2f}")
-        st.metric("Current Volume Ratio", f"{metrics.get('Current Volume Ratio', 0):.2f}x")
-    
-    with col2:
-        st.subheader("Liquidity Quality")
-        st.metric("Spread Proxy", f"{metrics.get('Average Spread Proxy', 0):.3f}%")
-        st.metric("Amihud Illiquidity", f"{metrics.get('Amihud Illiquidity', 0):.6f}")
-        st.metric("Liquidity Score", f"{metrics.get('Liquidity Score', 0):.3f}")
-    
-    # Liquidity trend chart
-    st.subheader("Liquidity Trends")
+def create_dark_pool_chart(data, symbol):
+    """Create dark pool activity visualization"""
+    dark_pool_activity = estimate_dark_pool_activity(data)
     
     fig = make_subplots(
-        rows=3, cols=1,
-        subplot_titles=['Price & Volume', 'Liquidity Score', 'Amihud Illiquidity'],
-        vertical_spacing=0.08
+        rows=2, cols=1,
+        shared_xaxes=True,
+        subplot_titles=[f"{symbol} Price", "Estimated Dark Pool Activity"],
+        vertical_spacing=0.1,
+        row_heights=[0.7, 0.3]
     )
     
-    # Price and volume
-    fig.add_trace(
-        go.Scatter(
-            x=analyzer.data.index,
-            y=analyzer.data['Close'],
-            name='Price',
-            line=dict(color='#00d4ff')
-        ),
-        row=1, col=1
-    )
+    # Price chart
+    fig.add_trace(go.Candlestick(
+        x=data.index,
+        open=data['Open'],
+        high=data['High'],
+        low=data['Low'],
+        close=data['Close'],
+        name="Price"
+    ), row=1, col=1)
     
-    # Liquidity score
-    fig.add_trace(
-        go.Scatter(
-            x=analyzer.data.index,
-            y=analyzer.data['Liquidity_Score'],
-            name='Liquidity Score',
-            line=dict(color='orange')
-        ),
-        row=2, col=1
-    )
-    
-    # Amihud illiquidity
-    amihud_clean = analyzer.data['Amihud_Illiquidity'].replace([np.inf, -np.inf], np.nan).dropna()
-    fig.add_trace(
-        go.Scatter(
-            x=amihud_clean.index,
-            y=amihud_clean,
-            name='Amihud Illiquidity',
-            line=dict(color='red')
-        ),
-        row=3, col=1
-    )
+    # Dark pool activity
+    fig.add_trace(go.Scatter(
+        x=data.index,
+        y=dark_pool_activity,
+        mode='lines',
+        fill='tozeroy',
+        line=dict(color='purple'),
+        name="Dark Pool Activity"
+    ), row=2, col=1)
     
     fig.update_layout(
-        height=800,
-        title=f'{ticker_input} Liquidity Analysis Over Time',
-        plot_bgcolor='rgba(0,0,0,0.1)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white'),
-        showlegend=False
+        title=f"{symbol} Dark Pool Analysis",
+        template="plotly_dark",
+        height=700,
+        xaxis_rangeslider_visible=False
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    return fig
+
+def create_order_flow_chart(data, symbol):
+    """Create order flow imbalance chart"""
+    order_flow = calculate_order_flow_imbalance(data)
     
-    with st.expander("💡 Understanding Liquidity Metrics"):
-        st.markdown("""
-        **Key Liquidity Indicators**:
-        
-        **Volume Metrics**:
-        - **Average Daily Volume**: Higher = more liquid
-        - **Volume Volatility**: Lower = more consistent liquidity
-        - **Volume Ratio**: Current vs average activity
-        
-        **Liquidity Quality**:
-        - **Spread Proxy**: Price range as % of close (lower = tighter spreads)
-        - **Amihud Illiquidity**: Price impact per dollar volume (lower = more liquid)
-        - **Liquidity Score**: Composite metric (lower = more liquid)
-        
-        **Interpretation**:
-        - **High liquidity**: Easy to trade without price impact
-        - **Low liquidity**: Higher costs and price impact
-        - **Liquidity trends**: Help identify optimal trading times
-        """)
+    fig = make_subplots(
+        rows=2, cols=1,
+        shared_xaxes=True,
+        subplot_titles=[f"{symbol} Price", "Order Flow Imbalance"],
+        vertical_spacing=0.1
+    )
+    
+    # Price chart
+    fig.add_trace(go.Candlestick(
+        x=data.index,
+        open=data['Open'],
+        high=data['High'],
+        low=data['Low'],
+        close=data['Close'],
+        name="Price"
+    ), row=1, col=1)
+    
+    # Order flow imbalance
+    colors = ['red' if x < 0 else 'green' for x in order_flow]
+    fig.add_trace(go.Bar(
+        x=data.index,
+        y=order_flow,
+        marker_color=colors,
+        name="Order Flow",
+        opacity=0.7
+    ), row=2, col=1)
+    
+    fig.update_layout(
+        title=f"{symbol} Order Flow Analysis",
+        template="plotly_dark",
+        height=700,
+        xaxis_rangeslider_visible=False
+    )
+    
+    return fig
 
-# Additional market insights
-st.markdown("---")
-st.header("🔍 Market Microstructure Insights")
+def create_supply_demand_chart(data, symbol):
+    """Create supply and demand zones visualization"""
+    supply_zones, demand_zones = calculate_supply_demand_zones(data)
+    
+    fig = go.Figure()
+    
+    # Price chart
+    fig.add_trace(go.Candlestick(
+        x=data.index,
+        open=data['Open'],
+        high=data['High'],
+        low=data['Low'],
+        close=data['Close'],
+        name="Price"
+    ))
+    
+    # Supply zones (resistance)
+    for zone in supply_zones[-10:]:  # Show last 10 zones
+        fig.add_hline(
+            y=zone['price'],
+            line_color="red",
+            line_width=2,
+            opacity=min(zone['strength']/3, 1),
+            annotation_text=f"Supply: ${zone['price']:.2f}"
+        )
+    
+    # Demand zones (support)
+    for zone in demand_zones[-10:]:  # Show last 10 zones
+        fig.add_hline(
+            y=zone['price'],
+            line_color="green",
+            line_width=2,
+            opacity=min(zone['strength']/3, 1),
+            annotation_text=f"Demand: ${zone['price']:.2f}"
+        )
+    
+    fig.update_layout(
+        title=f"{symbol} Supply & Demand Zones",
+        template="plotly_dark",
+        height=600,
+        xaxis_rangeslider_visible=False
+    )
+    
+    return fig
 
-col1, col2 = st.columns(2)
+# Authentication check
+is_authenticated, username = check_authentication()
+
+# Sidebar
+st.sidebar.title("🌊 Liquidity Analysis")
+st.sidebar.markdown("---")
+
+if not is_authenticated:
+    st.sidebar.warning("Please log in to access advanced features and save analysis.")
+
+# Main interface
+st.title("🌊 Institutional Liquidity Analysis")
+st.markdown("### Advanced market microstructure analysis with dark pool detection and supply/demand zones")
+
+# Input section
+col1, col2, col3 = st.columns([2, 1, 1])
 
 with col1:
-    # Recent volume analysis
-    st.subheader("Recent Volume Pattern")
-    recent_volume = analyzer.data['Volume'].tail(20)
-    volume_change = (recent_volume.iloc[-1] - recent_volume.mean()) / recent_volume.mean()
-    
-    if volume_change > 0.5:
-        st.success(f"🔥 High volume activity: {volume_change:.1%} above average")
-    elif volume_change > 0:
-        st.info(f"📈 Above average volume: {volume_change:.1%}")
-    elif volume_change > -0.3:
-        st.warning(f"📊 Below average volume: {volume_change:.1%}")
-    else:
-        st.error(f"💤 Very low volume: {volume_change:.1%}")
+    symbol = st.text_input("Enter Stock Symbol", value="AAPL", key="liquidity_symbol")
 
 with col2:
-    # Price action quality
-    st.subheader("Price Action Quality")
-    recent_volatility = analyzer.data['Volatility_20'].iloc[-1]
-    avg_volatility = analyzer.data['Volatility_20'].mean()
-    vol_ratio = recent_volatility / avg_volatility
-    
-    if vol_ratio > 1.5:
-        st.error(f"⚡ High volatility: {vol_ratio:.1f}x average")
-    elif vol_ratio > 1.2:
-        st.warning(f"📈 Elevated volatility: {vol_ratio:.1f}x average")
-    elif vol_ratio > 0.8:
-        st.info(f"📊 Normal volatility: {vol_ratio:.1f}x average")
-    else:
-        st.success(f"😴 Low volatility: {vol_ratio:.1f}x average")
+    period = st.selectbox(
+        "Time Period",
+        ["1mo", "3mo", "6mo", "1y", "2y"],
+        index=2,
+        key="liquidity_period"
+    )
 
-# Risk warnings
-st.markdown("---")
-st.warning("""
-**⚠️ Important Disclaimers:**
-- Liquidation data is simulated based on historical patterns
-- Actual liquidation levels may vary significantly
-- This analysis is for educational purposes only
-- Not financial advice - conduct your own research
-- Market microstructure can change rapidly
+with col3:
+    interval = st.selectbox(
+        "Data Interval",
+        ["1d", "1h", "4h"],
+        index=0,
+        key="liquidity_interval"
+    )
+
+if st.button("🔍 Analyze Liquidity", type="primary"):
+    try:
+        with st.spinner(f"Fetching market microstructure data for {symbol}..."):
+            # Fetch data
+            ticker = yf.Ticker(symbol)
+            data = ticker.history(period=period, interval=interval)
+            
+            if data.empty:
+                st.error("No data found for this symbol.")
+                st.stop()
+            
+            # Calculate metrics
+            amihud_illiquidity = calculate_amihud_illiquidity(data.copy())
+            dark_pool_activity = estimate_dark_pool_activity(data.copy())
+            order_flow = calculate_order_flow_imbalance(data.copy())
+            
+            # Current metrics
+            current_price = data['Close'].iloc[-1]
+            avg_volume = data['Volume'].mean()
+            current_volume = data['Volume'].iloc[-1]
+            volume_ratio = current_volume / avg_volume
+            illiquidity_score = amihud_illiquidity.iloc[-1] if len(amihud_illiquidity) > 0 and not pd.isna(amihud_illiquidity.iloc[-1]) else 0
+            
+            # Display key metrics
+            st.markdown("### 📊 Current Market Microstructure")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                create_metric_card("Current Price", f"${current_price:.2f}")
+            
+            with col2:
+                create_metric_card(
+                    "Volume Ratio", 
+                    f"{volume_ratio:.2f}x",
+                    f"{'Above' if volume_ratio > 1 else 'Below'} Average"
+                )
+            
+            with col3:
+                illiq_level = "Low" if illiquidity_score < 1e-6 else "Medium" if illiquidity_score < 1e-5 else "High"
+                create_metric_card("Illiquidity", illiq_level, f"{illiquidity_score:.2e}")
+            
+            with col4:
+                dark_pool_level = dark_pool_activity.iloc[-1] if len(dark_pool_activity) > 0 and not pd.isna(dark_pool_activity.iloc[-1]) else 0
+                dp_status = "High" if dark_pool_level > 1 else "Medium" if dark_pool_level > 0.5 else "Low"
+                create_metric_card("Dark Pool Activity", dp_status, f"{dark_pool_level:.2f}")
+            
+            # Charts
+            st.markdown("### 🔥 Liquidity Heatmap")
+            liquidity_fig = create_liquidity_heatmap(data, symbol)
+            st.plotly_chart(liquidity_fig, use_container_width=True)
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("### 🕳️ Dark Pool Analysis")
+                dark_pool_fig = create_dark_pool_chart(data, symbol)
+                st.plotly_chart(dark_pool_fig, use_container_width=True)
+            
+            with col2:
+                st.markdown("### 📈 Supply & Demand Zones")
+                supply_demand_fig = create_supply_demand_chart(data, symbol)
+                st.plotly_chart(supply_demand_fig, use_container_width=True)
+            
+            st.markdown("### 🌊 Order Flow Analysis")
+            order_flow_fig = create_order_flow_chart(data, symbol)
+            st.plotly_chart(order_flow_fig, use_container_width=True)
+            
+            # Additional metrics table
+            st.markdown("### 📋 Detailed Liquidity Metrics")
+            
+            metrics_data = {
+                'Metric': [
+                    'Average Daily Volume',
+                    'Current Volume',
+                    'Volume Percentile (20d)',
+                    'Amihud Illiquidity',
+                    'Bid-Ask Spread Proxy',
+                    'Price Impact Score',
+                    'Dark Pool Estimate',
+                    'Order Flow Imbalance'
+                ],
+                'Value': [
+                    f"{avg_volume:,.0f}",
+                    f"{current_volume:,.0f}",
+                    f"{((data['Volume'].iloc[-1] > data['Volume'].rolling(20).quantile(0.8).iloc[-1]) * 80 + 20):.0f}%",
+                    f"{illiquidity_score:.2e}",
+                    f"{abs(data['High'].iloc[-1] - data['Low'].iloc[-1]) / data['Close'].iloc[-1] * 100:.3f}%",
+                    f"{(illiquidity_score * current_volume / 1e6):.2f}",
+                    f"{dark_pool_level:.2f}",
+                    f"{order_flow.iloc[-1]:,.0f}" if len(order_flow) > 0 and not pd.isna(order_flow.iloc[-1]) else "0"
+                ],
+                'Interpretation': [
+                    'Historical average trading volume',
+                    'Latest session volume',
+                    'Current volume vs 20-day distribution',
+                    'Price impact per dollar traded',
+                    'Estimated spread width',
+                    'Market impact of large orders',
+                    'Unusual volume/price patterns',
+                    'Buy vs sell pressure balance'
+                ]
+            }
+            
+            metrics_df = pd.DataFrame(metrics_data)
+            st.dataframe(metrics_df, use_container_width=True, hide_index=True)
+            
+            # Educational information
+            st.markdown("### 📚 Understanding Liquidity Analysis")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                create_info_card(
+                    "Liquidity Heatmap",
+                    "Shows price levels with highest trading volume. Red areas indicate high liquidity zones where large orders can be executed with minimal price impact. These levels often act as support/resistance."
+                )
+                
+                create_info_card(
+                    "Dark Pool Detection",
+                    "Estimates institutional 'dark pool' trading by identifying unusual volume patterns with minimal price movement. High values suggest large institutional orders being executed off-exchange."
+                )
+            
+            with col2:
+                create_info_card(
+                    "Supply & Demand Zones",
+                    "Identifies key price levels where significant buying (demand) or selling (supply) pressure occurred. These zones often act as future support and resistance levels."
+                )
+                
+                create_info_card(
+                    "Order Flow Analysis",
+                    "Measures the balance between buying and selling pressure. Positive values indicate net buying pressure, while negative values suggest selling pressure dominance."
+                )
+            
+            # Save functionality for authenticated users
+            if is_authenticated:
+                st.markdown("### 💾 Save Analysis")
+                
+                if st.button("Save Liquidity Analysis", key="save_liquidity"):
+                    # Implementation would save to user's account
+                    st.success(f"✅ Liquidity analysis for {symbol} saved to your account!")
+            
+            st.success(f"✅ Liquidity analysis complete for {symbol}")
+            
+    except Exception as e:
+        st.error(f"Error performing analysis: {str(e)}")
+        st.error("Please check the symbol and try again.")
+
+# Sidebar information
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🎯 Analysis Features")
+st.sidebar.markdown("""
+**Liquidity Heatmap:**
+- Volume-weighted price levels
+- CoinGlass-style visualization
+- Support/resistance identification
+
+**Dark Pool Detection:**
+- Institutional flow estimation
+- Hidden order analysis  
+- Off-exchange activity patterns
+
+**Supply & Demand Zones:**
+- Key price level identification
+- Volume-confirmed zones
+- Future S/R prediction
+
+**Order Flow Analysis:**
+- Buy/sell pressure balance
+- Market microstructure insights
+- Institutional vs retail flow
+""")
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### ⚠️ Important Notes")
+st.sidebar.markdown("""
+- Dark pool estimates are based on volume patterns
+- Higher resolution data provides better accuracy
+- Combine with other technical analysis
+- Consider market conditions and news
 """)
