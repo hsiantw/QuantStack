@@ -692,6 +692,12 @@ def main_dashboard():
                 "title": "Market Intelligence Sources",
                 "desc": "Comprehensive data sources, APIs, and market intelligence aggregation platform.",
                 "page": "pages/market_information_sources.py"
+            },
+            {
+                "icon": "📡",
+                "title": "Market Data Stream",
+                "desc": "Real-time market data with StockData.org integration, intraday charts, and enhanced data feeds.",
+                "page": "pages/market_data_stream.py"
             }
         ]
         
