@@ -36,6 +36,10 @@ except ImportError:
         return st.info(f"**{title}**\n\n{content}")
     def check_authentication():
         return True, None
+    def StockDataClient():
+        return None
+    def is_stockdata_available():
+        return False
 
 def create_real_time_dashboard(symbols, data_source="yahoo"):
     """Create real-time market data dashboard"""
