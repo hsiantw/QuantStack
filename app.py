@@ -723,9 +723,9 @@ def main_dashboard():
             },
             {
                 "icon": "⚡",
-                "title": "Trading Strategy Backtesting",
-                "desc": "★ COMPREHENSIVE: 15+ strategies with AI optimization, extensive performance metrics, and PineScript generation.",
-                "page": "pages/trading_strategies.py"
+                "title": "Strategy Backtesting",
+                "desc": "★ NEW: Professional backtesting engine with multiple strategies, performance metrics, and visual analysis.",
+                "page": "pages/strategy_backtesting.py"
             },
             {
                 "icon": "📊",
