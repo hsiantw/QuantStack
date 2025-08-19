@@ -439,8 +439,21 @@ def main():
                     results[name] = result
                     metrics[name] = metric
                 
+                # Store results in session state for visualization module
+                st.session_state.backtest_results = results
+                st.session_state.backtest_metrics = metrics
+                st.session_state.backtest_symbol = symbol
+                
                 # Display results
                 st.success(f"✅ Backtest completed for {symbol}")
+                
+                # Add link to interactive visualization
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.info("💡 View advanced interactive visualizations in the Performance Visualization module")
+                with col2:
+                    if st.button("📊 Open Interactive Viz", type="primary"):
+                        st.switch_page("pages/interactive_backtest_visualization.py")
                 
                 # Performance summary
                 st.header("📊 Performance Summary")

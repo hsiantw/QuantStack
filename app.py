@@ -607,9 +607,15 @@ def main_dashboard():
             },
             {
                 "icon": "⚡",
-                "title": "Trading Strategy Backtesting",
-                "desc": "Comprehensive strategy backtesting with 15+ algorithms, AI optimization, and performance metrics.",
-                "page": "pages/trading_strategies.py"
+                "title": "Strategy Backtesting",
+                "desc": "Professional backtesting engine with multiple strategies, performance metrics, and analysis tools.",
+                "page": "pages/strategy_backtesting.py"
+            },
+            {
+                "icon": "📊",
+                "title": "Interactive Backtest Visualization",
+                "desc": "Advanced visual analytics with interactive charts, risk-return analysis, and performance dashboards.",
+                "page": "pages/interactive_backtest_visualization.py"
             },
             {
                 "icon": "🎯",
