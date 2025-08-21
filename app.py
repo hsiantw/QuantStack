@@ -618,6 +618,12 @@ def main_dashboard():
                 "page": "pages/interactive_backtest_visualization.py"
             },
             {
+                "icon": "📈",
+                "title": "Market Performance Tracker",
+                "desc": "Track best/worst performers across major indices with momentum strategy signals and backtesting.",
+                "page": "pages/market_performance_tracker.py"
+            },
+            {
                 "icon": "🎯",
                 "title": "Strategy Comparison & Optimization",
                 "desc": "Advanced multi-strategy comparison with parameter optimization and risk-return analysis.",
