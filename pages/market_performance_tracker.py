@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import yfinance as yf
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
@@ -25,39 +26,14 @@ except ImportError:
     def check_authentication():
         return True, None
 
-# Import StockDataClient separately to ensure it's available
-try:
-    from utils.stockdata_client import StockDataClient
-except ImportError as e:
-    st.error(f"Failed to import StockDataClient: {str(e)}")
-    StockDataClient = None
+# Yahoo Finance is our primary data source - reliable and free
 
 class MarketPerformanceTracker:
     """Track best and worst performers across major indices"""
     
     def __init__(self):
-        # Initialize StockData.org client
-        self.stockdata_client = None
-        if StockDataClient is not None:
-            try:
-                self.stockdata_client = StockDataClient("uh8kCdBkyEjbME9WtzMPiwMkgcNOyARSgJe34mIq")
-                # Test the connection
-                test_data = self.stockdata_client.get_real_time_quote(["AAPL"])
-                if not test_data.empty:
-                    st.success("✅ Connected to StockData.org premium market data")
-                else:
-                    st.warning("⚠️ StockData.org API connected but no test data returned")
-            except Exception as e:
-                st.error(f"❌ Failed to connect to StockData.org: {str(e)}")
-                st.info("💡 Trying to initialize without connection test...")
-                try:
-                    # Initialize without testing
-                    self.stockdata_client = StockDataClient("uh8kCdBkyEjbME9WtzMPiwMkgcNOyARSgJe34mIq")
-                    st.warning("⚠️ StockData.org client initialized but connection not verified")
-                except:
-                    self.stockdata_client = None
-        else:
-            st.error("❌ StockDataClient class not available - import failed")
+        # Using Yahoo Finance for reliable market data
+        pass
         
         # Major indices components
         self.indices = {
@@ -160,77 +136,94 @@ class MarketPerformanceTracker:
     
     @st.cache_data(ttl=300)  # Cache for 5 minutes
     def get_performance_data(_self, tickers, period_days):
-        """Get performance data using StockData.org API exclusively"""
-        if not _self.stockdata_client:
-            st.error("StockData.org API client not available")
-            return pd.DataFrame()
-        
+        """Get performance data using Yahoo Finance"""
         performance_data = []
         
         try:
-            # For current day performance, use real-time quotes
-            if period_days <= 1:
-                real_time_data = _self.stockdata_client.get_real_time_quote(tickers[:100])
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=max(period_days + 10, 30))  # Buffer for weekends
+            
+            # Process in batches to avoid API limits
+            batch_size = 20
+            for i in range(0, len(tickers), batch_size):
+                batch = tickers[i:i+batch_size]
                 
-                for _, row in real_time_data.iterrows():
-                    performance_data.append({
-                        'Ticker': row['symbol'],
-                        'Current_Price': row['price'],
-                        'Past_Price': row['price'] - row.get('change', 0),
-                        'Change_Pct': row.get('change_percent', 0),
-                        'Volume': row.get('volume', 0),
-                        'Data_Source': 'StockData.org Real-time'
-                    })
-            else:
-                # For historical performance, use historical data
-                end_date = datetime.now()
-                start_date = end_date - timedelta(days=period_days + 10)
-                
-                # Process in smaller batches for API efficiency
-                batch_size = 25
-                for i in range(0, len(tickers), batch_size):
-                    batch = tickers[i:i+batch_size]
+                try:
+                    # Download batch data
+                    data = yf.download(batch, start=start_date, end=end_date, progress=False)
                     
-                    try:
-                        historical_data = _self.stockdata_client.get_historical_data(
-                            batch,
-                            start_date.strftime('%Y-%m-%d'),
-                            end_date.strftime('%Y-%m-%d')
-                        )
-                        
-                        if not historical_data.empty:
-                            # Calculate performance for each ticker
-                            for ticker in batch:
-                                ticker_data = historical_data[historical_data['symbol'] == ticker].sort_values('date')
+                    if data.empty:
+                        continue
+                    
+                    # Handle single ticker vs multiple tickers
+                    if len(batch) == 1:
+                        ticker = batch[0]
+                        if 'Close' in data.columns:
+                            closes = data['Close'].dropna()
+                            if len(closes) >= 2:
+                                current_price = closes.iloc[-1]
+                                past_price = closes.iloc[-(min(period_days + 1, len(closes)))]
+                                change_pct = ((current_price - past_price) / past_price) * 100
                                 
-                                if len(ticker_data) >= 2:
-                                    current_price = ticker_data['close'].iloc[-1]
-                                    target_date = end_date - timedelta(days=period_days)
-                                    
-                                    # Find closest historical price to target date
-                                    ticker_data['date'] = pd.to_datetime(ticker_data['date'])
-                                    past_data = ticker_data[ticker_data['date'] <= target_date]
-                                    
-                                    if len(past_data) > 0:
-                                        past_price = past_data['close'].iloc[-1]
+                                performance_data.append({
+                                    'Ticker': ticker,
+                                    'Current_Price': current_price,
+                                    'Past_Price': past_price,
+                                    'Change_Pct': change_pct,
+                                    'Volume': data.get('Volume', pd.Series()).iloc[-1] if 'Volume' in data.columns else 0,
+                                    'Data_Source': 'Yahoo Finance'
+                                })
+                    else:
+                        for ticker in batch:
+                            try:
+                                if ticker in data['Close'].columns:
+                                    closes = data['Close'][ticker].dropna()
+                                    if len(closes) >= 2:
+                                        current_price = closes.iloc[-1]
+                                        past_price = closes.iloc[-(min(period_days + 1, len(closes)))]
                                         change_pct = ((current_price - past_price) / past_price) * 100
+                                        
+                                        volume = 0
+                                        if 'Volume' in data.columns and ticker in data['Volume'].columns:
+                                            volume = data['Volume'][ticker].iloc[-1]
                                         
                                         performance_data.append({
                                             'Ticker': ticker,
                                             'Current_Price': current_price,
                                             'Past_Price': past_price,
                                             'Change_Pct': change_pct,
-                                            'Volume': ticker_data['volume'].iloc[-1] if 'volume' in ticker_data.columns else 0,
-                                            'Data_Source': 'StockData.org Historical'
+                                            'Volume': volume,
+                                            'Data_Source': 'Yahoo Finance'
                                         })
-                    except Exception as e:
-                        st.warning(f"Error fetching data for batch {i//batch_size + 1}: {str(e)}")
-                        continue
+                            except Exception:
+                                continue
+                                
+                except Exception:
+                    # Fall back to individual ticker processing
+                    for ticker in batch:
+                        try:
+                            ticker_data = yf.download(ticker, start=start_date, end=end_date, progress=False)
+                            if not ticker_data.empty and len(ticker_data) >= 2:
+                                current_price = ticker_data['Close'].iloc[-1]
+                                past_price = ticker_data['Close'].iloc[-(min(period_days + 1, len(ticker_data)))]
+                                change_pct = ((current_price - past_price) / past_price) * 100
+                                volume = ticker_data.get('Volume', pd.Series()).iloc[-1] if 'Volume' in ticker_data.columns else 0
+                                
+                                performance_data.append({
+                                    'Ticker': ticker,
+                                    'Current_Price': current_price,
+                                    'Past_Price': past_price,
+                                    'Change_Pct': change_pct,
+                                    'Volume': volume,
+                                    'Data_Source': 'Yahoo Finance'
+                                })
+                        except Exception:
+                            continue
             
             return pd.DataFrame(performance_data)
             
         except Exception as e:
-            st.error(f"Error fetching performance data from StockData.org: {str(e)}")
+            st.error(f"Error fetching performance data: {str(e)}")
             return pd.DataFrame()
     
     def get_top_bottom_performers(self, index_name, period_days, top_n=10):
@@ -283,8 +276,7 @@ class MarketPerformanceTracker:
 class SPY500TradingStrategies:
     """Trading strategies: Momentum and Contrarian strategies for SPY 500"""
     
-    def __init__(self, stockdata_client=None):
-        self.stockdata_client = stockdata_client
+    def __init__(self):
         self.strategies = {
             'momentum': {
                 'name': "SPY 500 Momentum Strategy",
@@ -302,32 +294,45 @@ class SPY500TradingStrategies:
     
     @st.cache_data(ttl=3600)  # Cache for 1 hour
     def backtest_strategy(_self, start_date, end_date, strategy_type='momentum', benchmark='SPY', lookback_days=1):
-        """Backtest trading strategies using StockData.org API"""
-        
-        if not _self.stockdata_client:
-            raise ValueError("StockData.org API client not available")
+        """Backtest trading strategies using Yahoo Finance"""
         
         try:
-            # Get benchmark historical data from StockData.org
-            historical_data = _self.stockdata_client.get_historical_data(
-                [benchmark],
-                start_date.strftime('%Y-%m-%d'),
-                end_date.strftime('%Y-%m-%d')
-            )
+            # Get benchmark data from Yahoo Finance
+            benchmark_raw = yf.download(benchmark, start=start_date, end=end_date, progress=False)
             
-            if historical_data.empty:
-                raise ValueError(f"No historical data available for benchmark {benchmark}")
+            if benchmark_raw.empty:
+                raise ValueError(f"No data available for benchmark {benchmark}")
             
-            # Extract benchmark prices
-            benchmark_data = historical_data[historical_data['symbol'] == benchmark].sort_values('date')
-            benchmark_data['date'] = pd.to_datetime(benchmark_data['date'])
-            benchmark_data = benchmark_data.set_index('date')
+            # Handle both single and multiple ticker data structures
+            if isinstance(benchmark_raw.columns, pd.MultiIndex):
+                # Multi-level columns
+                if 'Adj Close' in benchmark_raw.columns.get_level_values(0):
+                    benchmark_data = benchmark_raw['Adj Close']
+                    if len(benchmark_data.columns) > 1:
+                        benchmark_data = benchmark_data.iloc[:, 0]
+                elif 'Close' in benchmark_raw.columns.get_level_values(0):
+                    benchmark_data = benchmark_raw['Close']
+                    if len(benchmark_data.columns) > 1:
+                        benchmark_data = benchmark_data.iloc[:, 0]
+                else:
+                    benchmark_data = benchmark_raw.iloc[:, 0]
+            else:
+                # Simple column structure
+                if 'Adj Close' in benchmark_raw.columns:
+                    benchmark_data = benchmark_raw['Adj Close']
+                elif 'Close' in benchmark_raw.columns:
+                    benchmark_data = benchmark_raw['Close']
+                else:
+                    benchmark_data = benchmark_raw.iloc[:, 0]
             
-            if len(benchmark_data) < 10:
-                raise ValueError(f"Insufficient data for backtesting {benchmark} - only {len(benchmark_data)} data points")
+            # Ensure we have a Series, not DataFrame
+            if isinstance(benchmark_data, pd.DataFrame):
+                benchmark_data = benchmark_data.iloc[:, 0]
             
-            benchmark_prices = benchmark_data['close']
-            benchmark_returns = benchmark_prices.pct_change().dropna()
+            benchmark_returns = benchmark_data.pct_change().dropna()
+            
+            if len(benchmark_returns) < 10:
+                raise ValueError(f"Insufficient data for backtesting {benchmark} - only {len(benchmark_returns)} data points")
             
             # Generate synthetic strategy returns (simplified for demo)
             np.random.seed(42)  # For reproducibility
@@ -501,10 +506,7 @@ def main():
         col1, col2 = st.columns([3, 1])
         
         with col1:
-            if tracker.stockdata_client:
-                st.markdown("**Data Source:** 🚀 StockData.org Premium API")
-            else:
-                st.error("**Data Source:** ❌ StockData.org API not connected")
+            st.markdown("**Data Source:** 📊 Yahoo Finance")
             
         with col2:
             if st.button("🔄 Refresh Data", type="primary"):
@@ -742,7 +744,7 @@ def main():
             )
         
         if st.button("🚀 Run Strategy Backtest", type="primary"):
-            strategies = SPY500TradingStrategies(tracker.stockdata_client)
+            strategies = SPY500TradingStrategies()
             
             with st.spinner(f"Running {backtest_strategy} strategy backtest vs {benchmark}..."):
                 backtest_data = strategies.backtest_strategy(start_date, end_date, backtest_strategy, benchmark)
