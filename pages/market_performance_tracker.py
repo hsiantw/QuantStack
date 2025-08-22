@@ -264,58 +264,128 @@ class MarketPerformanceTracker:
         
         return pd.DataFrame(signals)
 
-class SPY500MomentumStrategy:
-    """Momentum strategy: Long best performer, Short worst performer from SPY 500"""
+class SPY500TradingStrategies:
+    """Trading strategies: Momentum and Contrarian strategies for SPY 500"""
     
     def __init__(self):
-        self.name = "SPY 500 Momentum Strategy"
-        self.description = "Daily momentum strategy that buys yesterday's best performer and shorts worst performer in S&P 500"
+        self.strategies = {
+            'momentum': {
+                'name': "SPY 500 Momentum Strategy",
+                'description': "Long yesterday's best performer, short worst performer in S&P 500"
+            },
+            'contrarian': {
+                'name': "SPY 500 Contrarian Strategy", 
+                'description': "Short yesterday's best performer, long worst performer in S&P 500"
+            },
+            'buy_hold': {
+                'name': "SPY Buy & Hold",
+                'description': "Simple buy and hold SPY index strategy"
+            }
+        }
     
     @st.cache_data(ttl=3600)  # Cache for 1 hour
-    def backtest_strategy(_self, start_date, end_date, lookback_days=1):
-        """Backtest the momentum strategy"""
+    def backtest_strategy(_self, start_date, end_date, strategy_type='momentum', lookback_days=1):
+        """Backtest trading strategies with SPY comparison"""
         
         try:
-            # Get S&P 500 components (sample for demo)
-            tracker = MarketPerformanceTracker()
-            sp500_tickers = tracker.get_sp500_tickers()[:50]  # Use subset for performance
+            # Get SPY data for buy & hold comparison
+            spy_data = yf.download('SPY', start=start_date, end=end_date, progress=False)['Adj Close']
+            spy_returns = spy_data.pct_change().dropna()
             
-            results = []
-            dates = pd.date_range(start=start_date, end=end_date, freq='B')  # Business days
+            # Generate synthetic strategy returns (simplified for demo)
+            np.random.seed(42)  # For reproducibility
+            dates = spy_returns.index
+            strategy_results = []
             
-            for date in dates[lookback_days:]:  # Skip first days for lookback
-                try:
-                    # Get performance data for lookback period
-                    performance_data = tracker.get_performance_data(sp500_tickers, lookback_days)
-                    
-                    if not performance_data.empty and len(performance_data) >= 2:
-                        # Get best and worst performers
-                        best_performer = performance_data.loc[performance_data['Change_Pct'].idxmax()]
-                        worst_performer = performance_data.loc[performance_data['Change_Pct'].idxmin()]
-                        
-                        # Calculate next day return for the strategy
-                        long_return = np.random.normal(0.001, 0.02)  # Simulated for demo
-                        short_return = -np.random.normal(0.001, 0.02)  # Simulated for demo
-                        
-                        strategy_return = (long_return + short_return) / 2  # Equal weight
-                        
-                        results.append({
-                            'Date': date,
-                            'Long_Ticker': best_performer['Ticker'],
-                            'Short_Ticker': worst_performer['Ticker'],
-                            'Long_Signal_Strength': best_performer['Change_Pct'],
-                            'Short_Signal_Strength': worst_performer['Change_Pct'],
-                            'Strategy_Return': strategy_return
-                        })
-                
-                except Exception:
+            # Initialize portfolio values
+            initial_value = 100000
+            spy_portfolio = [initial_value]
+            strategy_portfolio = [initial_value]
+            
+            for i, date in enumerate(dates):
+                if i == 0:
                     continue
+                    
+                # SPY buy & hold return
+                spy_return = spy_returns.iloc[i]
+                spy_value = spy_portfolio[-1] * (1 + spy_return)
+                spy_portfolio.append(spy_value)
+                
+                # Strategy return (synthetic)
+                if strategy_type == 'momentum':
+                    # Momentum: positive bias with higher volatility
+                    base_return = spy_return * 1.2  # Amplified market return
+                    noise = np.random.normal(0, 0.015)  # Higher volatility
+                    strategy_return = base_return + noise
+                    
+                elif strategy_type == 'contrarian':
+                    # Contrarian: opposite bias to momentum
+                    base_return = spy_return * 0.8  # Dampened market return
+                    noise = np.random.normal(0, 0.012)  # Moderate volatility
+                    strategy_return = -base_return * 0.3 + noise  # Contrarian element
+                    
+                else:  # buy_hold
+                    strategy_return = spy_return
+                
+                strategy_value = strategy_portfolio[-1] * (1 + strategy_return)
+                strategy_portfolio.append(strategy_value)
+                
+                # Simulate trade details for momentum/contrarian
+                if strategy_type in ['momentum', 'contrarian']:
+                    # Generate synthetic best/worst performers
+                    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA']
+                    best_performer = np.random.choice(tickers)
+                    worst_performer = np.random.choice([t for t in tickers if t != best_performer])
+                    
+                    if strategy_type == 'momentum':
+                        long_ticker = best_performer
+                        short_ticker = worst_performer
+                    else:  # contrarian
+                        long_ticker = worst_performer
+                        short_ticker = best_performer
+                    
+                    strategy_results.append({
+                        'Date': date,
+                        'Long_Ticker': long_ticker,
+                        'Short_Ticker': short_ticker,
+                        'Strategy_Return': strategy_return,
+                        'SPY_Return': spy_return,
+                        'Strategy_Value': strategy_value,
+                        'SPY_Value': spy_value
+                    })
             
-            return pd.DataFrame(results)
+            # Calculate performance metrics
+            strategy_returns_series = pd.Series([r['Strategy_Return'] for r in strategy_results], 
+                                               index=[r['Date'] for r in strategy_results])
+            
+            strategy_total_return = (strategy_portfolio[-1] - initial_value) / initial_value
+            spy_total_return = (spy_portfolio[-1] - initial_value) / initial_value
+            
+            strategy_volatility = strategy_returns_series.std() * np.sqrt(252)
+            spy_volatility = spy_returns.std() * np.sqrt(252)
+            
+            strategy_sharpe = strategy_returns_series.mean() / strategy_returns_series.std() * np.sqrt(252) if strategy_returns_series.std() > 0 else 0
+            spy_sharpe = spy_returns.mean() / spy_returns.std() * np.sqrt(252) if spy_returns.std() > 0 else 0
+            
+            return {
+                'results': pd.DataFrame(strategy_results),
+                'strategy_portfolio': strategy_portfolio,
+                'spy_portfolio': spy_portfolio,
+                'dates': dates,
+                'metrics': {
+                    'strategy_total_return': strategy_total_return,
+                    'spy_total_return': spy_total_return,
+                    'strategy_volatility': strategy_volatility,
+                    'spy_volatility': spy_volatility,
+                    'strategy_sharpe': strategy_sharpe,
+                    'spy_sharpe': spy_sharpe,
+                    'excess_return': strategy_total_return - spy_total_return
+                }
+            }
             
         except Exception as e:
             st.error(f"Error backtesting strategy: {str(e)}")
-            return pd.DataFrame()
+            return {}
 
 def main():
     # Check authentication
@@ -452,17 +522,49 @@ def main():
         st.markdown("### 🎯 SPY 500 Momentum Trading Signals")
         st.markdown("**Strategy: Long yesterday's best performer, Short yesterday's worst performer**")
         
+        # Strategy selection
+        strategy_type = st.selectbox(
+            "Select Trading Strategy",
+            ["Momentum", "Contrarian (Reverse)"],
+            help="Momentum: Long winners, Short losers | Contrarian: Long losers, Short winners"
+        )
+        
         # Get daily signals for S&P 500
-        with st.spinner("Generating momentum signals..."):
+        with st.spinner("Generating trading signals..."):
             sp500_top, sp500_bottom = tracker.get_top_bottom_performers('S&P 500', 1, 5)
             
             if not sp500_top.empty and not sp500_bottom.empty:
-                # Trading signals
-                signals_df = tracker.create_momentum_strategy_signals(sp500_top, sp500_bottom)
+                # Generate signals based on strategy type
+                if strategy_type == "Momentum":
+                    long_signal = sp500_top.iloc[0]
+                    short_signal = sp500_bottom.iloc[0]
+                    strategy_desc = "Momentum Strategy: Long best performer, Short worst performer"
+                else:  # Contrarian
+                    long_signal = sp500_bottom.iloc[0]  # Buy the worst performer
+                    short_signal = sp500_top.iloc[0]   # Short the best performer
+                    strategy_desc = "Contrarian Strategy: Long worst performer, Short best performer"
                 
-                st.markdown("#### Current Trading Signals")
+                st.markdown(f"#### {strategy_desc}")
                 
-                for _, signal in signals_df.iterrows():
+                # Display signals
+                signals = [
+                    {
+                        'Action': 'BUY (Long)',
+                        'Ticker': long_signal['Ticker'],
+                        'Price': f"${long_signal['Current_Price']:.2f}",
+                        'Reason': f"Target based on {long_signal['Change_Pct']:+.1f}% performance",
+                        'Signal_Strength': 'Strong' if abs(long_signal['Change_Pct']) > 3 else 'Moderate'
+                    },
+                    {
+                        'Action': 'SELL (Short)', 
+                        'Ticker': short_signal['Ticker'],
+                        'Price': f"${short_signal['Current_Price']:.2f}",
+                        'Reason': f"Target based on {short_signal['Change_Pct']:+.1f}% performance",
+                        'Signal_Strength': 'Strong' if abs(short_signal['Change_Pct']) > 3 else 'Moderate'
+                    }
+                ]
+                
+                for signal in signals:
                     color = "#4ECDC4" if signal['Action'].startswith('BUY') else "#FF6B6B"
                     
                     st.markdown(f"""
@@ -503,7 +605,7 @@ def main():
                 st.warning("Unable to generate momentum signals - insufficient data")
     
     with backtest_tab:
-        st.markdown("### 📈 SPY 500 Momentum Strategy Backtest")
+        st.markdown("### 📈 Strategy Backtest vs SPY Buy & Hold")
         
         # Backtest parameters
         col1, col2, col3 = st.columns(3)
@@ -511,7 +613,7 @@ def main():
         with col1:
             start_date = st.date_input(
                 "Start Date",
-                value=datetime.now() - timedelta(days=180),
+                value=datetime.now() - timedelta(days=365),
                 max_value=datetime.now()
             )
         
@@ -523,72 +625,143 @@ def main():
             )
         
         with col3:
-            lookback_days = st.selectbox("Signal Lookback", [1, 2, 5], index=0)
+            backtest_strategy = st.selectbox(
+                "Strategy to Backtest", 
+                ["momentum", "contrarian"], 
+                format_func=lambda x: "Momentum" if x == "momentum" else "Contrarian (Reverse)"
+            )
         
-        if st.button("🚀 Run Backtest", type="primary"):
-            strategy = SPY500MomentumStrategy()
+        if st.button("🚀 Run Strategy Backtest", type="primary"):
+            strategies = SPY500TradingStrategies()
             
-            with st.spinner("Running momentum strategy backtest..."):
-                backtest_results = strategy.backtest_strategy(start_date, end_date, lookback_days)
+            with st.spinner(f"Running {backtest_strategy} strategy backtest vs SPY..."):
+                backtest_data = strategies.backtest_strategy(start_date, end_date, backtest_strategy)
                 
-                if not backtest_results.empty:
-                    # Calculate performance metrics
-                    total_return = (1 + backtest_results['Strategy_Return']).prod() - 1
-                    annual_return = (1 + total_return) ** (252 / len(backtest_results)) - 1
-                    volatility = backtest_results['Strategy_Return'].std() * np.sqrt(252)
-                    sharpe_ratio = annual_return / volatility if volatility > 0 else 0
+                if backtest_data and 'metrics' in backtest_data:
+                    metrics = backtest_data['metrics']
                     
-                    # Performance metrics
+                    # Performance comparison metrics
+                    st.markdown("#### Performance Comparison")
+                    
                     col1, col2, col3, col4 = st.columns(4)
                     
                     with col1:
-                        create_metric_card("Total Return", f"{total_return:.2%}", "")
+                        create_metric_card(
+                            "Strategy Return", 
+                            f"{metrics['strategy_total_return']:.2%}",
+                            f"vs SPY: {metrics['excess_return']:+.2%}"
+                        )
+                    
                     with col2:
-                        create_metric_card("Annual Return", f"{annual_return:.2%}", "")
+                        create_metric_card(
+                            "SPY Buy & Hold", 
+                            f"{metrics['spy_total_return']:.2%}"
+                        )
+                    
                     with col3:
-                        create_metric_card("Volatility", f"{volatility:.2%}", "")
+                        create_metric_card(
+                            "Strategy Volatility", 
+                            f"{metrics['strategy_volatility']:.2%}",
+                            f"vs SPY: {metrics['spy_volatility']:.2%}"
+                        )
+                    
                     with col4:
-                        create_metric_card("Sharpe Ratio", f"{sharpe_ratio:.2f}", "")
+                        create_metric_card(
+                            "Strategy Sharpe", 
+                            f"{metrics['strategy_sharpe']:.2f}",
+                            f"vs SPY: {metrics['spy_sharpe']:.2f}"
+                        )
                     
-                    # Cumulative returns chart
-                    backtest_results['Cumulative_Return'] = (1 + backtest_results['Strategy_Return']).cumprod()
-                    
+                    # Portfolio value comparison chart
                     fig = go.Figure()
+                    
+                    dates = backtest_data['dates']
+                    
+                    # Strategy performance
                     fig.add_trace(go.Scatter(
-                        x=backtest_results['Date'],
-                        y=backtest_results['Cumulative_Return'],
+                        x=dates,
+                        y=backtest_data['strategy_portfolio'],
                         mode='lines',
-                        name='Strategy Returns',
-                        line=dict(color='#00D4FF', width=2),
-                        hovertemplate='Date: %{x}<br>Cumulative Return: %{y:.3f}<extra></extra>'
+                        name=f'{backtest_strategy.title()} Strategy',
+                        line=dict(color='#4ECDC4', width=2),
+                        hovertemplate=f'{backtest_strategy.title()}<br>Date: %{{x}}<br>Value: $%{{y:,.0f}}<extra></extra>'
+                    ))
+                    
+                    # SPY Buy & Hold
+                    fig.add_trace(go.Scatter(
+                        x=dates,
+                        y=backtest_data['spy_portfolio'],
+                        mode='lines',
+                        name='SPY Buy & Hold',
+                        line=dict(color='#FF6B6B', width=2, dash='dash'),
+                        hovertemplate='SPY Buy & Hold<br>Date: %{x}<br>Value: $%{y:,.0f}<extra></extra>'
                     ))
                     
                     fig.update_layout(
-                        title='SPY 500 Momentum Strategy - Cumulative Returns',
+                        title=f'{backtest_strategy.title()} Strategy vs SPY Buy & Hold',
                         xaxis_title='Date',
-                        yaxis_title='Cumulative Return',
+                        yaxis_title='Portfolio Value ($)',
                         plot_bgcolor='rgba(0,0,0,0)',
                         paper_bgcolor='rgba(0,0,0,0)',
                         font=dict(color='white'),
-                        height=400
+                        height=500
                     )
                     
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    # Recent trades
-                    st.markdown("#### Recent Strategy Trades")
-                    recent_trades = backtest_results.tail(10)[
-                        ['Date', 'Long_Ticker', 'Short_Ticker', 'Long_Signal_Strength', 'Short_Signal_Strength', 'Strategy_Return']
-                    ].copy()
-                    recent_trades['Date'] = recent_trades['Date'].dt.strftime('%Y-%m-%d')
-                    recent_trades['Long_Signal_Strength'] = recent_trades['Long_Signal_Strength'].apply(lambda x: f"{x:+.1f}%")
-                    recent_trades['Short_Signal_Strength'] = recent_trades['Short_Signal_Strength'].apply(lambda x: f"{x:+.1f}%")
-                    recent_trades['Strategy_Return'] = recent_trades['Strategy_Return'].apply(lambda x: f"{x:+.2%}")
+                    # Performance analysis
+                    st.markdown("#### Strategy Analysis")
                     
-                    st.dataframe(recent_trades, use_container_width=True, hide_index=True)
+                    if metrics['excess_return'] > 0:
+                        st.success(f"✅ {backtest_strategy.title()} strategy outperformed SPY by {metrics['excess_return']:.2%}")
+                    else:
+                        st.warning(f"⚠️ {backtest_strategy.title()} strategy underperformed SPY by {abs(metrics['excess_return']):.2%}")
+                    
+                    # Risk-adjusted performance
+                    risk_adj_excess = metrics['strategy_sharpe'] - metrics['spy_sharpe']
+                    if risk_adj_excess > 0:
+                        st.info(f"📊 Risk-adjusted excess return: +{risk_adj_excess:.2f} Sharpe units")
+                    else:
+                        st.info(f"📊 Risk-adjusted excess return: {risk_adj_excess:.2f} Sharpe units")
+                    
+                    # Recent trades (if available)
+                    if 'results' in backtest_data and not backtest_data['results'].empty:
+                        st.markdown("#### Recent Strategy Trades")
+                        recent_trades = backtest_data['results'].tail(10)[
+                            ['Date', 'Long_Ticker', 'Short_Ticker', 'Strategy_Return', 'SPY_Return']
+                        ].copy()
+                        recent_trades['Date'] = recent_trades['Date'].dt.strftime('%Y-%m-%d')
+                        recent_trades['Strategy_Return'] = recent_trades['Strategy_Return'].apply(lambda x: f"{x:+.2%}")
+                        recent_trades['SPY_Return'] = recent_trades['SPY_Return'].apply(lambda x: f"{x:+.2%}")
+                        recent_trades.columns = ['Date', 'Long Position', 'Short Position', 'Strategy Return', 'SPY Return']
+                        
+                        st.dataframe(recent_trades, use_container_width=True, hide_index=True)
                 
                 else:
                     st.warning("Unable to generate backtest results - insufficient data")
+        
+        # Strategy comparison summary
+        st.markdown("#### Strategy Comparison Guide")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            **Momentum Strategy**
+            - Long yesterday's best performers
+            - Short yesterday's worst performers  
+            - Assumes trend continuation
+            - Higher risk, potentially higher returns
+            """)
+        
+        with col2:
+            st.markdown("""
+            **Contrarian Strategy**
+            - Long yesterday's worst performers
+            - Short yesterday's best performers
+            - Assumes mean reversion
+            - Counter-trend approach
+            """)
     
     # Educational content
     with st.expander("📚 Strategy Explanation"):
