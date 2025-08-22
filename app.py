@@ -636,6 +636,12 @@ def main_dashboard():
                 "page": "pages/advanced_risk_management.py"
             },
             {
+                "icon": "🔄",
+                "title": "Dynamic Portfolio Rebalancing",
+                "desc": "Intelligent portfolio rebalancing with multiple strategies, drift analysis, and automated alerts.",
+                "page": "pages/dynamic_portfolio_rebalancing.py"
+            },
+            {
                 "icon": "🎯",
                 "title": "Strategy Comparison & Optimization",
                 "desc": "Advanced multi-strategy comparison with parameter optimization and risk-return analysis.",
