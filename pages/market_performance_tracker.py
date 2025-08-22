@@ -303,7 +303,8 @@ class MarketPerformanceTracker:
 class SPY500TradingStrategies:
     """Trading strategies: Momentum and Contrarian strategies for SPY 500"""
     
-    def __init__(self):
+    def __init__(self, stockdata_client=None):
+        self.stockdata_client = stockdata_client
         self.strategies = {
             'momentum': {
                 'name': "SPY 500 Momentum Strategy",
@@ -324,23 +325,11 @@ class SPY500TradingStrategies:
         """Backtest trading strategies with benchmark comparison"""
         
         try:
-            # Try StockData.org for historical data first
+            # Use Yahoo Finance for historical data (more reliable for backtesting)
             benchmark_data = None
-            if _self.stockdata_client:
-                try:
-                    historical_data = _self.stockdata_client.get_historical_data(
-                        [benchmark], 
-                        start_date.strftime('%Y-%m-%d'), 
-                        end_date.strftime('%Y-%m-%d')
-                    )
-                    if not historical_data.empty:
-                        benchmark_data = historical_data[historical_data['symbol'] == benchmark]['close']
-                        benchmark_data.index = pd.to_datetime(historical_data[historical_data['symbol'] == benchmark]['date'])
-                except Exception:
-                    pass  # Fall back to Yahoo Finance
             
-            # Fallback to Yahoo Finance
-            if benchmark_data is None or len(benchmark_data) < 10:
+            # Get benchmark data from Yahoo Finance
+            try:
                 benchmark_raw = yf.download(benchmark, start=start_date, end=end_date, progress=False)
                 
                 # Handle both single and multiple ticker data structures
@@ -354,6 +343,8 @@ class SPY500TradingStrategies:
                     else:
                         # If it's a simple series
                         benchmark_data = benchmark_raw.iloc[:, -1]
+            except Exception:
+                raise ValueError(f"Could not fetch data for benchmark {benchmark}")
             
             benchmark_returns = benchmark_data.pct_change().dropna()
             
@@ -765,7 +756,7 @@ def main():
             )
         
         if st.button("🚀 Run Strategy Backtest", type="primary"):
-            strategies = SPY500TradingStrategies()
+            strategies = SPY500TradingStrategies(tracker.stockdata_client)
             
             with st.spinner(f"Running {backtest_strategy} strategy backtest vs {benchmark}..."):
                 backtest_data = strategies.backtest_strategy(start_date, end_date, backtest_strategy, benchmark)
