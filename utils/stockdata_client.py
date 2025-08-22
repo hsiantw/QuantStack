@@ -56,7 +56,7 @@ class StockDataClient:
             raise Exception(f"Request error: {str(e)}")
     
     def get_real_time_quote(self, symbols: List[str]) -> pd.DataFrame:
-        """Get real-time quotes for multiple symbols"""
+        """Get real-time quotes for multiple symbols using StockData.org API"""
         try:
             symbols_str = ",".join(symbols)
             params = {
@@ -72,7 +72,7 @@ class StockDataClient:
                     "symbol": quote_data.get("ticker"),
                     "price": quote_data.get("price"),
                     "change": quote_data.get("day_change"),
-                    "change_percent": quote_data.get("day_change_percent"),
+                    "change_percent": quote_data.get("day_change"),
                     "volume": quote_data.get("volume"),
                     "market_cap": quote_data.get("market_cap"),
                     "pe_ratio": quote_data.get("pe"),
@@ -85,9 +85,13 @@ class StockDataClient:
         except Exception as e:
             return pd.DataFrame()
     
-    def get_historical_data(self, symbol: str, date_from: Optional[str] = None, date_to: Optional[str] = None) -> pd.DataFrame:
-        """Get historical OHLCV data"""
+    def get_historical_data(self, symbols, date_from: Optional[str] = None, date_to: Optional[str] = None) -> pd.DataFrame:
+        """Get historical OHLCV data for multiple symbols"""
         try:
+            # Handle both single symbol string and list of symbols
+            if isinstance(symbols, str):
+                symbols = [symbols]
+            
             # Default to last year if no dates provided
             if not date_to:
                 date_to = datetime.now().strftime("%Y-%m-%d")
@@ -95,7 +99,7 @@ class StockDataClient:
                 date_from = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
             
             params = {
-                "symbols": symbol,
+                "symbols": ",".join(symbols),
                 "date_from": date_from,
                 "date_to": date_to,
                 "api_token": self.api_key
@@ -106,32 +110,19 @@ class StockDataClient:
             historical_data = []
             for item in data.get("data", []):
                 historical_data.append({
-                    "Date": item.get("date"),
-                    "Open": item.get("open"),
-                    "High": item.get("high"),
-                    "Low": item.get("low"),
-                    "Close": item.get("close"),
-                    "Volume": item.get("volume"),
-                    "Adj Close": item.get("adj_close", item.get("close"))
+                    "symbol": item.get("ticker"),
+                    "date": item.get("date"),
+                    "open": item.get("open"),
+                    "high": item.get("high"),
+                    "low": item.get("low"),
+                    "close": item.get("close"),
+                    "volume": item.get("volume"),
                 })
             
-            df = pd.DataFrame(historical_data)
-            if not df.empty:
-                df["Date"] = pd.to_datetime(df["Date"])
-                df.set_index("Date", inplace=True)
-                df = df.sort_index()
-                
-                # Convert to numeric
-                numeric_cols = ["Open", "High", "Low", "Close", "Volume", "Adj Close"]
-                for col in numeric_cols:
-                    if col in df.columns:
-                        df[col] = pd.to_numeric(df[col], errors="coerce")
-            
-            return df
+            return pd.DataFrame(historical_data)
             
         except Exception as e:
-            st.error(f"Error fetching historical data: {str(e)}")
-            return pd.DataFrame()
+            raise Exception(f"Error fetching historical data: {str(e)}")
     
     def get_intraday_data(self, symbol: str, interval: str = "1min", outputsize: int = 100) -> pd.DataFrame:
         """Get intraday data with specified interval"""
