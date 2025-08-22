@@ -631,7 +631,7 @@ def main_dashboard():
             },
             {
                 "icon": "⚡",
-                "title": "Advanced Risk Management",
+                "title": "Risk Management Suite",
                 "desc": "Professional portfolio risk analytics, VaR analysis, Monte Carlo simulations, and stress testing.",
                 "page": "pages/advanced_risk_management.py"
             },
