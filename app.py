@@ -624,6 +624,18 @@ def main_dashboard():
                 "page": "pages/market_performance_tracker.py"
             },
             {
+                "icon": "📊",
+                "title": "Options Analysis",
+                "desc": "Advanced options pricing, Greeks analysis, volatility surface modeling, and strategy payoff diagrams.",
+                "page": "pages/options_analysis.py"
+            },
+            {
+                "icon": "⚡",
+                "title": "Advanced Risk Management",
+                "desc": "Professional portfolio risk analytics, VaR analysis, Monte Carlo simulations, and stress testing.",
+                "page": "pages/advanced_risk_management.py"
+            },
+            {
                 "icon": "🎯",
                 "title": "Strategy Comparison & Optimization",
                 "desc": "Advanced multi-strategy comparison with parameter optimization and risk-return analysis.",
