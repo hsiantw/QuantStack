@@ -325,31 +325,42 @@ class SPY500TradingStrategies:
         """Backtest trading strategies with benchmark comparison"""
         
         try:
-            # Use Yahoo Finance for historical data (more reliable for backtesting)
-            benchmark_data = None
-            
             # Get benchmark data from Yahoo Finance
-            try:
-                benchmark_raw = yf.download(benchmark, start=start_date, end=end_date, progress=False)
-                
-                # Handle both single and multiple ticker data structures
-                if isinstance(benchmark_raw.columns, pd.MultiIndex):
-                    benchmark_data = benchmark_raw['Adj Close'].iloc[:, 0] if len(benchmark_raw['Adj Close'].columns) > 1 else benchmark_raw['Adj Close']
+            benchmark_raw = yf.download(benchmark, start=start_date, end=end_date, progress=False)
+            
+            if benchmark_raw.empty:
+                raise ValueError(f"No data available for benchmark {benchmark}")
+            
+            # Handle both single and multiple ticker data structures
+            if isinstance(benchmark_raw.columns, pd.MultiIndex):
+                # Multi-level columns
+                if 'Adj Close' in benchmark_raw.columns.get_level_values(0):
+                    benchmark_data = benchmark_raw['Adj Close']
+                    if len(benchmark_data.columns) > 1:
+                        benchmark_data = benchmark_data.iloc[:, 0]
+                elif 'Close' in benchmark_raw.columns.get_level_values(0):
+                    benchmark_data = benchmark_raw['Close']
+                    if len(benchmark_data.columns) > 1:
+                        benchmark_data = benchmark_data.iloc[:, 0]
                 else:
-                    if 'Adj Close' in benchmark_raw.columns:
-                        benchmark_data = benchmark_raw['Adj Close']
-                    elif 'Close' in benchmark_raw.columns:
-                        benchmark_data = benchmark_raw['Close']
-                    else:
-                        # If it's a simple series
-                        benchmark_data = benchmark_raw.iloc[:, -1]
-            except Exception:
-                raise ValueError(f"Could not fetch data for benchmark {benchmark}")
+                    benchmark_data = benchmark_raw.iloc[:, 0]
+            else:
+                # Simple column structure
+                if 'Adj Close' in benchmark_raw.columns:
+                    benchmark_data = benchmark_raw['Adj Close']
+                elif 'Close' in benchmark_raw.columns:
+                    benchmark_data = benchmark_raw['Close']
+                else:
+                    benchmark_data = benchmark_raw.iloc[:, 0]
+            
+            # Ensure we have a Series, not DataFrame
+            if isinstance(benchmark_data, pd.DataFrame):
+                benchmark_data = benchmark_data.iloc[:, 0]
             
             benchmark_returns = benchmark_data.pct_change().dropna()
             
             if len(benchmark_returns) < 10:
-                raise ValueError("Insufficient data for backtesting")
+                raise ValueError(f"Insufficient data for backtesting {benchmark} - only {len(benchmark_returns)} data points")
             
             # Generate synthetic strategy returns (simplified for demo)
             np.random.seed(42)  # For reproducibility
@@ -444,7 +455,13 @@ class SPY500TradingStrategies:
             }
             
         except Exception as e:
-            st.error(f"Error backtesting strategy: {str(e)}")
+            error_msg = str(e)
+            if "No data" in error_msg or "Insufficient data" in error_msg:
+                st.error(f"Data issue: {error_msg}")
+                st.info(f"Try selecting a different time period or benchmark. Current selection: {benchmark} from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+            else:
+                st.error(f"Error backtesting strategy: {error_msg}")
+            
             # Return empty structure for consistent handling
             return {
                 'results': pd.DataFrame(),
@@ -862,12 +879,12 @@ def main():
                         st.dataframe(recent_trades, use_container_width=True, hide_index=True)
                 
                 else:
-                    st.warning("Unable to generate backtest results - insufficient data or connection error. Please try:")
+                    st.warning("Unable to generate backtest results. Please try:")
                     st.markdown("""
-                    - Selecting a longer time period
-                    - Choosing a different benchmark (SPY, QQQ, IWM)
-                    - Checking your internet connection
-                    - Trying again in a moment
+                    - **Different time period**: Select 1 Year or 2 Years for more data
+                    - **Different benchmark**: Try QQQ (NASDAQ) or IWM (Russell 2000) instead of SPY
+                    - **Wait and retry**: Market data services may be temporarily busy
+                    - **Check connection**: Ensure stable internet connection
                     """)
         
         # Strategy comparison summary
