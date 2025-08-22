@@ -16,7 +16,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
     from utils.ui_components import apply_custom_css, create_metric_card, create_info_card
     from utils.auth import check_authentication
-    from utils.stockdata_client import StockDataClient
     apply_custom_css()
 except ImportError:
     def create_metric_card(title, value, delta=None):
@@ -25,6 +24,12 @@ except ImportError:
         return st.info(f"**{title}**\n\n{content}")
     def check_authentication():
         return True, None
+
+# Import StockDataClient separately to ensure it's available
+try:
+    from utils.stockdata_client import StockDataClient
+except ImportError as e:
+    st.error(f"Failed to import StockDataClient: {str(e)}")
     StockDataClient = None
 
 class MarketPerformanceTracker:
@@ -33,13 +38,26 @@ class MarketPerformanceTracker:
     def __init__(self):
         # Initialize StockData.org client
         self.stockdata_client = None
-        if StockDataClient:
+        if StockDataClient is not None:
             try:
                 self.stockdata_client = StockDataClient("uh8kCdBkyEjbME9WtzMPiwMkgcNOyARSgJe34mIq")
-                st.success("✅ Connected to StockData.org premium market data")
+                # Test the connection
+                test_data = self.stockdata_client.get_real_time_quote(["AAPL"])
+                if not test_data.empty:
+                    st.success("✅ Connected to StockData.org premium market data")
+                else:
+                    st.warning("⚠️ StockData.org API connected but no test data returned")
             except Exception as e:
-                st.error(f"Failed to connect to StockData.org: {str(e)}")
-                self.stockdata_client = None
+                st.error(f"❌ Failed to connect to StockData.org: {str(e)}")
+                st.info("💡 Trying to initialize without connection test...")
+                try:
+                    # Initialize without testing
+                    self.stockdata_client = StockDataClient("uh8kCdBkyEjbME9WtzMPiwMkgcNOyARSgJe34mIq")
+                    st.warning("⚠️ StockData.org client initialized but connection not verified")
+                except:
+                    self.stockdata_client = None
+        else:
+            st.error("❌ StockDataClient class not available - import failed")
         
         # Major indices components
         self.indices = {

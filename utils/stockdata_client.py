@@ -11,6 +11,7 @@ import os
 import time
 from typing import Optional, Dict, List, Any
 import json
+import streamlit as st
 
 class StockDataClient:
     """Client for stockdata.org API integration"""
