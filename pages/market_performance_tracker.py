@@ -34,7 +34,7 @@ class MarketPerformanceTracker:
         self.indices = {
             'S&P 500': {
                 'ticker': '^GSPC',
-                'components': self.get_sp500_tickers()[:100]  # Top 100 for performance
+                'components': self.get_sp500_tickers()
             },
             'NASDAQ 100': {
                 'ticker': '^NDX', 
@@ -46,7 +46,22 @@ class MarketPerformanceTracker:
             },
             'Russell 2000': {
                 'ticker': '^RUT',
-                'components': self.get_russell2000_tickers()[:50]  # Top 50 for performance
+                'components': self.get_russell2000_tickers()
+            },
+            'Nikkei 225': {
+                'ticker': '^N225',
+                'components': ['7203.T', '6758.T', '9984.T', '6861.T', '8306.T', '9432.T', '4063.T', '6981.T',
+                             '8035.T', '7974.T', '6954.T', '4502.T', '8058.T', '9983.T', '4519.T', '6367.T']
+            },
+            'FTSE 100': {
+                'ticker': '^FTSE',
+                'components': ['SHEL.L', 'AZN.L', 'LSEG.L', 'UU.L', 'ULVR.L', 'BP.L', 'GSK.L', 'VOD.L',
+                             'RIO.L', 'BHP.L', 'BARC.L', 'LLOY.L', 'HSBA.L', 'DGE.L', 'NWG.L', 'BT-A.L']
+            },
+            'DAX': {
+                'ticker': '^GDAXI',
+                'components': ['SAP.DE', 'ASME.DE', 'SIE.DE', 'ALV.DE', 'DTG.DE', 'MUV2.DE', 'ADS.DE', 'BMW.DE',
+                             'VOW3.DE', 'BAS.DE', 'DB1.DE', 'DBK.DE', 'CON.DE', 'LIN.DE', 'MBG.DE', 'BEI.DE']
             }
         }
         
@@ -60,19 +75,18 @@ class MarketPerformanceTracker:
     
     def get_sp500_tickers(self):
         """Get S&P 500 component tickers"""
-        # Major S&P 500 components for demonstration
         return [
             'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK-B',
             'UNH', 'JNJ', 'JPM', 'V', 'PG', 'XOM', 'HD', 'CVX', 'MA', 'PFE',
             'ABBV', 'KO', 'AVGO', 'COST', 'PEP', 'WMT', 'TMO', 'MRK', 'DIS',
-            'BAC', 'ABT', 'NFLX', 'CRM', 'ACN', 'ADBE', 'VZ', 'DHCP', 'NKE',
+            'BAC', 'ABT', 'NFLX', 'CRM', 'ACN', 'ADBE', 'VZ', 'NKE',
             'T', 'CMCSA', 'TXN', 'RTX', 'NEE', 'WFC', 'QCOM', 'PM', 'HON',
             'LLY', 'UPS', 'IBM', 'SPGI', 'LOW', 'AMD', 'GE', 'CAT', 'INTU',
             'ORCL', 'INTC', 'MDT', 'GS', 'BMY', 'AXP', 'BLK', 'BA', 'MU',
             'NOW', 'AMT', 'DE', 'SYK', 'AMAT', 'TGT', 'SCHW', 'LRCX', 'GILD',
             'CVS', 'BKNG', 'ADI', 'TMUS', 'MDLZ', 'ADP', 'CI', 'LMT', 'ISRG',
             'TJX', 'ZTS', 'MMC', 'VRTX', 'MO', 'PYPL', 'DUK', 'EOG', 'SLB',
-            'CME', 'ITW', 'PLD', 'CSX', 'FIS', 'NOC', 'AON', 'ICE', 'USB',
+            'CME', 'ITW', 'PLD', 'CSX', 'NOC', 'AON', 'ICE', 'USB',
             'WM', 'GD', 'CL', 'NSC', 'APD', 'KLAC', 'FCX', 'HUM', 'EMR', 'F'
         ]
     
@@ -88,8 +102,8 @@ class MarketPerformanceTracker:
             'WDAY', 'TEAM', 'CSGP', 'PAYX', 'ODFL', 'FAST', 'ROST', 'IDXX',
             'KHC', 'BKR', 'BIIB', 'EA', 'GEHC', 'VRSK', 'EXC', 'XEL',
             'CTSH', 'FANG', 'PCAR', 'MNST', 'CCEP', 'WBD', 'DDOG', 'CRWD',
-            'AEP', 'ABNB', 'ON', 'ANSS', 'CDW', 'ILMN', 'GFS', 'MRNA',
-            'SGEN', 'EBAY', 'ZM', 'LCID', 'ZS', 'WBA', 'ALGN', 'ENPH'
+            'AEP', 'ABNB', 'ON', 'CDW', 'ILMN', 'GFS', 'MRNA',
+            'EBAY', 'ZM', 'LCID', 'ZS', 'WBA', 'ALGN', 'ENPH'
         ]
     
     def get_dow_tickers(self):
@@ -104,13 +118,15 @@ class MarketPerformanceTracker:
     def get_russell2000_tickers(self):
         """Get Russell 2000 component tickers (sample)"""
         return [
-            'FTCH', 'NKTR', 'COTY', 'PENN', 'BBBY', 'AMC', 'CLOV', 'WKHS',
+            'FTCH', 'NKTR', 'COTY', 'PENN', 'AMC', 'CLOV', 'WKHS',
             'RIDE', 'GOEV', 'HYLN', 'QS', 'LAZR', 'VLDR', 'LIDR', 'OUST',
-            'BLDE', 'ARVL', 'LCID', 'RIVN', 'F', 'GM', 'FORD', 'NIO', 'XPEV',
-            'LI', 'BYDDY', 'BYD', 'TSLA', 'PLUG', 'FCEL', 'BE', 'CLNE',
+            'BLDE', 'ARVL', 'LCID', 'RIVN', 'F', 'GM', 'NIO', 'XPEV',
+            'LI', 'PLUG', 'FCEL', 'BE', 'CLNE',
             'GEVO', 'RUN', 'NOVA', 'ENPH', 'SEDG', 'CSIQ', 'JKS', 'SOL',
             'MAXN', 'SPWR', 'FSLR', 'DQ', 'YGE', 'TSM', 'UMC'
         ]
+    
+
     
     @st.cache_data(ttl=300)  # Cache for 5 minutes
     def get_performance_data(_self, tickers, period_days):
@@ -219,60 +235,7 @@ class MarketPerformanceTracker:
         
         return top_performers, bottom_performers
     
-    def create_performance_chart(self, top_performers, bottom_performers, period_name, index_name):
-        """Create performance comparison chart"""
-        
-        fig = make_subplots(
-            rows=1, cols=2,
-            subplot_titles=(f'Top 10 Performers - {period_name}', f'Bottom 10 Performers - {period_name}'),
-            horizontal_spacing=0.1
-        )
-        
-        # Top performers
-        fig.add_trace(
-            go.Bar(
-                x=top_performers['Change_Pct'],
-                y=top_performers['Ticker'],
-                orientation='h',
-                name='Top Performers',
-                marker=dict(color='#4ECDC4'),
-                text=[f'{x:.1f}%' for x in top_performers['Change_Pct']],
-                textposition='outside',
-                hovertemplate='<b>%{y}</b><br>Change: %{x:.2f}%<br>Price: $%{customdata:.2f}<extra></extra>',
-                customdata=top_performers['Current_Price']
-            ),
-            row=1, col=1
-        )
-        
-        # Bottom performers
-        fig.add_trace(
-            go.Bar(
-                x=bottom_performers['Change_Pct'],
-                y=bottom_performers['Ticker'],
-                orientation='h',
-                name='Bottom Performers',
-                marker=dict(color='#FF6B6B'),
-                text=[f'{x:.1f}%' for x in bottom_performers['Change_Pct']],
-                textposition='outside',
-                hovertemplate='<b>%{y}</b><br>Change: %{x:.2f}%<br>Price: $%{customdata:.2f}<extra></extra>',
-                customdata=bottom_performers['Current_Price']
-            ),
-            row=1, col=2
-        )
-        
-        fig.update_layout(
-            title=f'{index_name} - {period_name} Performance Leaders',
-            height=600,
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white'),
-            showlegend=False
-        )
-        
-        fig.update_xaxes(gridcolor='rgba(128,128,128,0.2)', zeroline=True, zerolinecolor='white')
-        fig.update_yaxes(gridcolor='rgba(128,128,128,0.2)')
-        
-        return fig
+
     
     def create_momentum_strategy_signals(self, top_performers, bottom_performers):
         """Create momentum strategy signals for SPY 500"""
@@ -372,10 +335,10 @@ def main():
         st.header("🎛️ Analysis Controls")
         
         # Index selection
-        selected_index = st.selectbox(
-            "Select Index",
+        selected_indices = st.multiselect(
+            "Select Indices to Analyze",
             list(tracker.indices.keys()),
-            index=1  # Default to NASDAQ 100
+            default=['S&P 500', 'NASDAQ 100', 'Dow Jones']
         )
         
         # Time period selection
@@ -401,79 +364,87 @@ def main():
     ])
     
     with performance_tab:
-        st.markdown(f"### {selected_index} Performance Analysis")
+        if not selected_indices:
+            st.warning("Please select at least one index to analyze")
+            return
+            
+        st.markdown("### Market Performance Analysis")
         
         for period_name in selected_periods:
             period_days = tracker.time_periods[period_name]
             
             st.markdown(f"#### {period_name} Performance")
             
-            with st.spinner(f"Analyzing {period_name} performance..."):
-                top_performers, bottom_performers = tracker.get_top_bottom_performers(
-                    selected_index, period_days, top_n
-                )
-                
-                if not top_performers.empty and not bottom_performers.empty:
-                    # Performance metrics
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        best_gain = top_performers.iloc[0]['Change_Pct']
-                        create_metric_card(
-                            "Best Performer",
-                            f"{top_performers.iloc[0]['Ticker']}",
-                            f"{best_gain:+.2f}%"
+            # Create tabs for each selected index
+            if len(selected_indices) > 1:
+                index_tabs = st.tabs(selected_indices)
+            else:
+                index_tabs = [st.container()]
+            
+            for idx, index_name in enumerate(selected_indices):
+                with index_tabs[idx]:
+                    with st.spinner(f"Analyzing {index_name} {period_name} performance..."):
+                        top_performers, bottom_performers = tracker.get_top_bottom_performers(
+                            index_name, period_days, top_n
                         )
-                    
-                    with col2:
-                        worst_loss = bottom_performers.iloc[0]['Change_Pct']
-                        create_metric_card(
-                            "Worst Performer", 
-                            f"{bottom_performers.iloc[0]['Ticker']}",
-                            f"{worst_loss:+.2f}%"
-                        )
-                    
-                    with col3:
-                        spread = best_gain - worst_loss
-                        create_metric_card(
-                            "Performance Spread",
-                            f"{spread:.2f}%",
-                            "High volatility" if spread > 20 else "Moderate"
-                        )
-                    
-                    with col4:
-                        avg_top_perf = top_performers['Change_Pct'].mean()
-                        create_metric_card(
-                            f"Avg Top {top_n}",
-                            f"{avg_top_perf:+.2f}%",
-                            f"vs Bottom {top_n}: {bottom_performers['Change_Pct'].mean():+.2f}%"
-                        )
-                    
-                    # Performance chart
-                    fig = tracker.create_performance_chart(
-                        top_performers, bottom_performers, period_name, selected_index
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Detailed tables
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.markdown("**Top Performers**")
-                        display_top = top_performers[['Ticker', 'Change_Pct', 'Current_Price']].copy()
-                        display_top['Change_Pct'] = display_top['Change_Pct'].apply(lambda x: f"{x:+.2f}%")
-                        display_top['Current_Price'] = display_top['Current_Price'].apply(lambda x: f"${x:.2f}")
-                        st.dataframe(display_top, use_container_width=True, hide_index=True)
-                    
-                    with col2:
-                        st.markdown("**Bottom Performers**")
-                        display_bottom = bottom_performers[['Ticker', 'Change_Pct', 'Current_Price']].copy()
-                        display_bottom['Change_Pct'] = display_bottom['Change_Pct'].apply(lambda x: f"{x:+.2f}%")
-                        display_bottom['Current_Price'] = display_bottom['Current_Price'].apply(lambda x: f"${x:.2f}")
-                        st.dataframe(display_bottom, use_container_width=True, hide_index=True)
-                
-                else:
-                    st.warning(f"No data available for {period_name} analysis")
+                        
+                        if not top_performers.empty and not bottom_performers.empty:
+                            # Performance metrics
+                            col1, col2, col3, col4 = st.columns(4)
+                            
+                            with col1:
+                                best_gain = top_performers.iloc[0]['Change_Pct']
+                                create_metric_card(
+                                    "Best Performer",
+                                    f"{top_performers.iloc[0]['Ticker']}",
+                                    f"{best_gain:+.2f}%"
+                                )
+                            
+                            with col2:
+                                worst_loss = bottom_performers.iloc[0]['Change_Pct']
+                                create_metric_card(
+                                    "Worst Performer", 
+                                    f"{bottom_performers.iloc[0]['Ticker']}",
+                                    f"{worst_loss:+.2f}%"
+                                )
+                            
+                            with col3:
+                                spread = best_gain - worst_loss
+                                create_metric_card(
+                                    "Performance Spread",
+                                    f"{spread:.2f}%",
+                                    "High volatility" if spread > 20 else "Moderate"
+                                )
+                            
+                            with col4:
+                                avg_top_perf = top_performers['Change_Pct'].mean()
+                                create_metric_card(
+                                    f"Avg Top {top_n}",
+                                    f"{avg_top_perf:+.2f}%",
+                                    f"vs Bottom {top_n}: {bottom_performers['Change_Pct'].mean():+.2f}%"
+                                )
+                            
+                            # Detailed tables
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                st.markdown("**Top Performers**")
+                                display_top = top_performers[['Ticker', 'Change_Pct', 'Current_Price']].copy()
+                                display_top.columns = ['Symbol', 'Change %', 'Price']
+                                display_top['Change %'] = display_top['Change %'].apply(lambda x: f"{x:+.2f}%")
+                                display_top['Price'] = display_top['Price'].apply(lambda x: f"${x:.2f}")
+                                st.dataframe(display_top, use_container_width=True, hide_index=True)
+                            
+                            with col2:
+                                st.markdown("**Bottom Performers**")
+                                display_bottom = bottom_performers[['Ticker', 'Change_Pct', 'Current_Price']].copy()
+                                display_bottom.columns = ['Symbol', 'Change %', 'Price']
+                                display_bottom['Change %'] = display_bottom['Change %'].apply(lambda x: f"{x:+.2f}%")
+                                display_bottom['Price'] = display_bottom['Price'].apply(lambda x: f"${x:.2f}")
+                                st.dataframe(display_bottom, use_container_width=True, hide_index=True)
+                        
+                        else:
+                            st.warning(f"No data available for {index_name} {period_name} analysis")
             
             st.markdown("---")
     
