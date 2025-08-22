@@ -290,8 +290,24 @@ class SPY500TradingStrategies:
         
         try:
             # Get benchmark data for buy & hold comparison
-            benchmark_data = yf.download(benchmark, start=start_date, end=end_date, progress=False)['Adj Close']
+            benchmark_raw = yf.download(benchmark, start=start_date, end=end_date, progress=False)
+            
+            # Handle both single and multiple ticker data structures
+            if isinstance(benchmark_raw.columns, pd.MultiIndex):
+                benchmark_data = benchmark_raw['Adj Close'].iloc[:, 0] if len(benchmark_raw['Adj Close'].columns) > 1 else benchmark_raw['Adj Close']
+            else:
+                if 'Adj Close' in benchmark_raw.columns:
+                    benchmark_data = benchmark_raw['Adj Close']
+                elif 'Close' in benchmark_raw.columns:
+                    benchmark_data = benchmark_raw['Close']
+                else:
+                    # If it's a simple series
+                    benchmark_data = benchmark_raw.iloc[:, -1]
+            
             benchmark_returns = benchmark_data.pct_change().dropna()
+            
+            if len(benchmark_returns) < 10:
+                raise ValueError("Insufficient data for backtesting")
             
             # Generate synthetic strategy returns (simplified for demo)
             np.random.seed(42)  # For reproducibility
@@ -387,7 +403,15 @@ class SPY500TradingStrategies:
             
         except Exception as e:
             st.error(f"Error backtesting strategy: {str(e)}")
-            return {}
+            # Return empty structure for consistent handling
+            return {
+                'results': pd.DataFrame(),
+                'strategy_portfolio': [],
+                'benchmark_portfolio': [],
+                'benchmark_symbol': benchmark,
+                'dates': [],
+                'metrics': {}
+            }
 
 def main():
     # Check authentication
@@ -688,7 +712,7 @@ def main():
             with st.spinner(f"Running {backtest_strategy} strategy backtest vs {benchmark}..."):
                 backtest_data = strategies.backtest_strategy(start_date, end_date, backtest_strategy, benchmark)
                 
-                if backtest_data and 'metrics' in backtest_data:
+                if backtest_data and 'metrics' in backtest_data and backtest_data['metrics']:
                     metrics = backtest_data['metrics']
                     
                     # Performance comparison metrics
@@ -789,7 +813,13 @@ def main():
                         st.dataframe(recent_trades, use_container_width=True, hide_index=True)
                 
                 else:
-                    st.warning("Unable to generate backtest results - insufficient data")
+                    st.warning("Unable to generate backtest results - insufficient data or connection error. Please try:")
+                    st.markdown("""
+                    - Selecting a longer time period
+                    - Choosing a different benchmark (SPY, QQQ, IWM)
+                    - Checking your internet connection
+                    - Trying again in a moment
+                    """)
         
         # Strategy comparison summary
         st.markdown("#### Strategy Comparison Guide")
