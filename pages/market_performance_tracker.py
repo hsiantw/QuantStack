@@ -17,6 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
     from utils.ui_components import apply_custom_css, create_metric_card, create_info_card
     from utils.auth import check_authentication
+    from utils.stockdata_client import StockDataClient
     apply_custom_css()
 except ImportError:
     def create_metric_card(title, value, delta=None):
@@ -25,11 +26,20 @@ except ImportError:
         return st.info(f"**{title}**\n\n{content}")
     def check_authentication():
         return True, None
+    StockDataClient = None
 
 class MarketPerformanceTracker:
     """Track best and worst performers across major indices"""
     
     def __init__(self):
+        # Initialize StockData.org client
+        self.stockdata_client = None
+        if StockDataClient:
+            try:
+                self.stockdata_client = StockDataClient("uh8kCdBkyEjbME9WtzMPiwMkgcNOyARSgJe34mIq")
+            except Exception:
+                self.stockdata_client = None
+        
         # Major indices components
         self.indices = {
             'S&P 500': {
@@ -131,12 +141,34 @@ class MarketPerformanceTracker:
     
     @st.cache_data(ttl=300)  # Cache for 5 minutes
     def get_performance_data(_self, tickers, period_days):
-        """Get performance data for list of tickers"""
+        """Get performance data using StockData.org API with Yahoo Finance fallback"""
+        performance_data = []
+        
+        # Try StockData.org first for real-time quotes
+        if _self.stockdata_client and period_days <= 1:  # Use for current day data
+            try:
+                real_time_data = _self.stockdata_client.get_real_time_quote(tickers[:50])  # Limit batch size
+                
+                for _, row in real_time_data.iterrows():
+                    performance_data.append({
+                        'Ticker': row['symbol'],
+                        'Current_Price': row['price'],
+                        'Past_Price': row['price'] - row.get('change', 0),
+                        'Change_Pct': row.get('change_percent', 0),
+                        'Volume': row.get('volume', 0),
+                        'Data_Source': 'StockData.org'
+                    })
+                
+                if len(performance_data) > 0:
+                    return pd.DataFrame(performance_data)
+                    
+            except Exception as e:
+                st.warning(f"StockData.org API temporarily unavailable, using Yahoo Finance fallback")
+        
+        # Fallback to Yahoo Finance for historical data or if StockData fails
         try:
             end_date = datetime.now()
             start_date = end_date - timedelta(days=max(period_days + 10, 30))  # Buffer for weekends
-            
-            performance_data = []
             
             # Process in batches to avoid API limits
             batch_size = 20
@@ -165,7 +197,8 @@ class MarketPerformanceTracker:
                                     'Current_Price': current_price,
                                     'Past_Price': past_price,
                                     'Change_Pct': change_pct,
-                                    'Volume': data.get('Volume', pd.Series()).iloc[-1] if 'Volume' in data.columns else 0
+                                    'Volume': data.get('Volume', pd.Series()).iloc[-1] if 'Volume' in data.columns else 0,
+                                    'Data_Source': 'Yahoo Finance'
                                 })
                     else:
                         for ticker in batch:
@@ -186,7 +219,8 @@ class MarketPerformanceTracker:
                                             'Current_Price': current_price,
                                             'Past_Price': past_price,
                                             'Change_Pct': change_pct,
-                                            'Volume': volume
+                                            'Volume': volume,
+                                            'Data_Source': 'Yahoo Finance'
                                         })
                             except Exception:
                                 continue
@@ -207,7 +241,8 @@ class MarketPerformanceTracker:
                                     'Current_Price': current_price,
                                     'Past_Price': past_price,
                                     'Change_Pct': change_pct,
-                                    'Volume': volume
+                                    'Volume': volume,
+                                    'Data_Source': 'Yahoo Finance'
                                 })
                         except Exception:
                             continue
@@ -289,20 +324,36 @@ class SPY500TradingStrategies:
         """Backtest trading strategies with benchmark comparison"""
         
         try:
-            # Get benchmark data for buy & hold comparison
-            benchmark_raw = yf.download(benchmark, start=start_date, end=end_date, progress=False)
+            # Try StockData.org for historical data first
+            benchmark_data = None
+            if _self.stockdata_client:
+                try:
+                    historical_data = _self.stockdata_client.get_historical_data(
+                        [benchmark], 
+                        start_date.strftime('%Y-%m-%d'), 
+                        end_date.strftime('%Y-%m-%d')
+                    )
+                    if not historical_data.empty:
+                        benchmark_data = historical_data[historical_data['symbol'] == benchmark]['close']
+                        benchmark_data.index = pd.to_datetime(historical_data[historical_data['symbol'] == benchmark]['date'])
+                except Exception:
+                    pass  # Fall back to Yahoo Finance
             
-            # Handle both single and multiple ticker data structures
-            if isinstance(benchmark_raw.columns, pd.MultiIndex):
-                benchmark_data = benchmark_raw['Adj Close'].iloc[:, 0] if len(benchmark_raw['Adj Close'].columns) > 1 else benchmark_raw['Adj Close']
-            else:
-                if 'Adj Close' in benchmark_raw.columns:
-                    benchmark_data = benchmark_raw['Adj Close']
-                elif 'Close' in benchmark_raw.columns:
-                    benchmark_data = benchmark_raw['Close']
+            # Fallback to Yahoo Finance
+            if benchmark_data is None or len(benchmark_data) < 10:
+                benchmark_raw = yf.download(benchmark, start=start_date, end=end_date, progress=False)
+                
+                # Handle both single and multiple ticker data structures
+                if isinstance(benchmark_raw.columns, pd.MultiIndex):
+                    benchmark_data = benchmark_raw['Adj Close'].iloc[:, 0] if len(benchmark_raw['Adj Close'].columns) > 1 else benchmark_raw['Adj Close']
                 else:
-                    # If it's a simple series
-                    benchmark_data = benchmark_raw.iloc[:, -1]
+                    if 'Adj Close' in benchmark_raw.columns:
+                        benchmark_data = benchmark_raw['Adj Close']
+                    elif 'Close' in benchmark_raw.columns:
+                        benchmark_data = benchmark_raw['Close']
+                    else:
+                        # If it's a simple series
+                        benchmark_data = benchmark_raw.iloc[:, -1]
             
             benchmark_returns = benchmark_data.pct_change().dropna()
             
@@ -471,10 +522,17 @@ def main():
         # Number of performers to show
         top_n = st.slider("Number of Top/Bottom Performers", 5, 20, 10)
         
-        # Refresh data
-        if st.button("🔄 Refresh Data", type="primary"):
-            st.cache_data.clear()
-            st.rerun()
+        # Data source indicator and refresh
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            data_source = "StockData.org + Yahoo Finance" if tracker.stockdata_client else "Yahoo Finance"
+            st.markdown(f"**Data Source:** {data_source}")
+            
+        with col2:
+            if st.button("🔄 Refresh Data", type="primary"):
+                st.cache_data.clear()
+                st.rerun()
     
     # Main content tabs
     performance_tab, momentum_tab, backtest_tab = st.tabs([
