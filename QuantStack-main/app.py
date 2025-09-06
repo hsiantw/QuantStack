@@ -524,13 +524,7 @@ def get_most_recent_price(ticker, periods=["2d", "5d", "1mo", "3mo"]):
     
     return None, None, False
 
-# Page configuration
-st.set_page_config(
-    page_title="Quantitative Finance Platform",
-    page_icon="📈",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Remove duplicate page configuration - already set at top
 
 # Main dashboard
 def main_dashboard():
@@ -558,8 +552,8 @@ def main_dashboard():
         if st.button("📊 New Analysis", use_container_width=True, type="primary"):
             st.switch_page("pages/portfolio_optimization.py")
     with quick_cols[1]:
-        if st.button("🤖 AI Strategies", use_container_width=True, type="secondary"):
-            st.switch_page("pages/ai_analysis.py")
+        if st.button("📊 Strategy Analysis", use_container_width=True, type="secondary"):
+            st.switch_page("pages/strategy_backtesting.py")
     with quick_cols[2]:
         if st.button("📈 Trading Signals", use_container_width=True, type="secondary"):
             st.switch_page("pages/trading_strategies.py")
