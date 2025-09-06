@@ -1,0 +1,68 @@
+File change.
+🎯 Advanced Strategy Comparison & Optimization
+Compare multiple trading strategies with different indicator combinations to find the optimal approach
+
+📊 SPY - SPDR S&P 500 ETF
+Current Price
+
+$643.44
+Daily Change
+
+-0.23%
+3 Years Return
+
+56.24%
+Annualized Volatility
+
+17.22%
+🔧 Strategy Optimization Process
+💡 Strategy Optimization Concepts
+
+🏆 Optimization Results
+Top 5 Strategies by Sharpe Ratio
+🥇 Best Strategy: MA_Cross_Fast (Sharpe Ratio: 0.000)
+
+📊 Strategy Performance Analysis
+🔍 Detailed Strategy Analysis
+Select strategy for detailed analysis
+
+MA_Cross_Fast
+TypeError: '<' not supported between instances of 'int' and 'Timestamp'
+Traceback:
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 128, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 667, in code_to_exec
+    _mpa_v1(self._main_script_path)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 165, in _mpa_v1
+    page.run()
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/navigation/page.py", line 300, in run
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/pages/strategy_comparison.py", line 264, in <module>
+    strategy_details = optimizer.get_strategy_details(selected_strategy_name)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/utils/strategy_optimizer.py", line 501, in get_strategy_details
+    monthly_returns = returns.resample('M').sum()
+                      ^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pandas/core/generic.py", line 9790, in resample
+    return get_resampler(
+           ^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pandas/core/resample.py", line 2050, in get_resampler
+    return tg._get_resampler(obj, kind=kind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pandas/core/resample.py", line 2229, in _get_resampler
+    _, ax, _ = self._set_grouper(obj, gpr_index=None)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pandas/core/resample.py", line 2529, in _set_grouper
+    obj, ax, indexer = super()._set_grouper(obj, sort, gpr_index=gpr_index)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pandas/core/groupby/grouper.py", line 403, in _set_grouper
+    indexer = self._indexer_deprecated = ax.array.argsort(
+                                         ^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pandas/core/arrays/base.py", line 848, in argsort
+    return nargsort(
+           ^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pandas/core/sorting.py", line 439, in nargsort
+    indexer = non_nan_idx[non_nans.argsort(kind=kind)]
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
