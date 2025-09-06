@@ -9,22 +9,18 @@ warnings.filterwarnings('ignore')
 
 class AIStrategyOptimizer:
     """
-    AI-powered trading strategy optimizer that finds optimal parameters
-    to minimize drawdown while maximizing returns with detailed methodology tracking.
+    AI-powered trading strategy optimizer - DISABLED FOR DEPLOYMENT
     """
     
     def __init__(self, data, ticker):
         self.data = data.copy()
         self.ticker = ticker
-        self.models = {
-            'rf': RandomForestRegressor(n_estimators=100, random_state=42),
-            'gb': GradientBoostingRegressor(n_estimators=100, random_state=42)
-        }
-        self.scaler = StandardScaler()
+        self.models = None
+        self.scaler = None
         self.best_params = {}
         self.feature_importance = {}
         self.calculation_details = {}
-        self.optimization_log = []
+        self.optimization_log = ["AI optimization disabled for deployment"]
         
     def create_features(self, data, lookback_periods=[5, 10, 20, 50]):
         """Create technical features for ML model"""
@@ -87,8 +83,9 @@ class AIStrategyOptimizer:
         return macd, signal_line
     
     def optimize_strategy(self):
-        """Main optimization method with detailed tracking"""
-        self.optimization_log.append(f"Starting optimization for {self.ticker} at {datetime.now()}")
+        """Main optimization method - DISABLED FOR DEPLOYMENT"""
+        self.optimization_log.append("AI strategy optimization disabled for deployment")
+        return None
         
         # Define strategy universe
         strategies = self._get_strategy_universe()
@@ -790,9 +787,17 @@ class AIStrategyOptimizer:
     
     def generate_strategy_recommendations(self, data):
         """
-        Generate comprehensive strategy recommendations using AI optimization
+        Generate strategy recommendations - DISABLED FOR DEPLOYMENT
         """
-        recommendations = {}
+        return {
+            'success': False,
+            'message': 'AI strategy recommendations disabled for deployment',
+            'moving_average': {'best': None, 'all_results': []},
+            'rsi': {'best': None, 'all_results': []},
+            'ensemble': None,
+            'risk_adjusted': None,
+            'feature_importance': {}
+        }
         
         try:
             # Optimize individual strategies with error handling

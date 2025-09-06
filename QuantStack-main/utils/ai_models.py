@@ -12,63 +12,27 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class AIModels:
-    """AI-powered financial analysis and prediction models with extended historical training data"""
+    """AI-powered financial analysis and prediction models - DISABLED FOR DEPLOYMENT"""
     
     def __init__(self, price_data, ticker, use_extended_history=True, training_years=15):
         """
-        Initialize with price data, optionally using extended historical data for training
-        
-        Args:
-            price_data (pandas.DataFrame): Recent OHLCV data for prediction
-            ticker (str): Asset ticker
-            use_extended_history (bool): Whether to fetch 10-20 years of historical data for training
-            training_years (int): Number of years of historical data for training (10-20)
+        Initialize with price data - AI functionality disabled
         """
         self.data = price_data.copy()
         self.ticker = ticker
-        self.scaler = StandardScaler()
-        self.use_extended_history = use_extended_history
-        self.training_years = max(10, min(20, training_years))  # Ensure 10-20 year range
+        self.scaler = None
+        self.use_extended_history = False
+        self.training_years = 0
         self.training_data = None
-        
-        # Get extended historical data for training if requested
-        if use_extended_history:
-            self._fetch_training_data()
-        
-        # Prepare features for both training and prediction data
-        self._prepare_features()
+        st.info("AI functionality is currently disabled for deployment")
     
     def _fetch_training_data(self):
-        """Fetch extended historical data for AI model training"""
-        from utils.data_fetcher import DataFetcher
-        
-        try:
-            st.info(f"Fetching {self.training_years} years of historical data for robust AI training...")
-            self.training_data = DataFetcher.get_historical_data_for_ai(
-                self.ticker, 
-                years_back=self.training_years
-            )
-            
-            if not self.training_data.empty:
-                st.success(f"Successfully loaded {len(self.training_data)} days of historical data "
-                          f"({self.training_data.attrs.get('years_covered', self.training_years)} years) for training")
-            else:
-                st.warning("Could not fetch extended historical data. Using provided data for training.")
-                self.training_data = self.data.copy()
-                
-        except Exception as e:
-            st.warning(f"Error fetching training data: {str(e)}. Using provided data for training.")
-            self.training_data = self.data.copy()
+        """Disabled for deployment"""
+        return None
     
     def _prepare_features(self):
-        """Prepare features for ML models using both training and prediction data"""
-        
-        # Prepare features for training data if available
-        if self.training_data is not None and not self.training_data.empty:
-            self.training_features = self._calculate_features(self.training_data.copy())
-        
-        # Prepare features for prediction data
-        self.prediction_features = self._calculate_features(self.data.copy())
+        """Disabled for deployment"""
+        return None
     
     def _calculate_features(self, data):
         """Calculate features for a given dataset"""
@@ -229,15 +193,13 @@ class AIModels:
     
     def train_random_forest(self, target_horizon=1, **kwargs):
         """
-        Train Random Forest model
-        
-        Args:
-            target_horizon (int): Prediction horizon
-            **kwargs: Additional parameters for RandomForestRegressor
+        Train Random Forest model - DISABLED FOR DEPLOYMENT
         
         Returns:
-            dict: Model and performance metrics
+            None: AI functionality disabled
         """
+        st.warning("AI model training is currently disabled for deployment")
+        return None
         try:
             X_train, X_test, y_train, y_test, feature_cols, training_info = self.prepare_data_for_training(target_horizon)
             
@@ -295,15 +257,13 @@ class AIModels:
     
     def train_gradient_boosting(self, target_horizon=1, **kwargs):
         """
-        Train Gradient Boosting model
-        
-        Args:
-            target_horizon (int): Prediction horizon
-            **kwargs: Additional parameters for GradientBoostingRegressor
+        Train Gradient Boosting model - DISABLED FOR DEPLOYMENT
         
         Returns:
-            dict: Model and performance metrics
+            None: AI functionality disabled
         """
+        st.warning("AI model training is currently disabled for deployment")
+        return None
         try:
             X_train, X_test, y_train, y_test, feature_cols, training_info = self.prepare_data_for_training(target_horizon)
             
@@ -360,17 +320,13 @@ class AIModels:
     
     def generate_predictions(self, model_result, prediction_days=30):
         """
-        Generate future predictions
-        
-        Args:
-            model_result (dict): Trained model result
-            prediction_days (int): Number of days to predict
+        Generate future predictions - DISABLED FOR DEPLOYMENT
         
         Returns:
-            pandas.Series: Future predictions
+            None: AI functionality disabled
         """
-        if model_result is None:
-            return None
+        st.warning("AI predictions are currently disabled for deployment")
+        return None
             
         try:
             model = model_result['model']
@@ -582,15 +538,13 @@ class AIModels:
     
     def pattern_recognition(self, lookback_window=20):
         """
-        Simple pattern recognition using price movements
-        
-        Args:
-            lookback_window (int): Window for pattern analysis
+        Pattern recognition - DISABLED FOR DEPLOYMENT
         
         Returns:
-            dict: Detected patterns
+            dict: Empty patterns (AI disabled)
         """
-        patterns = {
+        st.warning("AI pattern recognition is currently disabled for deployment")
+        return {
             'bullish_patterns': [],
             'bearish_patterns': [],
             'neutral_patterns': []
