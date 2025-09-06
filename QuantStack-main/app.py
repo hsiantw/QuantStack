@@ -464,8 +464,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-@st.cache_data(ttl=300)  # Cache for 5 minutes
-def get_most_recent_price(ticker, periods=["2d", "5d", "1mo", "3mo"]):
+@st.cache_data(ttl=600)  # Cache for 10 minutes (longer for free tier)
+def get_most_recent_price(ticker, periods=["1mo"]):
     """
     Searches for the most recent available price data across multiple time periods.
     Returns (current_price, previous_price, success_flag)
@@ -572,10 +572,10 @@ def main_dashboard():
     </p>
     """, unsafe_allow_html=True)
     
-    # Create tabs for the three main categories
+    # Create tabs for the main categories (simplified for free tier)
     portfolio_tab, insights_tab, best_features_tab = st.tabs([
         "💼 Portfolio & Trading", 
-        "🧠 AI Insights & Analysis", 
+        "📊 Market Analysis", 
         "⭐ Platform Highlights"
     ])
     
@@ -594,12 +594,13 @@ def main_dashboard():
                 "desc": "Comprehensive portfolio tracking, rebalancing, and performance monitoring with real-time analytics.",
                 "page": "pages/portfolio_manager.py"
             },
-            {
-                "icon": "📊",
-                "title": "Trading Account Monitor",
-                "desc": "Live trading account integration with Webull, real-time P&L tracking, and position analysis.",
-                "page": "pages/trading_monitor.py"
-            },
+            # Trading monitor disabled for free tier
+            # {
+            #     "icon": "📊",
+            #     "title": "Trading Account Monitor",
+            #     "desc": "Live trading account integration with Webull, real-time P&L tracking, and position analysis.",
+            #     "page": "pages/trading_monitor.py"
+            # },
             {
                 "icon": "⚡",
                 "title": "Strategy Backtesting",
@@ -662,25 +663,14 @@ def main_dashboard():
                 create_feature_card(feature["icon"], feature["title"], feature["desc"], "Launch", feature["page"], "portfolio")
     
     with insights_tab:
-        st.markdown("#### AI-Powered Analysis & Market Intelligence")
+        st.markdown("#### Market Analysis & Intelligence")
+        st.info("AI-powered features are temporarily disabled for the free tier deployment")
         insights_features = [
-            {
-                "icon": "🤖",
-                "title": "AI Financial Analysis",
-                "desc": "Machine learning price predictions with Random Forest, Gradient Boosting, and neural networks.",
-                "page": "pages/ai_analysis.py"
-            },
             {
                 "icon": "📈",
                 "title": "Statistical Arbitrage",
                 "desc": "Pair trading with cointegration testing, spread analysis, and automated opportunity detection.",
                 "page": "pages/statistical_arbitrage.py"
-            },
-            {
-                "icon": "🔗",
-                "title": "AI Pairs Trading",
-                "desc": "Advanced AI-optimized pairs trading with 6 mean reversion strategies and real-time monitoring.",
-                "page": "pages/ai_pairs_trading.py"
             },
             {
                 "icon": "📊",
@@ -741,7 +731,7 @@ def main_dashboard():
         
         best_features = [
             {
-                "icon": "🔗",
+                "icon": "💼",
                 "title": "AI Pairs Trading",
                 "desc": "★ EXCEPTIONAL: 6 mathematical mean reversion strategies with AI optimization. Best-in-class cointegration analysis.",
                 "page": "pages/ai_pairs_trading.py"
