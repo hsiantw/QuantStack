@@ -24,7 +24,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd QuantStack-main && streamlit run app.py"
+args = "cd QuantStack-main && streamlit run app.py --server.address=0.0.0.0 --server.port=5000"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
