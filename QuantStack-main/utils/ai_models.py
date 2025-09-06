@@ -24,6 +24,8 @@ class AIModels:
         self.use_extended_history = False
         self.training_years = 0
         self.training_data = None
+        self.prediction_features = None
+        self.training_features = None
         st.info("AI functionality is currently disabled for deployment")
     
     def _fetch_training_data(self):
@@ -32,7 +34,13 @@ class AIModels:
     
     def _prepare_features(self):
         """Disabled for deployment"""
+        self.prediction_features = pd.DataFrame()
+        self.training_features = pd.DataFrame()
         return None
+    
+    def _calculate_features(self, data):
+        """Disabled for deployment"""
+        return pd.DataFrame()
     
     def _calculate_features(self, data):
         """Calculate features for a given dataset"""
@@ -549,6 +557,27 @@ class AIModels:
             'bearish_patterns': [],
             'neutral_patterns': []
         }
+    
+    def get_feature_columns(self, features):
+        """Get feature column names - DISABLED FOR DEPLOYMENT"""
+        if features is None:
+            return []
+        return list(features.columns) if hasattr(features, 'columns') else []
+    
+    def prepare_data_for_training(self, target_horizon=1):
+        """Prepare data for training - DISABLED FOR DEPLOYMENT"""
+        st.warning("AI data preparation is currently disabled for deployment")
+        return None, None, None, None, [], {}
+    
+    def train_linear_regression(self, target_horizon=1, **kwargs):
+        """Train Linear Regression model - DISABLED FOR DEPLOYMENT"""
+        st.warning("AI model training is currently disabled for deployment")
+        return None
+    
+    def create_model_plots(self, model_result, model_name="Model"):
+        """Create model plots - DISABLED FOR DEPLOYMENT"""
+        st.warning("AI model visualization is currently disabled for deployment")
+        return {}
         
         try:
             # Calculate price changes
