@@ -1,0 +1,50 @@
+#workspaceMarkovPanel{color:var(--text);background:var(--surface);font-size:12px}
+.markov-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 20px 8px}
+.markov-header h2{font-size:19px;margin:5px 0}
+.markov-header p,.markov-help,.markov-section p,.markov-method p{font-size:12px;color:var(--text-muted);line-height:1.65}
+.markov-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.markov-config{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:12px 20px;background:var(--surface-raised);border-block:1px solid var(--border)}
+#workspaceMarkovPanel label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--text-muted);min-width:0}
+#workspaceMarkovPanel :is(input,select){width:100%;min-width:0;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:8px;font-size:12px}
+.markov-config .markov-actions{align-self:end}
+#markovRun{background:var(--accent);color:var(--surface);border:0;padding:10px 12px;border-radius:5px;font-weight:600}
+.markov-help,#markovStatus,#markovError{margin:12px 20px}
+#markovError{color:var(--negative)}
+.markov-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--border);border-block:1px solid var(--border)}
+.markov-metrics>div{padding:15px 20px;background:var(--surface)}
+.markov-metrics>div>span{display:block;color:var(--text-muted);font-size:10px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.markov-metrics strong{display:block;font-size:17px}
+.markov-metrics small{font-size:12px}
+.markov-state{display:inline-block;font-weight:600;font-size:11px;white-space:nowrap;border-radius:4px;padding:4px 6px;background:color-mix(in srgb,var(--state-color) 16%,var(--surface));color:var(--text);border-left:3px solid var(--state-color)}
+.mk-state-0{--state-color:#e06473}.mk-state-1{--state-color:#b58a42}.mk-state-2{--state-color:#419fc9}.mk-state-3{--state-color:#9374d9}.mk-state-4{--state-color:#24ae91}
+.markov-warnings{margin:12px 20px;background:var(--surface-raised);border-radius:6px}
+.markov-warnings:empty{display:none}
+.markov-warnings details{padding:12px 14px;border:1px solid var(--border);border-radius:6px}
+.markov-warnings summary,.markov-method summary{cursor:pointer;font-weight:600}
+.markov-warnings ul{padding-left:18px;margin-bottom:0;line-height:1.8;color:var(--text-muted)}
+.markov-tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);padding:0 20px;overflow:auto}
+.markov-tabs button{border:0;background:transparent;color:var(--text-muted);padding:12px 14px;border-bottom:2px solid transparent;white-space:nowrap}
+.markov-tabs button[aria-selected=true]{border-color:var(--accent);color:var(--accent)}
+.markov-section{padding:16px 20px}.markov-section h3,.markov-method h3{font-size:13px;margin:14px 0 10px}
+.markov-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.markov-table-wrap{overflow:auto;max-width:100%;border:1px solid var(--border);border-radius:6px;margin:12px 0}
+.markov-table-wrap table{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums}
+.markov-table-wrap th,.markov-table-wrap td{padding:10px 12px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--border)}
+.markov-table-wrap th{color:var(--text-muted);font-size:11px;background:var(--surface-raised)}
+.markov-table-wrap th:first-child{text-align:left}
+.markov-table-wrap tbody th{font-weight:500}
+.markov-table-wrap tr:last-child :is(th,td){border-bottom:0}
+.markov-table-wrap th button{padding:0;background:none;border:0}
+.markov-heat{background:color-mix(in srgb,var(--accent) var(--heat),var(--surface));color:var(--text)}
+.markov-heat small{display:block;font-size:10px;margin-top:6px}
+.markov-probabilities{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.markov-probabilities>div{display:grid;gap:10px;padding:12px;background:var(--surface-raised);border:1px solid var(--border);border-radius:6px}
+.markov-probabilities strong{font-size:20px}.markov-probabilities progress{width:100%;accent-color:var(--accent)}
+.markov-state-strip{display:flex;gap:2px;height:26px;margin:15px 0}.markov-state-strip span{flex:1;min-width:0;background:var(--state-color);border-radius:2px}
+#markovFan{border:1px solid var(--border);border-radius:6px;background:var(--surface-raised);padding:8px}
+#markovFan svg{display:block;width:100%;max-height:320px}#markovFan text{fill:var(--text-muted);font-size:11px}
+.markov-grid{stroke:var(--border)}.markov-fan-outer{fill:var(--accent);opacity:.13}.markov-fan-inner{fill:var(--accent);opacity:.24}.markov-fan-line{fill:none;stroke:var(--accent);stroke-width:2}
+.markov-horizon-label{max-width:500px;margin-top:14px}#workspaceMarkovPanel input[type=range]{accent-color:var(--accent);padding:0}
+.markov-method{margin:12px 20px 24px;border-top:1px solid var(--border);padding-top:14px}.markov-method a{color:var(--accent)}
+.workspace-tab-list{overflow-x:auto;scrollbar-width:thin;flex-shrink:1}.workspace-tab-list>button{flex-shrink:0}
+@media(max-width:650px){.markov-header{align-items:flex-start;flex-direction:column}.markov-header,.markov-section{padding-inline:12px}.markov-config{padding:12px;grid-template-columns:repeat(2,minmax(0,1fr))}.markov-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.markov-metrics>div{padding:12px}.markov-metrics strong{font-size:15px}.markov-help,#markovStatus,#markovError,.markov-warnings,.markov-method{margin-inline:12px}.markov-tabs{padding-inline:8px}.markov-tabs button{padding-inline:10px}.markov-section-head{align-items:stretch;flex-direction:column}}

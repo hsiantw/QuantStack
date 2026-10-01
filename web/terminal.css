@@ -1,0 +1,48 @@
+/* A compact second toolbar keeps analysis actions available at every width. */
+.workspace #chartTypes>button{display:none}
+.workspace #terminalStyle{max-width:110px;background:var(--atlas-surface,#fff);color:var(--atlas-text,#434a56);border:0;font:12px 'Segoe UI',sans-serif;padding:6px 3px;cursor:pointer;color-scheme:light}
+.terminal-actions{display:flex;align-items:center;flex:none;gap:3px;padding:4px 12px 7px;border-bottom:1px solid var(--atlas-border,#e3e5e9);overflow-x:auto;scrollbar-width:thin;min-height:37px}
+.terminal-actions button{display:flex;align-items:center;gap:5px;flex:none;padding:5px 9px;border:1px solid transparent;border-radius:4px;background:var(--atlas-surface,#fff);color:var(--atlas-text,#596579);font:11px 'Segoe UI',sans-serif;white-space:nowrap}
+.terminal-actions button:hover{background:var(--atlas-hover,#f3f5f9);color:var(--atlas-accent,#2962ff)}
+.terminal-actions button.active{background:var(--atlas-hover,#edf2ff);color:var(--atlas-accent,#2962ff)}
+.terminal-actions #terminalCompare{font-weight:600;color:var(--atlas-accent,#2962ff)}
+#terminalNotice{margin-left:auto;color:var(--atlas-muted,#778397);font-size:10px;white-space:nowrap}
+#comparisonPane{flex:none;border-top:1px solid var(--atlas-border,#e3e5e9);background:var(--atlas-surface,#fff);min-width:0}
+#comparisonPane[hidden]{display:none}
+.comparison-heading{display:flex;align-items:center;gap:10px;padding:7px 13px 2px;font-size:10px;color:var(--atlas-muted,#778397)}
+.comparison-heading strong{font-size:11px;color:var(--atlas-text,#39475b)}
+.comparison-heading>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.comparison-heading button{margin-left:auto;border:0;background:none;color:var(--atlas-muted,#778397);font-size:17px;padding:0 3px}
+#comparisonLegend{display:flex;gap:12px;padding:0 13px 3px;overflow:auto;min-height:23px;scrollbar-width:thin;font-size:10px;color:var(--atlas-muted,#667388)}
+#comparisonLegend>span{display:flex;align-items:center;gap:5px;white-space:nowrap}
+#comparisonLegend i,#terminalCompareActive i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--series-color)}
+#comparisonLegend strong{color:var(--series-color);font-weight:600}
+#comparisonLegend button{background:none;border:0;padding:0 3px;font-size:14px;color:var(--atlas-muted,#778397)}
+#comparisonCanvas{display:block;width:100%;height:130px}
+.workspace .terminal-dialog{width:460px;max-width:calc(100vw - 28px);max-height:85dvh;padding:24px;background:var(--atlas-surface,#fff);color:var(--atlas-text,#20242c);border:1px solid var(--atlas-border,#dce1e9);border-radius:12px;box-shadow:0 16px 70px #13213c30;font:13px/1.6 'Segoe UI',sans-serif;color-scheme:light}
+.terminal-dialog::backdrop{background:#111c3540;backdrop-filter:blur(2px)}
+.terminal-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.terminal-dialog-head small{color:var(--atlas-muted,#8590a3);font-size:9px;letter-spacing:1.5px}
+.terminal-dialog h2{font-size:22px;letter-spacing:-.5px;margin:2px 0 0;color:var(--atlas-text,#20242c)}
+.terminal-dialog p{font-size:12px;color:var(--atlas-muted,#778397);margin:12px 0 18px}
+.terminal-dialog button{border:1px solid var(--atlas-border,#e3e7ee);border-radius:5px;background:var(--atlas-surface,#fff);color:var(--atlas-text,#536076);padding:7px 12px;cursor:pointer}
+.terminal-dialog-head>button{border:0;font-size:22px;padding:0 3px;line-height:1.3}
+.terminal-dialog input[type=search],.terminal-dialog input[type=date]{width:100%;padding:10px 12px;border:1px solid var(--atlas-border,#dce1e9);border-radius:6px;background:var(--atlas-raised,#fafbfd);color:var(--atlas-text,#303b4b);font:13px 'Segoe UI',sans-serif;margin:5px 0 10px}
+.terminal-dialog input:focus-visible,.terminal-dialog button:focus-visible{outline:2px solid var(--atlas-accent,#2962ff);outline-offset:2px}
+#terminalCompareResults{max-height:320px;overflow:auto;margin-top:12px;scrollbar-width:thin}
+#terminalCompareResults>button{display:flex;align-items:center;width:100%;gap:12px;text-align:left;border:0;border-bottom:1px solid var(--atlas-hover,#f0f2f6);border-radius:0;padding:11px 4px}
+#terminalCompareResults>button:hover{background:var(--atlas-hover,#f3f6ff)}
+#terminalCompareResults strong{min-width:70px;color:var(--atlas-text,#303b4b)}
+#terminalCompareResults span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;flex:1}
+#terminalCompareResults b{font-size:16px;color:var(--atlas-accent,#2962ff)}
+#terminalCompareActive{display:flex;flex-wrap:wrap;gap:6px}
+#terminalCompareActive button{display:flex;gap:7px;align-items:center;font-size:11px;padding:4px 7px;background:var(--atlas-raised,#f7f9fc)}
+.terminal-setting{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:12px 0;border-bottom:1px solid var(--atlas-border,#edf0f4)}
+.terminal-setting input[type=checkbox]{accent-color:var(--atlas-accent,#2962ff);width:17px;height:17px}
+.terminal-setting input[type=color]{width:36px;height:28px;padding:2px;border:1px solid var(--atlas-border,#dce1e9);border-radius:4px;background:var(--atlas-surface,#fff)}
+.terminal-dialog-foot{display:flex;justify-content:space-between;gap:10px;margin-top:22px}
+.terminal-dialog .terminal-primary{background:var(--atlas-accent,#2962ff);border-color:var(--atlas-accent,#2962ff);color:var(--atlas-surface,#fff)}
+#terminalGoError{color:#d83b48}
+.terminal-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+@media(max-width:600px){.terminal-actions{padding-inline:5px}.terminal-actions button{padding-inline:6px;font-size:10px}.terminal-actions #terminalSettings span,.terminal-actions #terminalSnapshot span{display:none}#comparisonCanvas{height:100px}.comparison-heading{padding-inline:8px}#comparisonLegend{padding-inline:8px;gap:8px}.workspace #terminalStyle{max-width:80px;font-size:10px}.terminal-dialog{padding:18px!important}}
+@media(max-height:650px){#comparisonCanvas{height:85px}}
