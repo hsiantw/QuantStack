@@ -1,4 +1,33 @@
-# Stock and crypto datasets
+# QuantStack
+
+QuantStack combines the Streamlit analysis platform in `QuantStack-main/` with
+the market-data collector and chart workspace in this repository. Open
+**Market workspace** from the home screen or Streamlit navigation for charts,
+drawings, comparisons, stock screening, strategy tests, and Markov analysis.
+Existing portfolio, risk, AI, and statistical analysis pages remain available.
+
+Run the combined app:
+
+```powershell
+python -m pip install -r requirements.txt
+python serve_quantstack.py
+```
+
+Open **http://127.0.0.1:8501**. The launcher serves Streamlit and the workspace
+through one address, including on Render. It reads `data/market.sqlite` when
+available. Without stored prices, it serves the merged workspace using the
+published daily snapshot. Daily snapshot mode supports the screener, backtests,
+drawings, comparisons, and Markov analysis; hourly bars and the full indicator
+library require the stored database. `QUANTSTACK_SNAPSHOT_URL` can override
+the published dataset location.
+
+The original `streamlit run QuantStack-main/app.py` command also exposes the
+new page using the merged browser code and published daily prices. This keeps
+existing Streamlit-only deployments working while their start command is updated.
+
+See [Render deployment and integration checks](docs/quantstack-integration.md).
+
+## Stock and crypto datasets
 
 The main pipeline is `market_data.py`. Daily history is stored in **data/market.sqlite** and exported to **data/exports/** as one CSV per symbol. No editor extensions are required.
 

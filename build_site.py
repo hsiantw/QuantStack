@@ -21,7 +21,7 @@ def build():
     index = (OUTPUT / 'index.html').read_text(encoding='utf-8-sig')
     index = index.replace('href="/style.css"', 'href="./style.css"').replace('href="/"', 'href="./"')
     for asset in ('app.js', 'indicators.js', 'drawings.js', 'indicators.css', 'chart-scale.js', 'chart-scale.css', 'screener.js', 'screener.css', 'workspace.js', 'workspace.css', 'terminal.js', 'terminal.css', 'theme.js', 'theme.css', 'strategy-engine.js', 'strategy.js', 'markov-engine.js', 'markov-worker.js', 'markov.js', 'markov.css'):
-        index = index.replace('/' + asset, './' + asset)
+        index = index.replace('"/' + asset, '"./' + asset)
     index = index.replace('<script src="./app.js">', '<script src="./static-data.js"></script><script src="./app.js">')
     index = index.replace('Daily updates scheduled for 09:00 local time while logged in.',
                           'Daily snapshots published from the data collector. Check each asset for its latest date.')

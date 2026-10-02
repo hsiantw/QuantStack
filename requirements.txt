@@ -13,3 +13,4 @@ trafilatura>=2.0.0
 webull>=0.6.1
 yfinance>=0.2.66
 tzdata
+aiohttp>=3.12,<4

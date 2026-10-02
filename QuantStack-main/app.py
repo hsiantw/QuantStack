@@ -544,6 +544,11 @@ def main_dashboard():
     </div>
     """, unsafe_allow_html=True)
     
+    st.markdown("### Market workspace")
+    st.caption("Charts and indicators, stock screening, strategy backtests, and Markov analysis in one workspace.")
+    if st.button("Open market workspace", key="home_market_workspace", use_container_width=True):
+        st.switch_page("pages/market_workspace.py")
+
     # Quick Actions Section
     st.markdown("### 🚀 Quick Start")
     
@@ -1052,6 +1057,9 @@ def create_quantconnect_sidebar():
         
         st.markdown("---")
         
+        if st.button("Market workspace", key="sidebar_market_workspace", use_container_width=True):
+            st.switch_page("pages/market_workspace.py")
+
         # Quick Start section
         st.markdown("#### 🚀 Start")
         if st.button("📊 New Analysis", key="sidebar_analysis", use_container_width=True):

@@ -4,3 +4,4 @@ __pycache__/
 site/
 deployment.json
 *.log
+.venv-integration/

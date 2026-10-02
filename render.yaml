@@ -4,9 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: streamlit run QuantStack-main/app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true --server.enableCORS false --server.enableXsrfProtection false
+    startCommand: python serve_quantstack.py --host 0.0.0.0
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
-      - key: STREAMLIT_SERVER_PORT
-        value: $PORT

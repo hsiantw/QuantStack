@@ -12,8 +12,8 @@
 
   const brand = find('.brand');
   brand.classList.add('workspace-brand');
-  brand.setAttribute('aria-label', 'Market Atlas home');
-  brand.title = 'Market Atlas';
+  brand.setAttribute('aria-label', 'QuantStack home');
+  brand.title = 'QuantStack';
   brand.innerHTML = '<span class="logo">M<span>↗</span></span>';
   header.prepend(brand);
   header.children[1].classList.add('workspace-original-heading');

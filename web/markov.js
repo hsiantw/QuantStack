@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const el=id=>document.getElementById(id), pane=el('workspaceMarkovPanel');
-  const workerURL=new URL('./markov-worker.js',document.currentScript.src);
+  const workerURL=window.ATLAS_MARKOV_WORKER_URL || new URL('./markov-worker.js',document.currentScript.src);
   const storageKey='atlas.markov.v1';
   const number=(x,d=2)=>x===null || x===undefined || !Number.isFinite(x)?'Unavailable':x.toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
   const percent=x=>x===null || x===undefined?'Unavailable':`${number(x*100,1)}%`;
