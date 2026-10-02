@@ -138,7 +138,7 @@ draw = function() {
       if (tool !== 'cursor') { c.fillStyle = drawingStyle.color; c.beginPath(); c.arc(px, py, 4, 0, Math.PI * 2); c.fill(); }
     }
   }
-  c.fillStyle = '#abb0ba'; c.font = '600 12px Segoe UI'; c.fillText('MARKET ATLAS', left + 10, top + ph - 12);
+  c.fillStyle = '#abb0ba'; c.font = '600 12px Segoe UI'; c.fillText('QUANTSTACK', left + 10, top + ph - 12);
   drawAdvancedPanels();
 };
 

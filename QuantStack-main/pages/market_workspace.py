@@ -11,8 +11,6 @@ st.title('Market workspace')
 st.caption('Interactive charts, stock screening, strategy testing, and Markov chain analysis.')
 
 workspace_url = os.environ.get('QUANTSTACK_WORKSPACE_URL')
-snapshot_url = os.environ.get('QUANTSTACK_SNAPSHOT_URL', 'https://hsiantw.github.io/market-atlas/')
-url = workspace_url or snapshot_url
 if os.environ.get('QUANTSTACK_WORKSPACE_MODE') != 'stored':
     st.info('Published daily data: charts, drawings, comparisons, screening, strategy tests, and Markov analysis. '
             'Hourly bars and the full indicator library require a connected stored dataset.')
@@ -20,14 +18,29 @@ else:
     st.caption('Reading the shared QuantStack dataset. Use Refresh inside the workspace after a collection completes.')
 
 if workspace_url:
-    components.iframe(url, height=920, scrolling=True)
-    st.link_button('Open workspace in a full tab', url)
+    components.iframe(workspace_url, height=920, scrolling=True)
+    st.link_button('Open workspace in a full tab', workspace_url)
 else:
-    # Render services created before the merge may still launch Streamlit directly.
-    # Use the merged UI here too, rather than embedding an older published UI.
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    root = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(root))
+    sys.path.insert(0, str(root / 'QuantStack-main'))
+    from prepare_snapshot import prepare, MANIFEST
     from utils.workspace_embed import snapshot_html
-    components.html(snapshot_html(snapshot_url), height=920, scrolling=True)
+
+    @st.cache_resource
+    def installed_snapshot(revision):
+        return prepare()
+
+    try:
+        with st.spinner('Preparing QuantStack market data. The first load can take a few minutes.'):
+            directory = installed_snapshot(MANIFEST.read_text(encoding='utf-8'))
+    except Exception:
+        st.error('QuantStack market data could not be prepared. Please retry shortly.')
+        if st.button('Retry market data'):
+            installed_snapshot.clear()
+            st.rerun()
+        st.stop()
+    components.html(snapshot_html('/app/static/market-data/' + directory.name + '/'), height=920, scrolling=True)
 
 with st.expander('Workspace guide'):
     st.markdown('''

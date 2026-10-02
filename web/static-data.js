@@ -1,7 +1,7 @@
 // Static-host adapter. Loaded only by the generated hosted site.
 window.ATLAS_STATIC = true;
 const historyCache = new Map();
-const snapshotResource = path => window.ATLAS_DATA_BASE ? new URL(path, window.ATLAS_DATA_BASE).href : path;
+const snapshotResource = path => window.ATLAS_DATA_BASE ? new URL(path, new URL(window.ATLAS_DATA_BASE, document.baseURI)).href : path;
 window.atlasApi = async function(url) {
     const route = new URL(url, 'http://local');
     if (route.pathname === '/api/symbols') {

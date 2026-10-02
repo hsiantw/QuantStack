@@ -114,7 +114,7 @@ def add_rule(page: Page, field: str, operator: str, value: str = "",
 def read_export(page: Page) -> tuple[list[str], list[dict]]:
     with page.expect_download() as download:
         page.locator("#exportScreener").click()
-    assert download.value.suggested_filename.startswith("market-atlas-screen-")
+    assert download.value.suggested_filename.startswith("quantstack-screen-")
     reader = csv.DictReader(io.StringIO(Path(download.value.path()).read_text(encoding="utf-8-sig")))
     records = list(reader)
     return reader.fieldnames, records

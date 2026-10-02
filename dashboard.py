@@ -461,5 +461,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, default=8765)
     args = parser.parse_args()
-    print(f'Market Atlas is running at http://127.0.0.1:{args.port}', flush=True)
+    print(f'QuantStack is running at http://127.0.0.1:{args.port}', flush=True)
     ThreadingHTTPServer(('127.0.0.1', args.port), Handler).serve_forever()

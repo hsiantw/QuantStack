@@ -14,12 +14,12 @@ from http.server import ThreadingHTTPServer
 from aiohttp import ClientError, ClientSession, ClientTimeout, WSMsgType, web
 
 from dashboard import Handler
+from prepare_snapshot import data_file, prepare
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT_SNAPSHOT = 'https://hsiantw.github.io/market-atlas/'
 STREAMLIT = web.AppKey('streamlit', str)
 DASHBOARD = web.AppKey('dashboard', str)
-SNAPSHOT_URL = web.AppKey('snapshot_url', str)
+SNAPSHOT_PATH = web.AppKey('snapshot_path', Path)
 CLIENT = web.AppKey('client', ClientSession)
 HOP_HEADERS = {'connection', 'keep-alive', 'proxy-authenticate',
                'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade'}
@@ -52,7 +52,7 @@ def has_market_data(path):
 
 
 async def snapshot(request):
-    """Serve this checkout's UI, backed by the existing published daily dataset."""
+    """Serve the current UI and release data entirely from QuantStack."""
     if request.method not in ('GET', 'HEAD'):
         raise web.HTTPMethodNotAllowed(request.method, ['GET', 'HEAD'])
     name = request.path.removeprefix('/workspace/')
@@ -63,36 +63,19 @@ async def snapshot(request):
         return web.Response(text=index, content_type='text/html')
     if re.fullmatch(r'[a-z-]+\.(js|css)', name) and (ROOT / 'web' / name).is_file():
         return web.FileResponse(ROOT / 'web' / name)
-    if name not in ('symbols.json', 'snapshot.json', 'screener.json') and not re.fullmatch(r'prices/[^/]+\.json\.gz', name):
+    if not data_file(name):
         raise web.HTTPNotFound()
-    # The upstream is administrator-configured; never forward cookies or auth to it.
-    url = request.app[SNAPSHOT_URL].rstrip('/') + request.raw_path[len('/workspace'):]
-    try:
-        async with request.app[CLIENT].get(url, timeout=ClientTimeout(total=60)) as response:
-            if response.status != 200:
-                raise web.HTTPBadGateway(text='Published market data is temporarily unavailable.')
-            result = web.StreamResponse(headers={
-                'Content-Type': response.headers.get('Content-Type', 'application/octet-stream'),
-                'Cache-Control': 'public, max-age=300',
-                'X-Content-Type-Options': 'nosniff',
-            })
-            if 'Content-Encoding' in response.headers:
-                result.headers['Content-Encoding'] = response.headers['Content-Encoding']
-            await result.prepare(request)
-            if request.method != 'HEAD':
-                async for chunk in response.content.iter_chunked(64 * 1024):
-                    await result.write(chunk)
-            await result.write_eof()
-            return result
-    except (ClientError, asyncio.TimeoutError) as exc:
-        raise web.HTTPBadGateway(text='Published market data is temporarily unavailable.') from exc
+    path = request.app[SNAPSHOT_PATH] / name
+    if not path.is_file():
+        raise web.HTTPNotFound()
+    return web.FileResponse(path, headers={'X-Content-Type-Options': 'nosniff'})
 
 
 async def proxy(request):
     workspace = request.path == '/workspace' or request.path.startswith('/workspace/')
     if request.path == '/workspace':
         raise web.HTTPPermanentRedirect('/workspace/')
-    if workspace and request.app[SNAPSHOT_URL]:
+    if workspace and request.app[SNAPSHOT_PATH]:
         return await snapshot(request)
     upstream = request.app[DASHBOARD] if workspace else request.app[STREAMLIT]
     path = request.raw_path[len('/workspace'):] if workspace else request.raw_path
@@ -140,10 +123,10 @@ async def proxy(request):
         raise web.HTTPBadGateway(text='QuantStack is starting. Please retry.') from exc
 
 
-def create_app(streamlit_url, dashboard_url, snapshot_url=None):
+def create_app(streamlit_url, dashboard_url, snapshot_dir=None):
     app = web.Application(client_max_size=200 * 1024**2)
     app[STREAMLIT], app[DASHBOARD] = streamlit_url, dashboard_url
-    app[SNAPSHOT_URL] = snapshot_url
+    app[SNAPSHOT_PATH] = snapshot_dir
 
     async def client_context(application):
         async with ClientSession(auto_decompress=False, timeout=ClientTimeout(total=None, sock_connect=10)) as session:
@@ -156,13 +139,13 @@ def create_app(streamlit_url, dashboard_url, snapshot_url=None):
 
 
 async def serve(host, port):
+    use_snapshot = not has_market_data(ROOT / 'data' / 'market.sqlite')
+    snapshot_dir = await asyncio.to_thread(prepare) if use_snapshot else None
     dashboard = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
     threading.Thread(target=dashboard.serve_forever, daemon=True).start()
     with socket.socket() as reservation:
         reservation.bind(('127.0.0.1', 0))
         streamlit_port = reservation.getsockname()[1]
-    use_snapshot = not has_market_data(ROOT / 'data' / 'market.sqlite')
-    snapshot_url = os.environ.get('QUANTSTACK_SNAPSHOT_URL', DEFAULT_SNAPSHOT) if use_snapshot else None
     environment = dict(os.environ, QUANTSTACK_WORKSPACE_URL='/workspace/',
                        QUANTSTACK_WORKSPACE_MODE='snapshot' if use_snapshot else 'stored')
     process = None
@@ -171,7 +154,7 @@ async def serve(host, port):
         process = await asyncio.create_subprocess_exec(
             sys.executable, '-m', 'streamlit', 'run', str(ROOT / 'QuantStack-main' / 'app.py'),
             '--server.address=127.0.0.1', f'--server.port={streamlit_port}',
-            '--server.headless=true', '--server.enableCORS=false',
+            '--server.headless=true', '--server.enableStaticServing=true', '--server.enableCORS=false',
             '--server.enableXsrfProtection=true', '--browser.gatherUsageStats=false',
             cwd=ROOT, env=environment)
         streamlit_url = f'http://127.0.0.1:{streamlit_port}'
@@ -188,7 +171,7 @@ async def serve(host, port):
                 await asyncio.sleep(.5)
             else:
                 raise RuntimeError('Streamlit did not become ready within 60 seconds.')
-        app = create_app(streamlit_url, f'http://127.0.0.1:{dashboard.server_port}', snapshot_url)
+        app = create_app(streamlit_url, f'http://127.0.0.1:{dashboard.server_port}', snapshot_dir)
         runner = web.AppRunner(app)
         await runner.setup()
         await web.TCPSite(runner, host, port).start()

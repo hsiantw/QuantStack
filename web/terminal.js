@@ -176,7 +176,7 @@
     const output = document.createElement('canvas'); output.width = width * scale; output.height = (100 + canvases.reduce((sum, canvas) => sum + canvas.getBoundingClientRect().height + 30, 0)) * scale;
     const c = output.getContext('2d'); c.scale(scale, scale); c.fillStyle = window.atlasTheme.palette.surface; c.fillRect(0, 0, output.width / scale, output.height / scale);
     c.fillStyle = window.atlasTheme.palette.text; c.font = '600 17px Segoe UI'; c.fillText(`${selected.symbol} · ${interval} · ${$('terminalStyle').selectedOptions[0].text}`, 14, 28);
-    c.fillStyle = window.atlasTheme.palette.muted; c.font = '11px Segoe UI'; c.fillText('MARKET ATLAS · Stored market data · ' + new Date().toISOString().slice(0, 10), 14, 50);
+    c.fillStyle = window.atlasTheme.palette.muted; c.font = '11px Segoe UI'; c.fillText('QUANTSTACK · Stored market data · ' + new Date().toISOString().slice(0, 10), 14, 50);
     let y = 70;
     for (const canvas of canvases) {
       const height = canvas.getBoundingClientRect().height;
@@ -184,7 +184,7 @@
       c.fillStyle = window.atlasTheme.palette.muted; c.font = '10px Segoe UI'; c.fillText(title, 14, y + 12, width - 28); y += 26;
       c.drawImage(canvas, 0, y, width, height); y += height + 4;
     }
-    const filename = `Market-Atlas-${selected.symbol.replace(/[^a-z0-9_-]/gi, '_')}-${interval}.png`;
+    const filename = `QuantStack-${selected.symbol.replace(/[^a-z0-9_-]/gi, '_')}-${interval}.png`;
     output.toBlob(blob => {
       if (!blob) { notify('Snapshot could not be created.'); return; }
       const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = filename; link.click(); setTimeout(() => URL.revokeObjectURL(url), 10000); notify('Chart snapshot downloaded.');

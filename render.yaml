@@ -3,7 +3,7 @@ services:
     name: quantstack
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python prepare_snapshot.py
     startCommand: python serve_quantstack.py --host 0.0.0.0
     envVars:
       - key: PYTHON_VERSION

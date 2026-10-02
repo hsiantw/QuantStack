@@ -18,11 +18,11 @@ through one address, including on Render. It reads `data/market.sqlite` when
 available. Without stored prices, it serves the merged workspace using the
 published daily snapshot. Daily snapshot mode supports the screener, backtests,
 drawings, comparisons, and Markov analysis; hourly bars and the full indicator
-library require the stored database. `QUANTSTACK_SNAPSHOT_URL` can override
-the published dataset location.
+library require the stored database. `market-snapshot.json` pins and verifies
+the release downloaded by `prepare_snapshot.py`.
 
 The original `streamlit run QuantStack-main/app.py` command also exposes the
-new page using the merged browser code and published daily prices. This keeps
+new page using the merged browser code and QuantStack-hosted daily prices. This keeps
 existing Streamlit-only deployments working while their start command is updated.
 
 See [Render deployment and integration checks](docs/quantstack-integration.md).
@@ -33,9 +33,9 @@ The main pipeline is `market_data.py`. Daily history is stored in **data/market.
 
 ## Web interface
 
-Public website: **https://hsiantw.github.io/market-atlas/**. Repository: **https://github.com/hsiantw/market-atlas**.
+Public website: **https://quantstack.onrender.com/**. Repository: **https://github.com/hsiantw/QuantStack**.
 
-The hosted website stays available when this computer is off. The daily 09:00 local collector uploads fresh snapshots when this computer is on, connected, and logged in. See [HOSTING.md](HOSTING.md) for publishing details.
+QuantStack stays available when this computer is off. The daily 09:00 local collector publishes fresh data to the QuantStack release and updates its deployment manifest when this computer is on, connected, and logged in. See [HOSTING.md](HOSTING.md) for publishing details.
 
 Open **http://127.0.0.1:8765** while the dashboard is running. To launch it again:
 

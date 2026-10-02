@@ -5,3 +5,4 @@ site/
 deployment.json
 *.log
 .venv-integration/
+QuantStack-main/static/market-data/

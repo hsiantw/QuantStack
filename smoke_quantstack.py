@@ -10,7 +10,9 @@ def run(url, standalone=False):
         browser = playwright.chromium.launch(channel='msedge', headless=True)
         page = browser.new_page(viewport={'width': 1600, 'height': 1200})
         errors = []
+        requests = []
         page.on('pageerror', lambda error: errors.append(str(error)))
+        page.on('request', lambda request: requests.append(request.url))
         page.goto(url.rstrip('/') + '/market_workspace')
         expect(page.get_by_role('heading', name='Market workspace', exact=True)).to_be_visible(timeout=30000)
         frame = page.frame_locator('iframe[srcdoc]' if standalone else 'iframe[src="/workspace/"]')
@@ -23,6 +25,9 @@ def run(url, standalone=False):
         expect(frame.locator('#markovForm')).to_be_visible()
         frame.locator('#markovRun').click()
         expect(frame.locator('#markovResults')).to_be_visible(timeout=30000)
+        frame.locator('#workspaceOpenScreener').click()
+        expect(frame.locator('#screenerContent')).to_have_attribute('aria-busy', 'false', timeout=30000)
+        assert frame.locator('#screenerTableBody tr').count() > 0
         if standalone:
             expect(frame.locator('[data-interval="1h"]')).to_be_disabled()
             frame.locator('#workspaceOpenData').click()
@@ -33,6 +38,8 @@ def run(url, standalone=False):
         Path('data').mkdir(exist_ok=True)
         page.screenshot(path='data/quantstack-integration.png', full_page=True)
         assert not errors, errors
+        data_requests = [request for request in requests if request.endswith('.json') or '.json.gz' in request]
+        assert data_requests and all(request.startswith(url.rstrip('/') + '/') for request in data_requests), data_requests
         browser.close()
         print('PASS: Streamlit navigation, websocket session, embedded charts, strategy test and Markov panel.')
 

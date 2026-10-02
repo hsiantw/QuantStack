@@ -1,6 +1,8 @@
 """Integration tests for HTTP, websocket, and hosted-snapshot routing."""
 import gzip
 import json
+from pathlib import Path
+import tempfile
 import unittest
 
 from aiohttp import ClientSession, WSServerHandshakeError, web
@@ -39,11 +41,13 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
         self.gateway = TestServer(create_app(url, url))
         await self.gateway.start_server()
         self.client = ClientSession()
+        self.temporary = tempfile.TemporaryDirectory()
 
     async def asyncTearDown(self):
         await self.client.close()
         await self.gateway.close()
         await self.backend.close()
+        self.temporary.cleanup()
 
     async def test_streamlit_upload_and_cookies(self):
         async with self.client.post(self.gateway.make_url('/_stcore/upload_file?a=1'),
@@ -77,10 +81,14 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
     async def use_snapshot(self):
         await self.gateway.close()
         url = str(self.backend.make_url('')).rstrip('/')
-        self.gateway = TestServer(create_app(url, url, snapshot_url=url))
+        directory = Path(self.temporary.name)
+        (directory / 'prices').mkdir(exist_ok=True)
+        (directory / 'symbols.json').write_text('[{"symbol":"AAPL"}]')
+        (directory / 'prices' / 'AAPL.json.gz').write_bytes(gzip.compress(b'{"rows": []}'))
+        self.gateway = TestServer(create_app(url, url, snapshot_dir=directory))
         await self.gateway.start_server()
 
-    async def test_snapshot_serves_current_ui_without_forwarding_credentials(self):
+    async def test_snapshot_serves_current_ui_and_local_prices(self):
         await self.use_snapshot()
         async with self.client.get(self.gateway.make_url('/workspace/')) as response:
             html = await response.text()
@@ -89,7 +97,7 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
             self.assertLess(html.index('src="./static-data.js"'), html.index('src="./app.js"'))
         async with self.client.get(self.gateway.make_url('/workspace/symbols.json'),
                                     headers={'Cookie': 'private=test', 'Authorization': 'Bearer private'}) as response:
-            self.assertEqual(await response.json(), {'cookie': None, 'auth': None})
+            self.assertEqual(await response.json(), [{'symbol': 'AAPL'}])
         async with self.client.get(self.gateway.make_url('/workspace/prices/AAPL.json.gz')) as response:
             self.assertEqual(json.loads(gzip.decompress(await response.read())), {'rows': []})
 

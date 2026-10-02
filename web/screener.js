@@ -492,7 +492,7 @@
     };
     const csv = '\uFEFF' + [keys.map(key => cell(key)).join(','), ...filtered.map(row => keys.map(key => cell(row[key])).join(','))].join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'})), link = document.createElement('a');
-    link.href = url; link.download = `market-atlas-screen-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.href = url; link.download = `quantstack-screen-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.append(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     announce(`Exported all ${number(filtered.length, 0)} matching stocks with ${allMetrics ? 'all metric' : state.columns} columns.`);

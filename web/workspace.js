@@ -14,7 +14,7 @@
   brand.classList.add('workspace-brand');
   brand.setAttribute('aria-label', 'QuantStack home');
   brand.title = 'QuantStack';
-  brand.innerHTML = '<span class="logo">M<span>↗</span></span>';
+  brand.innerHTML = '<span class="logo">Q<span>↗</span></span>';
   header.prepend(brand);
   header.children[1].classList.add('workspace-original-heading');
   const symbolButton = document.createElement('button');
