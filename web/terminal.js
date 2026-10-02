@@ -195,3 +195,100 @@
     const button = {c: 'terminalCompare', g: 'terminalGo'}[event.key.toLowerCase()]; if (button) { event.preventDefault(); $(button).click(); }
   });
 })();
+
+// Keep the chart useful as the application's landing page.
+(() => {
+  const key = 'atlas.chart.session';
+  const periods = ['1D', '5D', '1M', '6M', '1Y', '5Y', 'MAX', 'CUSTOM'];
+  const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+  let restored = false;
+  window.restoreChartSession = () => {
+    if (restored) return selected?.symbol;
+    restored = true;
+    let prefs = {};
+    try { prefs = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch {}
+    const params = new URLSearchParams(location.search);
+    if (params.has('symbol')) prefs = Object.fromEntries(params);
+    interval = !window.ATLAS_STATIC && prefs.interval === '1h' ? '1h' : '1d';
+    period = periods.includes(prefs.period) ? prefs.period : '1Y';
+    if (period === 'CUSTOM') {
+      if ((prefs.start === '' || validDate(prefs.start)) && (prefs.end === '' || validDate(prefs.end)) &&
+          (!prefs.start || !prefs.end || prefs.start <= prefs.end)) {
+        $('start').value = prefs.start; $('end').value = prefs.end;
+      } else period = '1Y';
+    }
+    document.querySelectorAll('[data-interval]').forEach(button => button.classList.toggle('active', button.dataset.interval === interval));
+    document.querySelectorAll('[data-period]').forEach(button => button.classList.toggle('active', button.dataset.period === period));
+    return typeof prefs.symbol === 'string' ? prefs.symbol.toUpperCase() : null;
+  };
+  const state = () => ({symbol: selected.symbol, interval, period, start: $('start').value, end: $('end').value});
+  const load = loadHistory;
+  let revision = 0;
+  loadHistory = async function() {
+    const current = ++revision;
+    if (selected) {
+      try { localStorage.setItem(key, JSON.stringify(state())); } catch {}
+      // Keep an opened share link in sync when the user changes the chart.
+      if (new URLSearchParams(location.search).has('symbol')) {
+        try { history.replaceState(null, '', location.pathname + '?' + new URLSearchParams(state()) + location.hash); } catch {}
+      }
+    }
+    $('chart').setAttribute('aria-busy', 'true');
+    try { await load(); }
+    finally { if (current === revision) $('chart').setAttribute('aria-busy', 'false'); }
+  };
+
+  const menu = document.createElement('details');
+  menu.className = 'chart-home-menu';
+  menu.innerHTML = `<summary aria-label="Workspace menu">Workspace <span aria-hidden="true">⌄</span></summary>
+    <div class="chart-home-menu-content">
+      <strong>Chart workspace</strong>
+      <button id="chartShare">Share chart link</button>
+      <button id="chartShortcuts">Keyboard shortcuts</button>
+      <a id="chartResearch" href="/?research=1">Research &amp; portfolio tools ↗</a>
+      <small>Your symbol and range are saved in this browser.</small>
+    </div>`;
+  document.querySelector('.terminal-actions').prepend(menu);
+  menu.addEventListener('toggle', () => {
+    if (!menu.open) return;
+    const box = menu.getBoundingClientRect(), content = menu.querySelector('.chart-home-menu-content');
+    content.style.position = 'fixed';
+    content.style.top = `${box.bottom + 4}px`;
+    content.style.left = `${Math.max(8, Math.min(box.left, innerWidth - 261))}px`;
+  });
+  window.addEventListener('resize', () => { menu.open = false; });
+  // The integrated gateway exposes research tools; static and standalone charts do not.
+  $('chartResearch').hidden = !location.pathname.startsWith('/workspace/');
+  const dialog = document.createElement('dialog');
+  dialog.id = 'chartHomeDialog';
+  dialog.innerHTML = `<div class="dialog-head"><h2 id="chartHomeTitle">Chart workspace</h2><button id="chartHomeClose" aria-label="Close">×</button></div><div id="chartHomeContent"></div>`;
+  dialog.setAttribute('aria-labelledby', 'chartHomeTitle');
+  document.body.append(dialog);
+  dialog.addEventListener('close', () => menu.querySelector('summary').focus());
+  $('chartHomeClose').onclick = () => dialog.close();
+  dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+  $('chartShortcuts').onclick = () => {
+    menu.open = false;
+    $('chartHomeTitle').textContent = 'Keyboard shortcuts';
+    $('chartHomeContent').innerHTML = `<dl><dt>Search symbols</dt><dd><kbd>/</kbd></dd><dt>Compare symbols</dt><dd><kbd>Alt + C</kbd></dd><dt>Go to date</dt><dd><kbd>Alt + G</kbd></dd><dt>Undo drawing</dt><dd><kbd>Ctrl + Z</kbd></dd><dt>Redo drawing</dt><dd><kbd>Ctrl + Y</kbd></dd><dt>Cancel drawing / close dialog</dt><dd><kbd>Esc</kbd></dd></dl>`;
+    dialog.showModal();
+  };
+  $('chartShare').onclick = () => {
+    if (!selected) return;
+    menu.open = false;
+    const url = new URL(location.href);
+    url.search = new URLSearchParams(state()).toString();
+    $('chartHomeTitle').textContent = 'Share chart';
+    $('chartHomeContent').innerHTML = `<p>Open this symbol, interval and date range. Drawings and private notes stay in your browser.</p><label for="chartShareUrl">Chart link</label><input id="chartShareUrl" readonly><button id="chartCopyLink">Copy link</button><p id="chartCopyStatus" role="status"></p>`;
+    $('chartShareUrl').value = url.href;
+    $('chartCopyLink').onclick = async () => {
+      try { await navigator.clipboard.writeText(url.href); $('chartCopyStatus').textContent = 'Link copied.'; }
+      catch { $('chartShareUrl').focus(); $('chartShareUrl').select(); $('chartCopyStatus').textContent = 'Press Ctrl+C (or Cmd+C) to copy the selected link.'; }
+    };
+    dialog.showModal();
+    $('chartShareUrl').select();
+  };
+  document.addEventListener('pointerdown', event => { if (!menu.contains(event.target)) menu.open = false; });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') menu.open = false; });
+})();

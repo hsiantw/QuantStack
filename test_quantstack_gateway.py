@@ -64,6 +64,13 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(response.status, 308)
             self.assertEqual(response.headers['Location'], '/workspace/')
 
+    async def test_chart_is_home_and_research_remains_accessible(self):
+        async with self.client.get(self.gateway.make_url('/?symbol=MSFT&interval=1d'), allow_redirects=False) as response:
+            self.assertEqual(response.status, 302)
+            self.assertEqual(response.headers['Location'], '/workspace/?symbol=MSFT&interval=1d')
+        async with self.client.get(self.gateway.make_url('/?research=1')) as response:
+            self.assertEqual((await response.json())['path'], '/?research=1')
+
     async def test_streamlit_binary_websocket_and_subprotocol(self):
         async with self.client.ws_connect(self.gateway.make_url('/_stcore/stream'),
                                            protocols=['streamlit'], origin=str(self.gateway.make_url('')).rstrip('/')) as socket:

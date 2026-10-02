@@ -1,12 +1,30 @@
 # QuantStack
 
 QuantStack combines the Streamlit analysis platform in `QuantStack-main/` with
-the market-data collector and chart workspace in this repository. Open
-**Market workspace** from the home screen or Streamlit navigation for charts,
+the market-data collector and chart workspace in this repository. The main
+address opens the full-window **chart workspace**, with charts,
 drawings, comparisons, stock screening, strategy tests, and Markov analysis.
 Existing portfolio, risk, AI, and statistical analysis pages remain available.
+Choose **Workspace → Research & portfolio tools** to open the research dashboard.
+The Workspace menu also provides shareable symbol/interval/date-range links and
+keyboard shortcuts. The last symbol and range restore automatically in this
+browser; reloading market data preserves the current selection. Shared links
+override saved selections. Drawings and notes remain private to the browser.
+Watchlists render 100 assets at a time to keep large datasets responsive;
+search always covers the entire dataset, and **Show next** loads more rows.
 
 Run the combined app:
+
+For a local review before committing or deploying, double-click **Preview-Local.bat**
+or run `powershell -NoProfile -ExecutionPolicy Bypass -File .\Start-LocalSite.ps1`.
+This starts the combined app in the background and opens **http://127.0.0.1:8501**.
+It reuses a running preview and selects a working installed Python environment.
+Use `-Port 8502` if another application uses that port, or `-NoBrowser` to start
+without opening a browser. Logs are in `data/local-site-8501*.log`.
+Refresh after frontend edits; restart the Python server after backend edits.
+This local preview does not commit, push, or deploy anything.
+
+For a foreground server or a fresh environment:
 
 ```powershell
 python -m pip install -r requirements.txt

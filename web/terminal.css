@@ -46,3 +46,19 @@
 .terminal-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media(max-width:600px){.terminal-actions{padding-inline:5px}.terminal-actions button{padding-inline:6px;font-size:10px}.terminal-actions #terminalSettings span,.terminal-actions #terminalSnapshot span{display:none}#comparisonCanvas{height:100px}.comparison-heading{padding-inline:8px}#comparisonLegend{padding-inline:8px;gap:8px}.workspace #terminalStyle{max-width:80px;font-size:10px}.terminal-dialog{padding:18px!important}}
 @media(max-height:650px){#comparisonCanvas{height:85px}}
+/* Compact navigation keeps the chart at the center of the application. */
+.chart-home-menu{position:relative;flex:none;color:var(--ink)}
+.chart-home-menu summary{cursor:pointer;list-style:none;padding:7px 10px;font-size:11px;font-weight:600;border-right:1px solid var(--line)}
+.chart-home-menu summary::-webkit-details-marker{display:none}
+.chart-home-menu-content{position:absolute;top:34px;left:0;z-index:60;display:grid;width:245px;padding:10px;background:var(--surface,#fff);border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 28px #0002;white-space:normal}
+.chart-home-menu-content strong{padding:8px;font-size:12px}
+.chart-home-menu-content :is(button,a){display:block;padding:10px!important;text-align:left;text-decoration:none;color:var(--ink);font-size:12px;font-family:inherit;border:0;background:transparent;border-radius:4px}
+.chart-home-menu-content [hidden]{display:none}
+.chart-home-menu-content :is(button,a):hover{background:var(--surface-hover,#edf2ff)}
+.chart-home-menu-content small{padding:10px 8px;color:var(--muted);font-size:11px;line-height:1.6;border-top:1px solid var(--line)}
+#chartHomeDialog{width:min(470px,calc(100vw - 32px));padding:22px;background:var(--surface,#fff);color:var(--ink);border:1px solid var(--line);border-radius:10px}
+#chartHomeDialog p{font-size:12px;line-height:1.7;color:var(--muted);margin:12px 0}
+#chartHomeDialog button{border:1px solid var(--line);border-radius:4px;background:var(--surface-raised,#f7f9fc);color:var(--ink);padding:8px 12px}
+#chartHomeDialog label{font-size:12px}#chartShareUrl{width:100%;padding:10px;margin:8px 0 12px;background:var(--surface-raised,#f7f9fc);color:var(--ink);border:1px solid var(--line);border-radius:4px}
+#chartHomeDialog dl{display:grid;grid-template-columns:1fr auto;gap:16px;font-size:12px;margin-top:20px}#chartHomeDialog dd{margin:0}#chartHomeDialog kbd{color:var(--muted)}
+.workspace .watchlist-more{display:block;width:calc(100% - 20px);margin:10px;padding:12px;border:1px solid var(--line);border-radius:4px;background:var(--surface-raised,#f7f9fc);color:var(--accent,#2962ff);font-size:11px}

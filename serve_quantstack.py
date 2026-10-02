@@ -72,6 +72,11 @@ async def snapshot(request):
 
 
 async def proxy(request):
+    if request.path == '/' and request.method in ('GET', 'HEAD') and request.query.get('research') != '1':
+        target = '/workspace/'
+        if request.query_string:
+            target += '?' + request.query_string
+        raise web.HTTPFound(target)
     workspace = request.path == '/workspace' or request.path.startswith('/workspace/')
     if request.path == '/workspace':
         raise web.HTTPPermanentRedirect('/workspace/')
