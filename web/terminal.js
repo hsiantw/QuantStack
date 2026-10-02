@@ -5,8 +5,7 @@
   let comparisons = [], requestVersion = 0;
   try {
     const prefs = JSON.parse(localStorage.getItem('atlas.terminal') || '{}');
-    for (const key of ['grid', 'lastPrice', 'crosshair']) if (typeof prefs[key] === 'boolean') chartAppearance[key] = prefs[key];
-    for (const key of ['up', 'down']) if (/^#[0-9a-f]{6}$/i.test(prefs[key])) chartAppearance[key] = prefs[key];
+    Object.assign(chartAppearance,normalizeAppearance(prefs));
     if (['candles', 'bars', 'line', 'area'].includes(prefs.style)) chartType = prefs.style;
     comparisons = [...new Set((Array.isArray(prefs.comparisons) ? prefs.comparisons : []).filter(s => typeof s === 'string'))].slice(0, 3).map(symbol => ({symbol, data: new Map(), status: 'Loading'}));
   } catch {}
@@ -102,8 +101,8 @@
     const baseline = data[first];
     const canvas = $('comparisonCanvas'), box = canvas.getBoundingClientRect(), dpr = devicePixelRatio || 1;
     canvas.width = Math.max(1, Math.round(box.width * dpr)); canvas.height = Math.max(1, Math.round(box.height * dpr));
-    const c = canvas.getContext('2d'); c.scale(dpr, dpr); c.fillStyle = window.atlasTheme.palette.surface; c.fillRect(0, 0, box.width, box.height);
-    const series = baseline && active.length ? [{symbol: selected.symbol, color: '#2962ff', values: data.map(row => Number.isFinite(row.close) ? (row.close / baseline.close - 1) * 100 : null)}, ...active.map(item => ({symbol: item.symbol, color: colors[comparisons.indexOf(item)], values: data.map(row => item.data.has(row.date) ? (item.data.get(row.date) / item.data.get(baseline.date) - 1) * 100 : null)}))] : [];
+    const c = canvas.getContext('2d'); c.scale(dpr, dpr); c.fillStyle = chartPalette().surface; c.fillRect(0, 0, box.width, box.height);
+    const series = baseline && active.length ? [{symbol: selected.symbol, color: chartPalette().accent, values: data.map(row => Number.isFinite(row.close) ? (row.close / baseline.close - 1) * 100 : null)}, ...active.map(item => ({symbol: item.symbol, color: colors[comparisons.indexOf(item)], values: data.map(row => item.data.has(row.date) ? (item.data.get(row.date) / item.data.get(baseline.date) - 1) * 100 : null)}))] : [];
     const lastVisible = Math.min(data.length - 1, g.index(g.left + g.pw));
     const inspected = hover >= first && hover <= lastVisible ? hover : lastVisible;
     $('comparisonBaseline').textContent = baseline && active.length ? `0% at ${labelTime(baseline.date)} · matching timestamps` : active.length ? 'No shared timestamps in view' : 'Choose symbols with data for this interval';
@@ -114,7 +113,7 @@
       return `<span style="--series-color:${item.color}" title="${esc(data[inspected]?.date || '')}"><i></i><strong>${esc(item.symbol)}</strong> ${esc(label)}${item.removable ? `<button data-remove-comparison="${esc(item.symbol)}" aria-label="Remove ${esc(item.symbol)} comparison">×</button>` : ''}</span>`;
     }).join('');
     if ($('comparisonLegend').innerHTML !== markup) $('comparisonLegend').innerHTML = markup;
-    if (!series.length || box.width < 100) { c.fillStyle = window.atlasTheme.palette.muted; c.font = '12px Segoe UI'; c.fillText(active.length ? 'No common baseline. Pan or expand the loaded date range.' : 'Comparison data will appear here when available.', 14, 45); return; }
+    if (!series.length || box.width < 100) { c.fillStyle = chartPalette().muted; c.font = '12px Segoe UI'; c.fillText(active.length ? 'No common baseline. Pan or expand the loaded date range.' : 'Comparison data will appear here when available.', 14, 45); return; }
     let low = 0, high = 0;
     for (const item of series) item.values.forEach((value, index) => { if (index >= first && index <= lastVisible && Number.isFinite(value)) { low = Math.min(low, value); high = Math.max(high, value); } });
     const pad = (high - low || 1) * .14; low -= pad; high += pad;
@@ -122,7 +121,7 @@
     c.font = '10px Segoe UI';
     for (let i = 0; i < 3; i++) {
       const value = low + (high - low) * i / 2, py = y(value);
-      c.strokeStyle = window.atlasTheme.palette.grid; c.beginPath(); c.moveTo(g.left, py); c.lineTo(g.left + g.pw, py); c.stroke(); c.fillStyle = window.atlasTheme.palette.muted; c.fillText(`${fmt(value)}%`, g.left + g.pw + 8, py + 3);
+      c.strokeStyle = chartPalette().grid; c.beginPath(); c.moveTo(g.left, py); c.lineTo(g.left + g.pw, py); c.stroke(); c.fillStyle = chartPalette().muted; c.fillText(`${fmt(value)}%`, g.left + g.pw + 8, py + 3);
     }
     c.save(); c.beginPath(); c.rect(g.left, 0, g.pw, box.height); c.clip();
     c.strokeStyle = '#a7afbd'; c.setLineDash([3, 4]); c.beginPath(); c.moveTo(g.left, y(0)); c.lineTo(g.left + g.pw, y(0)); c.stroke(); c.setLineDash([]);
@@ -154,15 +153,168 @@
     moveChartTime(index - Math.floor(Math.min(viewCount, 100) / 2), Math.min(viewCount, 100));
     chartScale.auto = true; chartScale.bounds = null; hover = -1; hoverY = null; draw(); $('terminalGoDialog').close(); notify(`Showing ${labelTime(rows[index].date)}`);
   };
-  function fillSettings(prefs) {
-    for (const [id, key] of [['terminalGrid', 'grid'], ['terminalLastPrice', 'lastPrice'], ['terminalCrosshair', 'crosshair']]) $(id).checked = prefs[key];
-    $('terminalUp').value = prefs.up; $('terminalDown').value = prefs.down;
+  const checks = {terminalGrid:'grid',terminalLastPrice:'lastPrice',terminalCrosshair:'crosshair',terminalWicks:'wicks',terminalBorders:'borders',terminalWatermark:'watermark'};
+  const customColors = {background:['Background','surface'],gridColor:['Grid','grid'],textColor:['Axis labels','text'],lineColor:['Line / area','accent'],crosshairColor:['Crosshair','crosshair'],wickUp:['Rising wick','wickUp'],wickDown:['Falling wick','wickDown'],borderColor:['Candle borders','borderColor']};
+  const settings = $('terminalSettingsForm');
+  settings.innerHTML = `<div class="appearance-layout"><div class="appearance-controls">
+    <fieldset><legend>Workspace theme</legend><div class="appearance-presets">${[['system','System'],...Object.entries(window.atlasTheme.palettes).map(([id,p])=>[id,p.name])].map(([id,name])=>`<button type="button" data-appearance-theme="${id}"><i style="background:${window.atlasTheme.palettes[id]?.surface || '#8795ae'};border-color:${window.atlasTheme.palettes[id]?.accent || '#fff'}"></i>${name}</button>`).join('')}</div><p>The theme colors the entire workspace.</p></fieldset>
+    <fieldset><legend>Price series</legend><div class="appearance-fields">
+    <label class="terminal-setting">Chart type<select id="terminalAppearanceStyle"><option value="candles">Candles</option><option value="bars">OHLC bars</option><option value="line">Line</option><option value="area">Area</option></select></label>
+    <label class="terminal-setting">Area opacity<div class="appearance-range"><input id="terminalAreaOpacity" type="range" min="0" max="100" step="1"><output id="terminalAreaOpacityValue" for="terminalAreaOpacity"></output></div></label>
+    <label class="terminal-setting">Rising candle / bar<input id="terminalUp" type="color"></label><label class="terminal-setting">Falling candle / bar<input id="terminalDown" type="color"></label>
+    <label class="terminal-setting">Candle wicks<input id="terminalWicks" type="checkbox"></label><label class="terminal-setting">Candle borders<input id="terminalBorders" type="checkbox"></label>
+    <label class="terminal-setting">Line width<select id="terminalLineWidth">${[1,2,3,4].map(n=>`<option value="${n}">${n} px</option>`).join('')}</select></label></div></fieldset>
+    <fieldset><legend>Canvas &amp; labels</legend><div class="appearance-fields">
+    ${[['terminalGrid','Grid lines'],['terminalLastPrice','Last price line'],['terminalCrosshair','Crosshair'],['terminalWatermark','Watermark']].map(([id,name])=>`<label class="terminal-setting">${name}<input id="${id}" type="checkbox"></label>`).join('')}
+    <label class="terminal-setting">Grid direction<select id="terminalGridDirection"><option value="both">Both</option><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select></label><label class="terminal-setting">Grid style<select id="terminalGridStyle"><option value="dotted">Dotted</option><option value="dashed">Dashed</option><option value="solid">Solid</option></select></label>
+    <label class="terminal-setting">Axis label size<select id="terminalFontSize">${[10,11,12,13,14].map(n=>`<option value="${n}">${n} px</option>`).join('')}</select></label></div>
+    <details id="terminalCustomColors"><summary>Custom chart colors</summary><p>Turn off “Theme” for any color to keep your own choice across themes.</p>
+    ${Object.entries(customColors).map(([key,[label]])=>`<div class="terminal-setting"><label for="appearance-${key}">${label}</label><div class="appearance-color"><input type="color" id="appearance-${key}"><label><input type="checkbox" id="follow-${key}" checked> ${key.startsWith('wick') ? 'Candle' : 'Theme'}</label></div></div>`).join('')}</details></fieldset>
+    </div><div class="appearance-preview"><canvas id="terminalAppearancePreview" width="360" height="220" aria-label="Sample chart appearance preview"></canvas><strong>Appearance preview</strong><p>Sample prices in your selected chart style. Apply to update your chart. Your settings are saved in this browser.</p></div></div>
+    <div class="terminal-dialog-foot"><button id="terminalDefaults" type="button">Reset defaults</button><div><button id="terminalCancelSettings" type="button">Cancel</button><button class="terminal-primary" type="submit">Apply</button></div></div>`;
+  let draftTheme = window.atlasTheme.preference;
+  function draftPalette() { return window.atlasTheme.palettes[draftTheme] || window.atlasTheme.palettes[matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light']; }
+  function readSettings() {
+    const prefs = {...chartAppearanceDefaults};
+    for (const [id,key] of Object.entries(checks)) prefs[key] = $(id).checked;
+    prefs.up = $('terminalUp').value; prefs.down = $('terminalDown').value;
+    for (const key of Object.keys(customColors)) prefs[key] = $('follow-'+key).checked ? null : $('appearance-'+key).value;
+    prefs.areaOpacity = Number($('terminalAreaOpacity').value); prefs.gridDirection = $('terminalGridDirection').value;
+    prefs.lineWidth = Number($('terminalLineWidth').value); prefs.fontSize = Number($('terminalFontSize').value); prefs.gridStyle = $('terminalGridStyle').value;
+    return prefs;
   }
-  $('terminalSettings').onclick = () => { fillSettings(chartAppearance); $('terminalSettingsDialog').showModal(); };
-  $('terminalDefaults').onclick = () => fillSettings({grid: true, lastPrice: true, crosshair: true, up: '#089981', down: '#f23645'});
-  $('terminalSettingsForm').onsubmit = event => {
-    event.preventDefault(); Object.assign(chartAppearance, {grid: $('terminalGrid').checked, lastPrice: $('terminalLastPrice').checked, crosshair: $('terminalCrosshair').checked, up: $('terminalUp').value, down: $('terminalDown').value}); save(); draw(); $('terminalSettingsDialog').close();
+  function previewSettings() {
+    const prefs = readSettings(), palette = chartPalette(prefs,draftPalette());
+    settings.querySelectorAll('[data-appearance-theme]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.appearanceTheme === draftTheme)));
+    for (const [key,[,field]] of Object.entries(customColors)) {
+      const control = $('appearance-'+key), follows = $('follow-'+key).checked;
+      control.disabled = follows; if (follows) control.value = palette[field];
+    }
+    $('terminalAreaOpacityValue').textContent = prefs.areaOpacity + '%';
+    const style = $('terminalAppearanceStyle').value;
+    const c = $('terminalAppearancePreview').getContext('2d'); c.fillStyle = palette.surface; c.fillRect(0,0,360,220);
+    if (prefs.grid) {
+      c.strokeStyle=palette.grid;c.lineWidth=1;c.setLineDash(prefs.gridStyle === 'solid' ? [] : prefs.gridStyle === 'dashed' ? [6,4] : [1,4]);
+      if(prefs.gridDirection !== 'vertical') for(let y=35;y<200;y+=40){c.beginPath();c.moveTo(10,y);c.lineTo(310,y);c.stroke();}
+      if(prefs.gridDirection !== 'horizontal') for(let x=35;x<310;x+=45){c.beginPath();c.moveTo(x,12);c.lineTo(x,195);c.stroke();}
+      c.setLineDash([]);
+    }
+    const points=Array.from({length:12},(_,i)=>[22+i*23,140-i*6+(i%3)*12]);
+    if(style==='candles' || style==='bars') {
+      points.forEach(([x,y],i)=>{
+        const color=i%3 ? prefs.up : prefs.down;
+        c.fillStyle=color;c.strokeStyle=style==='bars' ? color : i%3 ? palette.wickUp : palette.wickDown;
+        if(prefs.wicks || style==='bars'){c.beginPath();c.moveTo(x,y-15);c.lineTo(x,y+27);c.stroke();}
+        if(style==='bars'){c.beginPath();c.moveTo(x-5,y);c.lineTo(x,y);c.moveTo(x,y+15);c.lineTo(x+5,y+15);c.stroke();}
+        else {c.fillRect(x-5,y,10,15);if(prefs.borders){c.strokeStyle=palette.borderColor;c.strokeRect(x-5,y,10,15);}}
+      });
+    } else {
+      if(style==='area') {
+        const gradient=c.createLinearGradient(0,12,0,195);
+        gradient.addColorStop(0,palette.accent+Math.round(prefs.areaOpacity*2.55).toString(16).padStart(2,'0'));gradient.addColorStop(1,palette.accent+'00');
+        c.fillStyle=gradient;c.beginPath();c.moveTo(points[0][0],195);points.forEach(([x,y])=>c.lineTo(x,y));c.lineTo(points.at(-1)[0],195);c.closePath();c.fill();
+      }
+      c.strokeStyle=palette.accent;c.lineWidth=prefs.lineWidth;c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();c.lineWidth=1;
+    }
+    c.fillStyle=palette.text;c.font=`${prefs.fontSize}px Segoe UI`;c.fillText('125.00',312,80);c.fillText('100.00',312,160);
+    if(prefs.crosshair){c.strokeStyle=palette.crosshair;c.setLineDash([4,4]);c.beginPath();c.moveTo(210,12);c.lineTo(210,195);c.moveTo(10,110);c.lineTo(310,110);c.stroke();c.setLineDash([]);}
+    if(prefs.lastPrice){c.strokeStyle=prefs.up;c.setLineDash([2,3]);c.beginPath();c.moveTo(10,95);c.lineTo(310,95);c.stroke();c.setLineDash([]);}
+    if(prefs.watermark){c.fillStyle=palette.muted;c.font='10px Segoe UI';c.fillText('QUANTSTACK',12,207);}
+  }
+  function fillSettings(prefs,theme=window.atlasTheme.preference,style=chartType) {
+    $('terminalAppearanceStyle').value=style;
+    $('terminalAreaOpacity').value=prefs.areaOpacity; $('terminalGridDirection').value=prefs.gridDirection;
+    draftTheme=theme;
+    for(const [id,key] of Object.entries(checks)) $(id).checked=prefs[key];
+    $('terminalUp').value=prefs.up; $('terminalDown').value=prefs.down;
+    $('terminalLineWidth').value=prefs.lineWidth; $('terminalFontSize').value=prefs.fontSize; $('terminalGridStyle').value=prefs.gridStyle;
+    for(const [key,[,field]] of Object.entries(customColors)){ $('follow-'+key).checked=!prefs[key]; $('appearance-'+key).value=prefs[key] || chartPalette(prefs,draftPalette())[field]; }
+    previewSettings();
+  }
+  settings.oninput = previewSettings;
+  settings.querySelectorAll('[data-appearance-theme]').forEach(button=>button.onclick=()=>{draftTheme=button.dataset.appearanceTheme;previewSettings();});
+  $('terminalSettings').onclick=()=>{fillSettings(chartAppearance);$('terminalSettingsDialog').showModal();$('terminalSettingsDialog').scrollTop=0;};
+  $('terminalDefaults').onclick=()=>fillSettings(chartAppearanceDefaults,'system','candles');
+  $('terminalCancelSettings').onclick=()=>$('terminalSettingsDialog').close();
+  const profileKey = 'atlas.appearance.presets.v1';
+  const profileFormat = 'quantstack-appearance';
+  function parseProfile(value) {
+    if (!value || value.format !== profileFormat || value.version !== 1) throw Error('Choose a QuantStack appearance JSON file (version 1).');
+    if (value.theme !== 'system' && !Object.hasOwn(window.atlasTheme.palettes,value.theme)) throw Error('Unknown workspace theme.');
+    if (!['candles','bars','line','area'].includes(value.style)) throw Error('Unknown chart style.');
+    return {format:profileFormat,version:1,name:typeof value.name === 'string' ? value.name.trim().slice(0,60) : '',theme:value.theme,style:value.style,appearance:normalizeAppearance(value.appearance,true)};
+  }
+  let profiles = [];
+  try {
+    const stored = JSON.parse(localStorage.getItem(profileKey) || '[]');
+    if (Array.isArray(stored)) for (const entry of stored.slice(0,20)) {
+      try { const profile = parseProfile(entry); if (profile.name && !profiles.some(p=>p.name===profile.name)) profiles.push(profile); } catch {}
+    }
+  } catch {}
+  const manager = document.createElement('fieldset');
+  manager.className = 'appearance-profile-manager';
+  manager.innerHTML = `<legend>My appearance presets</legend><p>Save the current draft as a reusable preset. Preset saves and deletions are immediate; chart changes take effect with Apply.</p>
+    <label for="appearanceProfileName">Preset name</label><div class="appearance-profile-row"><input id="appearanceProfileName" type="text" maxlength="60" placeholder="e.g. Evening analysis"><button id="appearanceProfileSave" type="button">Save / replace</button></div>
+    <label for="appearanceProfileList">Saved presets</label><div class="appearance-profile-row"><select id="appearanceProfileList"></select><button id="appearanceProfileLoad" type="button">Load</button><button id="appearanceProfileDelete" type="button">Delete</button></div>
+    <div class="appearance-profile-row"><button id="appearanceProfileExport" type="button">Export JSON</button><button id="appearanceProfileImport" type="button">Import JSON</button><input id="appearanceProfileFile" type="file" accept="application/json,.json" hidden></div><p id="appearanceProfileStatus" role="status" aria-live="polite"></p>`;
+  settings.querySelector('.appearance-controls').append(manager);
+  const sections=document.createElement('nav');sections.className='appearance-sections';sections.setAttribute('aria-label','Chart settings sections');
+  const sectionFields=[...settings.querySelectorAll('.appearance-controls>fieldset')];
+  ['Themes','Price series','Canvas','My presets'].forEach((label,index)=>{
+    const button=document.createElement('button');button.type='button';button.textContent=label;
+    const field=sectionFields[index];field.id='appearanceSection'+index;field.tabIndex=-1;button.setAttribute('aria-controls',field.id);
+    button.onclick=()=>{field.focus({preventScroll:true});field.scrollIntoView({block:'start'});};sections.append(button);
+  });
+  settings.prepend(sections);
+  const profileStatus = message => { $('appearanceProfileStatus').textContent = message; };
+  function currentProfile() { return {format:profileFormat,version:1,name:$('appearanceProfileName').value.trim(),theme:draftTheme,style:$('terminalAppearanceStyle').value,appearance:readSettings()}; }
+  function renderProfiles(selectedName = $('appearanceProfileList').value) {
+    const list = $('appearanceProfileList'); list.replaceChildren(new Option('Choose a saved preset',''));
+    for (const profile of profiles) list.add(new Option(profile.name,profile.name));
+    list.value=selectedName;
+    $('appearanceProfileLoad').disabled=$('appearanceProfileDelete').disabled=!list.value;
+  }
+  function storeProfiles(next) {
+    try { localStorage.setItem(profileKey,JSON.stringify(next)); profiles=next; return true; }
+    catch { profileStatus('Could not save presets. Browser storage may be full or unavailable.'); return false; }
+  }
+  $('appearanceProfileList').onchange=()=>renderProfiles();
+  $('appearanceProfileName').onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();$('appearanceProfileSave').click();}};
+  $('appearanceProfileSave').onclick=()=>{
+    const profile=currentProfile();
+    if (!profile.name) { profileStatus('Enter a name for this preset.'); $('appearanceProfileName').focus(); return; }
+    const index=profiles.findIndex(item=>item.name===profile.name),next=[...profiles];
+    if(index<0 && next.length>=20){profileStatus('You can save up to 20 presets. Delete or replace one first.');return;}
+    if(index<0)next.push(profile);else next[index]=profile;
+    if(storeProfiles(next)){renderProfiles(profile.name);profileStatus(`Saved “${profile.name}”.`);}
   };
+  $('appearanceProfileLoad').onclick=()=>{
+    const profile=profiles.find(p=>p.name===$('appearanceProfileList').value);if(!profile)return;
+    fillSettings(profile.appearance,profile.theme,profile.style);$('appearanceProfileName').value=profile.name;profileStatus(`Loaded “${profile.name}” into the preview. Choose Apply to use it.`);
+  };
+  $('appearanceProfileDelete').onclick=()=>{
+    const name=$('appearanceProfileList').value;if(!name)return;
+    if(storeProfiles(profiles.filter(p=>p.name!==name))){renderProfiles('');profileStatus(`Deleted “${name}”. The chart is unchanged.`);}
+  };
+  $('appearanceProfileExport').onclick=()=>{
+    const profile=currentProfile(),blob=new Blob([JSON.stringify(profile,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download='QuantStack-appearance.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);profileStatus('Exported the current appearance draft.');
+  };
+  $('appearanceProfileImport').onclick=()=>$('appearanceProfileFile').click();
+  let importVersion=0;
+  $('terminalSettingsDialog').addEventListener('close',()=>{importVersion++;});
+  $('appearanceProfileFile').onchange=async event=>{
+    const file=event.target.files[0],version=++importVersion;event.target.value='';if(!file)return;
+    try {
+      if(file.size>65536)throw Error('Appearance files must be smaller than 64 KB.');
+      const profile=parseProfile(JSON.parse(await file.text()));
+      if(version!==importVersion)return;
+      fillSettings(profile.appearance,profile.theme,profile.style);$('appearanceProfileName').value=profile.name;
+      profileStatus('Imported into the preview. Apply to use it, or Save / replace to keep a named preset.');
+    } catch(error) { if(version===importVersion)profileStatus(error instanceof SyntaxError ? 'This file is not valid JSON.' : error.message); }
+  };
+  renderProfiles();
+  settings.onsubmit=event=>{event.preventDefault();Object.assign(chartAppearance,readSettings());chartType=$('terminalAppearanceStyle').value;$('terminalStyle').value=chartType;window.atlasTheme.apply(draftTheme,true);save();draw();$('terminalSettingsDialog').close();notify('Chart appearance saved.');};
   $('terminalFullscreen').onclick = async () => {
     try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); }
     catch { notify('Full screen is unavailable in this browser.'); }
@@ -174,14 +326,14 @@
     const canvases = [$('chart'), ...(pane.hidden ? [] : [$('comparisonCanvas')]), ...document.querySelectorAll('#indicatorPanels canvas')].filter(canvas => canvas.width && canvas.getBoundingClientRect().height);
     const width = $('chart').getBoundingClientRect().width, scale = 2;
     const output = document.createElement('canvas'); output.width = width * scale; output.height = (100 + canvases.reduce((sum, canvas) => sum + canvas.getBoundingClientRect().height + 30, 0)) * scale;
-    const c = output.getContext('2d'); c.scale(scale, scale); c.fillStyle = window.atlasTheme.palette.surface; c.fillRect(0, 0, output.width / scale, output.height / scale);
-    c.fillStyle = window.atlasTheme.palette.text; c.font = '600 17px Segoe UI'; c.fillText(`${selected.symbol} · ${interval} · ${$('terminalStyle').selectedOptions[0].text}`, 14, 28);
-    c.fillStyle = window.atlasTheme.palette.muted; c.font = '11px Segoe UI'; c.fillText('QUANTSTACK · Stored market data · ' + new Date().toISOString().slice(0, 10), 14, 50);
+    const c = output.getContext('2d'); c.scale(scale, scale); c.fillStyle = chartPalette().surface; c.fillRect(0, 0, output.width / scale, output.height / scale);
+    c.fillStyle = chartPalette().text; c.font = '600 17px Segoe UI'; c.fillText(`${selected.symbol} · ${interval} · ${$('terminalStyle').selectedOptions[0].text}`, 14, 28);
+    c.fillStyle = chartPalette().muted; c.font = '11px Segoe UI'; c.fillText('QUANTSTACK · Stored market data · ' + new Date().toISOString().slice(0, 10), 14, 50);
     let y = 70;
     for (const canvas of canvases) {
       const height = canvas.getBoundingClientRect().height;
       const title = canvas.id === 'chart' ? `${visible()[0]?.date || ''} — ${visible().at(-1)?.date || ''}` : canvas.id === 'comparisonCanvas' ? `${$('comparisonBaseline').textContent} | ${[selected.symbol, ...comparisons.map(item => item.symbol)].join(' / ')}` : canvas.parentElement.querySelector('.indicator-panel-label')?.textContent || 'Study';
-      c.fillStyle = window.atlasTheme.palette.muted; c.font = '10px Segoe UI'; c.fillText(title, 14, y + 12, width - 28); y += 26;
+      c.fillStyle = chartPalette().muted; c.font = '10px Segoe UI'; c.fillText(title, 14, y + 12, width - 28); y += 26;
       c.drawImage(canvas, 0, y, width, height); y += height + 4;
     }
     const filename = `QuantStack-${selected.symbol.replace(/[^a-z0-9_-]/gi, '_')}-${interval}.png`;

@@ -9,6 +9,19 @@ import pandas as pd
 from market_data import connect, normalize, normalize_intraday, persist, persist_intraday, ingest
 
 class StorageTests(unittest.TestCase):
+    def test_expansion_cutoff_passed_without_weakening_validation(self):
+        db = connect(':memory:')
+        config = {'attempts': 1, 'full_refresh_days': 30, 'overlap_days': 14, 'request_pause_seconds': 0}
+        frame = pd.DataFrame({'Open': [1.], 'High': [2.], 'Low': [1.], 'Close': [2.], 'Volume': [1]},
+                             index=pd.date_range('2020-01-01', periods=1, tz='UTC'))
+        with patch('yfinance.Ticker') as ticker:
+            ticker.return_value.history.return_value = frame
+            ticker.return_value.get_history_metadata.return_value = {'exchangeTimezoneName': 'UTC'}
+            self.assertEqual(ingest(db, config, ['TEST'], end='2020-01-02'), [])
+            self.assertEqual(ticker.return_value.history.call_args.kwargs['end'], '2020-01-02')
+            self.assertEqual(db.execute('SELECT count(*) FROM prices').fetchone()[0], 1)
+        db.close()
+
     def test_resume_and_retry_failed_symbol(self):
         db = connect(':memory:')
         now = datetime.now(timezone.utc).isoformat()

@@ -1,8 +1,8 @@
 {
-  "built_at": "2026-09-29T07:31:19.883432+00:00",
-  "symbols": 2889,
-  "records": 16227288,
-  "sha256": "f201a4377661307ee88bf8f554c7e37d82b81d55a62d48099dca7bce006390ef",
-  "url": "https://github.com/hsiantw/QuantStack/releases/download/market-data/market-data-f201a4377661307e.zip",
-  "asset_id": 604927551
+  "built_at": "2026-10-02T16:52:18.181322+00:00",
+  "symbols": 2955,
+  "records": 16565215,
+  "sha256": "f7746d2373c0c4092c574ca117e3a07bb557d8844e56e2c78cf0ba9bbe7a0fea",
+  "url": "https://github.com/hsiantw/QuantStack/releases/download/market-data/market-data-f7746d2373c0c409.zip",
+  "asset_id": 606056382
 }

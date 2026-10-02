@@ -15,6 +15,8 @@ def snapshot_html(snapshot_url):
         WEB / 'markov-worker.js').read_text(encoding='utf-8-sig').replace("importScripts('./markov-engine.js');", '')
     setup = 'window.ATLAS_DATA_BASE=' + json.dumps(snapshot_url.rstrip('/') + '/') + ';\n'
     setup += 'window.ATLAS_MARKOV_WORKER_URL=URL.createObjectURL(new Blob([' + json.dumps(worker) + '],{type:"text/javascript"}));'
+    brownian_worker = (WEB / 'brownian-engine.js').read_text(encoding='utf-8') + '\n' + (WEB / 'brownian-worker.js').read_text(encoding='utf-8').replace("importScripts('./brownian-engine.js');", '')
+    setup += 'window.ATLAS_BROWNIAN_WORKER_URL=URL.createObjectURL(new Blob([' + json.dumps(brownian_worker) + '],{type:"text/javascript"}));'
     adapter = script(setup) + script((WEB / 'static-data.js').read_text(encoding='utf-8-sig'))
 
     def inline_script(match):

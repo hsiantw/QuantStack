@@ -1,6 +1,27 @@
 // Price transforms are shared by rendering, crosshairs and drawing anchors.
 const chartScale = {mode: 'linear', auto: true, inverted: false, priceOnly: true, bounds: null, offset: 0, context: ''};
-const chartAppearance = {grid: true, lastPrice: true, crosshair: true, up: '#089981', down: '#f23645'};
+const chartAppearanceDefaults = {grid:true,lastPrice:true,crosshair:true,up:'#089981',down:'#f23645',background:null,gridColor:null,textColor:null,lineColor:null,crosshairColor:null,gridStyle:'dotted',lineWidth:2,fontSize:11,wicks:true,borders:false,watermark:true,gridDirection:'both',areaOpacity:25,wickUp:null,wickDown:null,borderColor:null};
+const chartAppearance = {...chartAppearanceDefaults};
+// Validate both browser preferences and imported profiles without copying unknown keys.
+function normalizeAppearance(input, strict = false) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    if (strict) throw Error('Appearance must be an object.');
+    return {...chartAppearanceDefaults};
+  }
+  const result = {...chartAppearanceDefaults};
+  const options = {gridStyle:['dotted','dashed','solid'],gridDirection:['both','horizontal','vertical'],lineWidth:[1,2,3,4],fontSize:[10,11,12,13,14]};
+  for (const [key, fallback] of Object.entries(chartAppearanceDefaults)) {
+    if (!Object.hasOwn(input,key)) continue;
+    const value = input[key];
+    const valid = options[key] ? options[key].includes(value) : key === 'areaOpacity' ? Number.isInteger(value) && value >= 0 && value <= 100 : typeof fallback === 'boolean' ? typeof value === 'boolean' : (value === null && fallback === null) || (typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value));
+    if (valid) result[key] = value;
+    else if (strict) throw Error(`Invalid appearance value: ${key}.`);
+  }
+  return result;
+}
+function chartPalette(prefs = chartAppearance, theme = window.atlasTheme.palette) {
+  return {...theme,surface:prefs.background || theme.surface,grid:prefs.gridColor || theme.grid,text:prefs.textColor || theme.text,muted:prefs.textColor || theme.muted,accent:prefs.lineColor || theme.accent,crosshair:prefs.crosshairColor || theme.muted,wickUp:prefs.wickUp || prefs.up,wickDown:prefs.wickDown || prefs.down,borderColor:prefs.borderColor || prefs.textColor || theme.text};
+}
 try {
   const preferences = JSON.parse(localStorage.getItem('atlas.chartScale') || '{}');
   if (['linear', 'log', 'percent', 'indexed'].includes(preferences.mode)) chartScale.mode = preferences.mode;
@@ -66,31 +87,32 @@ pointer = function(event, snap = tool !== 'cursor', g = geometry()) {
 };
 
 draw = function() {
+  const palette = chartPalette();
   const g = geometry(), {canvas, w, h, left, top, pw, ph, data, x, y} = g;
   const dpr = devicePixelRatio || 1;
   canvas.width = Math.max(1, Math.round(w * dpr)); canvas.height = Math.max(1, Math.round(h * dpr));
-  const c = canvas.getContext('2d'); c.scale(dpr, dpr); c.fillStyle = window.atlasTheme.palette.surface; c.fillRect(0, 0, w, h);
+  const c = canvas.getContext('2d'); c.scale(dpr, dpr); c.fillStyle = palette.surface; c.fillRect(0, 0, w, h);
   syncChartScaleControls();
   if (!data.length || w < 100 || h < 80) return;
-  c.font = '11px Segoe UI, sans-serif'; c.lineWidth = 1;
+  c.font = `${chartAppearance.fontSize}px Segoe UI, sans-serif`; c.lineWidth = 1;
   const ticks = Math.max(3, Math.min(12, Math.floor(ph / 65)));
   for (let i = 0; i <= ticks; i++) {
     const py = top + i * ph / ticks;
-    if (chartAppearance.grid) { c.strokeStyle = window.atlasTheme.palette.grid; c.setLineDash([1, 4]); c.beginPath(); c.moveTo(left, py); c.lineTo(left + pw, py); c.stroke(); }
-    c.fillStyle = window.atlasTheme.palette.text; c.fillText(g.label(g.price(py)), left + pw + 9, py + 4);
+    if (chartAppearance.grid && chartAppearance.gridDirection !== 'vertical') { c.strokeStyle = palette.grid; c.setLineDash(chartAppearance.gridStyle === 'solid' ? [] : chartAppearance.gridStyle === 'dashed' ? [6, 4] : [1, 4]); c.beginPath(); c.moveTo(left, py); c.lineTo(left + pw, py); c.stroke(); }
+    c.fillStyle = palette.text; c.fillText(g.label(g.price(py)), left + pw + 9, py + 4);
   }
   const dateTicks = Math.max(2, Math.floor(pw / 110));
   for (let i = 0; i <= dateTicks; i++) {
     const px = left + i * pw / dateTicks, index = g.index(px), bar = data[index];
     if (!bar) continue;
-    if (chartAppearance.grid) { c.strokeStyle = window.atlasTheme.palette.grid; c.beginPath(); c.moveTo(x(index), top); c.lineTo(x(index), top + ph); c.stroke(); }
-    c.fillStyle = window.atlasTheme.palette.muted; c.textAlign = i === 0 ? 'left' : i === dateTicks ? 'right' : 'center';
+    if (chartAppearance.grid && chartAppearance.gridDirection !== 'horizontal') { c.strokeStyle = palette.grid; c.setLineDash(chartAppearance.gridStyle === 'solid' ? [] : chartAppearance.gridStyle === 'dashed' ? [6,4] : [1,4]); c.beginPath(); c.moveTo(x(index), top); c.lineTo(x(index), top + ph); c.stroke(); }
+    c.fillStyle = palette.muted; c.textAlign = i === 0 ? 'left' : i === dateTicks ? 'right' : 'center';
     const date = new Date(bar.date.length === 10 ? bar.date + 'T12:00:00Z' : bar.date);
     const label = interval === '1d' ? date.toLocaleDateString(undefined, {month: 'short', day: 'numeric', ...(viewCount > 750 ? {year: '2-digit'} : {})}) : date.toLocaleString(undefined, {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
     c.fillText(label, x(index), h - 10);
   }
   c.textAlign = 'left'; c.setLineDash([]);
-  c.strokeStyle = '#e0e3eb'; c.beginPath(); c.moveTo(left + pw, 0); c.lineTo(left + pw, h); c.moveTo(left, top + ph); c.lineTo(w, top + ph); c.stroke();
+  c.strokeStyle = palette.grid; c.beginPath(); c.moveTo(left + pw, 0); c.lineTo(left + pw, h); c.moveTo(left, top + ph); c.lineTo(w, top + ph); c.stroke();
   c.save(); c.beginPath(); c.rect(left, top, pw, ph); c.clip();
   if (indicators.has('volume')) drawVolume(c, g);
   if (chartType === 'candles' || chartType === 'bars') {
@@ -99,14 +121,14 @@ draw = function() {
       const px = x(index); if (px < left - width || px > left + pw + width) return;
       const positions = [row.open, row.high, row.low, row.close].map(y); if (!positions.every(Number.isFinite)) return;
       const [oy, hy, ly, cy] = positions, color = row.close >= row.open ? chartAppearance.up : chartAppearance.down;
-      c.strokeStyle = color; c.fillStyle = color; c.beginPath(); c.moveTo(px, hy); c.lineTo(px, ly); c.stroke();
+      c.strokeStyle = chartType === 'bars' ? color : row.close >= row.open ? palette.wickUp : palette.wickDown; c.fillStyle = color; if (chartAppearance.wicks || chartType === 'bars') { c.beginPath(); c.moveTo(px, hy); c.lineTo(px, ly); c.stroke(); }
       if (chartType === 'bars') { c.beginPath(); c.moveTo(px - width / 2, oy); c.lineTo(px, oy); c.moveTo(px, cy); c.lineTo(px + width / 2, cy); c.stroke(); }
-      else c.fillRect(px - width / 2, Math.min(oy, cy), width, Math.max(1, Math.abs(cy - oy)));
+      else { c.fillRect(px - width / 2, Math.min(oy, cy), width, Math.max(1, Math.abs(cy - oy))); if (chartAppearance.borders) { c.strokeStyle = palette.borderColor; c.strokeRect(px - width / 2, Math.min(oy, cy), width, Math.max(1, Math.abs(cy - oy))); } }
     });
   } else {
     if (chartType === 'area') {
       const gradient = c.createLinearGradient(0, top, 0, top + ph);
-      gradient.addColorStop(0, '#2962ff40'); gradient.addColorStop(1, '#2962ff02'); c.fillStyle = gradient;
+      gradient.addColorStop(0, palette.accent + Math.round(chartAppearance.areaOpacity * 2.55).toString(16).padStart(2,'0')); gradient.addColorStop(1, palette.accent + '00'); c.fillStyle = gradient;
       let segment = [];
       const fillSegment = () => {
         if (!segment.length) return;
@@ -118,7 +140,7 @@ draw = function() {
     }
     c.beginPath(); let started = false;
     data.forEach((row, index) => { const py = y(row.close); if (!Number.isFinite(py)) { started = false; return; } if (started) c.lineTo(x(index), py); else c.moveTo(x(index), py); started = true; });
-    c.strokeStyle = '#2962ff'; c.lineWidth = 1.8; c.stroke(); c.lineWidth = 1;
+    c.strokeStyle = palette.accent; c.lineWidth = chartAppearance.lineWidth; c.stroke(); c.lineWidth = 1;
   }
   drawIndicators(c, g); drawAnnotations(c, g);
   c.restore();
@@ -130,7 +152,7 @@ draw = function() {
   if (chartAppearance.crosshair && hover >= 0 && hover < data.length && hoverY != null) {
     const px = x(hover), py = Math.max(top, Math.min(top + ph, hoverY));
     if (px >= left && px <= left + pw) {
-      c.strokeStyle = '#9598a1'; c.setLineDash([4, 4]); c.beginPath(); c.moveTo(px, top); c.lineTo(px, top + ph); c.moveTo(left, py); c.lineTo(left + pw, py); c.stroke(); c.setLineDash([]);
+      c.strokeStyle = palette.crosshair; c.setLineDash([4, 4]); c.beginPath(); c.moveTo(px, top); c.lineTo(px, top + ph); c.moveTo(left, py); c.lineTo(left + pw, py); c.stroke(); c.setLineDash([]);
       c.fillStyle = '#363a45'; c.fillRect(left + pw, py - 10, g.right, 20); c.fillStyle = '#fff'; c.fillText(g.label(hoverAnchor?.price ?? g.price(py)), left + pw + 7, py + 4);
       const text = labelTime(data[hover].date), labelWidth = Math.min(pw, Math.max(92, c.measureText(text).width + 16));
       const labelX = Math.max(left, Math.min(left + pw - labelWidth, px - labelWidth / 2));
@@ -138,7 +160,7 @@ draw = function() {
       if (tool !== 'cursor') { c.fillStyle = drawingStyle.color; c.beginPath(); c.arc(px, py, 4, 0, Math.PI * 2); c.fill(); }
     }
   }
-  c.fillStyle = '#abb0ba'; c.font = '600 12px Segoe UI'; c.fillText('QUANTSTACK', left + 10, top + ph - 12);
+  if (chartAppearance.watermark) { c.fillStyle = palette.muted; c.font = '600 12px Segoe UI'; c.fillText('QUANTSTACK', left + 10, top + ph - 12); }
   drawAdvancedPanels();
 };
 

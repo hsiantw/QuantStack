@@ -397,7 +397,7 @@ def persist(db, symbol, rows, full, started, empty):
                    (symbol, started, 'full' if full else 'incremental', 'ok', len(rows), empty))
 
 
-def ingest(db, config, symbols, force=False):
+def ingest(db, config, symbols, force=False, end=None):
     import yfinance as yf
     failed = []
     for number, symbol in enumerate(symbols, 1):
@@ -411,6 +411,8 @@ def ingest(db, config, symbols, force=False):
             try:
                 ticker = yf.Ticker(symbol)
                 kwargs = dict(interval='1d', auto_adjust=False, actions=True, keepna=True, raise_errors=True, timeout=30)
+                if end is not None:
+                    kwargs['end'] = end
                 if full or not latest:
                     kwargs['period'] = 'max'
                 else:

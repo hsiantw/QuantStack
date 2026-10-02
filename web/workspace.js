@@ -300,7 +300,7 @@
 
   const bottom = document.createElement('div');
   bottom.className = 'workspace-bottom-tabs';
-  bottom.innerHTML = '<div class="workspace-tab-list" role="tablist" aria-label="Analysis panels"><button id="workspaceOpenScreener" role="tab" aria-controls="workspaceScreenerPanel">Stock screener</button><button id="workspaceOpenStrategy" role="tab" aria-controls="workspaceStrategyPanel">Strategy tester</button><button id="workspaceOpenMarkov" role="tab" aria-controls="workspaceMarkovPanel">Markov analysis</button><button id="workspaceOpenData" role="tab" aria-controls="workspaceDataPanel">Price bars</button></div><button id="workspaceOpenObjects">Drawing objects</button><span class="workspace-data-status"><i></i> Local market data</span><div class="workspace-dock-actions"><button id="workspaceMaximizeDock" title="Maximize panel" aria-label="Maximize panel" aria-pressed="false">⛶</button><button id="workspaceCloseDock" title="Collapse panel" aria-label="Collapse bottom panel">⌄</button></div>';
+  bottom.innerHTML = '<div class="workspace-tab-list" role="tablist" aria-label="Analysis panels"><button id="workspaceOpenScreener" role="tab" aria-controls="workspaceScreenerPanel">Stock screener</button><button id="workspaceOpenStrategy" role="tab" aria-controls="workspaceStrategyPanel">Strategy tester</button><button id="workspaceOpenMarkov" role="tab" aria-controls="workspaceMarkovPanel">Markov analysis</button><button id="workspaceOpenBrownian" role="tab" aria-controls="workspaceBrownianPanel">Brownian motion</button><button id="workspaceOpenData" role="tab" aria-controls="workspaceDataPanel">Price bars</button></div><button id="workspaceOpenObjects">Drawing objects</button><span class="workspace-data-status"><i></i> Local market data</span><div class="workspace-dock-actions"><button id="workspaceMaximizeDock" title="Maximize panel" aria-label="Maximize panel" aria-pressed="false">⛶</button><button id="workspaceCloseDock" title="Collapse panel" aria-label="Collapse bottom panel">⌄</button></div>';
   main.append(bottom);
   byId('workspaceOpenObjects').addEventListener('click', () => {
     rightRail.querySelector('[data-side-panel="objects"]').click();
@@ -312,7 +312,7 @@
   dock.id = 'workspaceDock';
   dock.className = 'workspace-dock';
   dock.hidden = true;
-  dock.innerHTML = '<div id="workspaceDockResize" class="workspace-dock-resize" role="separator" tabindex="0" aria-label="Analysis panel height" aria-orientation="horizontal" aria-valuemin="160" aria-valuemax="600"></div><div id="workspaceScreenerPanel" class="workspace-dock-pane" role="tabpanel" aria-labelledby="workspaceOpenScreener"></div><div id="workspaceStrategyPanel" class="workspace-dock-pane" role="tabpanel" aria-labelledby="workspaceOpenStrategy" hidden></div><div id="workspaceMarkovPanel" class="workspace-dock-pane" role="tabpanel" aria-labelledby="workspaceOpenMarkov" hidden></div><div id="workspaceDataPanel" class="workspace-dock-pane" role="tabpanel" aria-labelledby="workspaceOpenData" hidden><div class="workspace-data-body"></div></div>';
+  dock.innerHTML = '<div id="workspaceDockResize" class="workspace-dock-resize" role="separator" tabindex="0" aria-label="Analysis panel height" aria-orientation="horizontal" aria-valuemin="160" aria-valuemax="600"></div><div id="workspaceScreenerPanel" class="workspace-dock-pane" role="tabpanel" aria-labelledby="workspaceOpenScreener"></div><div id="workspaceStrategyPanel" class="workspace-dock-pane" role="tabpanel" aria-labelledby="workspaceOpenStrategy" hidden></div><div id="workspaceMarkovPanel" class="workspace-dock-pane" role="tabpanel" aria-labelledby="workspaceOpenMarkov" hidden></div><div id="workspaceBrownianPanel" class="workspace-dock-pane" role="tabpanel" aria-labelledby="workspaceOpenBrownian" hidden></div><div id="workspaceDataPanel" class="workspace-dock-pane" role="tabpanel" aria-labelledby="workspaceOpenData" hidden><div class="workspace-data-body"></div></div>';
   main.append(dock);
   byId('workspaceDataPanel').firstElementChild.append(find('.stats'), find('.table-panel'), find('main > footer'));
   const usage = document.createElement('button');
@@ -345,7 +345,7 @@
   screenFilters.addEventListener('toggle', () => filtersToggle.setAttribute('aria-expanded', String(screenFilters.open)));
   screenToolbar.append(filtersToggle);
   let activeDock = null;
-  const dockTabs = {screener: byId('workspaceOpenScreener'), strategy: byId('workspaceOpenStrategy'), markov: byId('workspaceOpenMarkov'), data: byId('workspaceOpenData')};
+  const dockTabs = {screener: byId('workspaceOpenScreener'), strategy: byId('workspaceOpenStrategy'), markov: byId('workspaceOpenMarkov'), brownian: byId('workspaceOpenBrownian'), data: byId('workspaceOpenData')};
   function showDock(name) {
     const hadFocus = dock.contains(document.activeElement);
     activeDock = name;
@@ -361,6 +361,7 @@
     byId('workspaceDataPanel').hidden = name !== 'data';
     byId('workspaceStrategyPanel').hidden = name !== 'strategy';
     byId('workspaceMarkovPanel').hidden = name !== 'markov';
+    byId('workspaceBrownianPanel').hidden = name !== 'brownian';
     for (const [key, button] of Object.entries(dockTabs)) {
       button.setAttribute('aria-selected', String(key === name));
       button.classList.toggle('active', key === name);

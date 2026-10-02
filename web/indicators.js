@@ -241,7 +241,7 @@ function drawAdvancedPanels() {
     canvas.height = Math.max(1, h * dpr);
     const c = canvas.getContext('2d');
     c.scale(dpr, dpr);
-    c.fillStyle = window.atlasTheme.palette.surface;
+    c.fillStyle = chartPalette().surface;
     c.fillRect(0, 0, w, h);
     const entries = Object.entries(item.outputs);
     const values = entries.flatMap(([, series]) => series.slice(viewStart, viewStart + viewCount).filter(value => value != null && Number.isFinite(value)));
@@ -254,8 +254,8 @@ function drawAdvancedPanels() {
     c.font = '9px Segoe UI';
     for (let i = 0; i < 3; i++) {
       const py = top + i * ph / 2, value = max - i * (max - min) / 2;
-      c.strokeStyle = window.atlasTheme.palette.grid; c.lineWidth = 1; c.beginPath(); c.moveTo(left, py); c.lineTo(w - right, py); c.stroke();
-      c.fillStyle = window.atlasTheme.palette.muted; c.fillText(fmt(value, Math.abs(value) > 1000 ? 0 : 2), w - right + 7, py + 3);
+      c.strokeStyle = chartPalette().grid; c.lineWidth = 1; c.beginPath(); c.moveTo(left, py); c.lineTo(w - right, py); c.stroke();
+      c.fillStyle = chartPalette().muted; c.fillText(fmt(value, Math.abs(value) > 1000 ? 0 : 2), w - right + 7, py + 3);
     }
     if (min < 0 && max > 0) {
       c.strokeStyle = '#526075'; c.setLineDash([3, 3]); c.beginPath(); c.moveTo(left, y(0)); c.lineTo(w - right, y(0)); c.stroke(); c.setLineDash([]);

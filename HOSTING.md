@@ -44,7 +44,7 @@ and generated datasets stay outside source control. The release contains market
 prices and screener metadata, not account databases or portfolio records.
 
 Daily snapshots support charts, drawings, comparisons, screening, backtesting,
-and Markov analysis. Native hourly data and the full indicator library require
+Markov analysis, and Brownian-motion simulations. Native hourly data and the full indicator library require
 the shared local database. Deployment does not itself refresh prices.
 
 `build_site.py` still creates a portable local preview used by regression tests;

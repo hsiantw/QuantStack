@@ -69,8 +69,15 @@ object tree. Click the arrow above the drawing tools to show their names. Click
 the active right-side icon again to collapse its panel; drag the panel's left edge
 to resize it. Notes are saved locally in this browser for each symbol.
 
-The bottom **Stock screener**, **Strategy tester**, **Markov analysis**, and **Price bars** tabs open a dock beneath the chart.
+The bottom **Stock screener**, **Strategy tester**, **Markov analysis**, **Brownian motion**, and **Price bars** tabs open a dock beneath the chart.
 New browser sessions start with this dock collapsed to give the chart more room.
+**Brownian motion** simulates geometric Brownian price paths from the selected
+chart. Choose historically fitted drift/volatility, zero price drift, or custom
+per-bar assumptions, then adjust the window, horizon, path count, random seed,
+and adjusted/raw price basis. Pointwise percentile bands, sample paths, an
+inspection slider, loss probabilities, and JSON/CSV exports are available.
+Changes to settings or chart data invalidate results; simulations run in a
+cancelable worker. See [model and coverage notes](docs/brownian-and-assets.md).
 Drag its top edge to resize it, or use its maximize and collapse buttons. The
 screener's **Filters** button expands presets, rules and saved screens. Panel resize
 handles also support arrow keys. Run `.\.venv\Scripts\python.exe smoke_workspace.py`
@@ -94,6 +101,26 @@ the bars already loaded. **Reset chart view** restores the default zoom.
 **Settings**
 controls grid lines, the last-price line, crosshairs and rising/falling candle
 colors. Styles, settings and comparison symbols persist in this browser.
+The theme picker offers **System**, **Light**, **Dark**, **Midnight**, **Forest**,
+and **Paper** across the workspace. In **Settings**, preview a theme before
+applying it, customize candle wicks/borders, line width, axis label size, grid
+style, and watermark visibility. Expand **Custom chart colors** to override
+background, grid, labels, line/area, and crosshair colors independently; leave
+**Theme** enabled for colors that should follow the selected theme. Canvas
+colors also carry into study/comparison panes and PNG exports. **Cancel**
+discards edits; **Reset defaults** prepares the original colors and system
+theme, which take effect when you choose **Apply**.
+Run `python smoke_themes.py` against the local preview to verify appearance.
+**My appearance presets** saves up to 20 named combinations of workspace theme,
+chart type, and appearance settings. Save / replace stores the current draft;
+Load restores a preset into the preview, and Apply changes the chart. Export
+JSON transfers the draft to another browser; Import JSON validates and previews
+it without changing the chart or saving a preset automatically. These files
+contain appearance settings only, without symbols, notes, drawings, or accounts.
+You can also choose horizontal/vertical/both grid directions, area opacity,
+and independent wick and candle-border colors. Wick colors follow the candle
+colors until overridden. Run `python smoke_appearance_profiles.py` to check
+profiles, imports, persistence, and mobile controls.
 **Go to date** (Alt+G) centers a date in the loaded history, using the next available
 bar for non-trading dates. **Snapshot** exports the visible chart, drawings and
 analysis panes as PNG; the full-screen button expands the workspace. These tools

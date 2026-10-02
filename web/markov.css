@@ -48,3 +48,11 @@
 .markov-method{margin:12px 20px 24px;border-top:1px solid var(--border);padding-top:14px}.markov-method a{color:var(--accent)}
 .workspace-tab-list{overflow-x:auto;scrollbar-width:thin;flex-shrink:1}.workspace-tab-list>button{flex-shrink:0}
 @media(max-width:650px){.markov-header{align-items:flex-start;flex-direction:column}.markov-header,.markov-section{padding-inline:12px}.markov-config{padding:12px;grid-template-columns:repeat(2,minmax(0,1fr))}.markov-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.markov-metrics>div{padding:12px}.markov-metrics strong{font-size:15px}.markov-help,#markovStatus,#markovError,.markov-warnings,.markov-method{margin-inline:12px}.markov-tabs{padding-inline:8px}.markov-tabs button{padding-inline:10px}.markov-section-head{align-items:stretch;flex-direction:column}}
+#brownianStatus,#brownianError{margin:12px 20px;font-size:12px}#brownianError{color:var(--negative)}
+#brownianRun{background:var(--accent);color:var(--surface);border:0;border-radius:5px;padding:10px 12px;font-weight:600}
+#brownianFan svg{width:100%;max-height:360px;display:block;background:var(--surface)}#brownianFan text{fill:var(--text-muted);font:11px 'Segoe UI',sans-serif}
+.brownian-sample{fill:none;stroke:var(--accent);stroke-width:1;opacity:.22}.brownian-path-toggle{display:flex;gap:8px;align-items:center;margin:12px 0;font-size:12px}
+#workspaceBrownianPanel{color:var(--text);background:var(--surface);font-size:12px}
+#brownianForm label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--text-muted);min-width:0}
+#brownianForm :is(input,select){width:100%;min-width:0;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:8px;font-size:12px}
+#brownianForm :disabled{opacity:.5}#brownianHorizon{width:100%;accent-color:var(--accent)}
