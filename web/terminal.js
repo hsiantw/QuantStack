@@ -32,6 +32,7 @@
     button.setAttribute('aria-label', label || 'Full screen');
   }
   document.querySelector('.chart-top').after(actions);
+  $('workspaceSettingsDock').append($('terminalSettings'));
   const notice = document.createElement('span'); notice.id = 'terminalNotice'; notice.setAttribute('role', 'status'); actions.append(notice);
   function notify(message) { notice.textContent = message; }
   const pane = document.createElement('section');
@@ -57,10 +58,17 @@
   function removeComparison(symbol) { comparisons = comparisons.filter(item => item.symbol !== symbol); save(); renderSearch(); refreshComparisons(); }
   $('terminalCompareActive').onclick = event => { const button = event.target.closest('[data-remove-comparison]'); if (button) removeComparison(button.dataset.removeComparison); };
   $('comparisonLegend').onclick = event => { const button = event.target.closest('[data-remove-comparison]'); if (button) removeComparison(button.dataset.removeComparison); };
+  window.addChartComparison = symbol => {
+    if(symbol===selected?.symbol)return 'This instrument is already the main chart.';
+    if(comparisons.some(item=>item.symbol===symbol))return 'This instrument is already in the comparison.';
+    if(comparisons.length>=3)return 'Three comparisons are already added. Remove one in Compare first.';
+    if(!assets.some(asset=>asset.symbol===symbol))return 'No stored data for this instrument.';
+    comparisons.push({symbol, data:new Map(), status:'Loading'});
+    save();renderSearch();refreshComparisons();return null;
+  };
   $('terminalCompareResults').onclick = event => {
-    const button = event.target.closest('[data-compare-symbol]'); if (!button || comparisons.length >= 3) return;
-    comparisons.push({symbol: button.dataset.compareSymbol, data: new Map(), status: 'Loading'});
-    save(); renderSearch(); refreshComparisons();
+    const button=event.target.closest('[data-compare-symbol]');if(!button)return;
+    const error=window.addChartComparison(button.dataset.compareSymbol);if(error)notify(error);
   };
   $('comparisonClose').onclick = () => { comparisons = []; requestVersion++; save(); drawComparison(); };
   async function refreshComparisons() {
@@ -171,7 +179,8 @@
     <details id="terminalCustomColors"><summary>Custom chart colors</summary><p>Turn off “Theme” for any color to keep your own choice across themes.</p>
     ${Object.entries(customColors).map(([key,[label]])=>`<div class="terminal-setting"><label for="appearance-${key}">${label}</label><div class="appearance-color"><input type="color" id="appearance-${key}"><label><input type="checkbox" id="follow-${key}" checked> ${key.startsWith('wick') ? 'Candle' : 'Theme'}</label></div></div>`).join('')}</details></fieldset>
     </div><div class="appearance-preview"><canvas id="terminalAppearancePreview" width="360" height="220" aria-label="Sample chart appearance preview"></canvas><strong>Appearance preview</strong><p>Sample prices in your selected chart style. Apply to update your chart. Your settings are saved in this browser.</p></div></div>
-    <div class="terminal-dialog-foot"><button id="terminalDefaults" type="button">Reset defaults</button><div><button id="terminalCancelSettings" type="button">Cancel</button><button class="terminal-primary" type="submit">Apply</button></div></div>`;
+    <div class="terminal-dialog-foot"><div><button id="terminalDefaults" type="button">Reset defaults</button><button id="workspaceEditOverview" type="button">Edit overview</button></div><div><button id="terminalCancelSettings" type="button">Cancel</button><button class="terminal-primary" type="submit">Apply</button></div></div>
+    <div class="terminal-settings-extras"><a id="terminalInterviewPrep" href="./interview-prep.html" target="_blank" rel="noopener" aria-label="Interview prep (opens in a new tab)">Interview prep</a></div>`;
   let draftTheme = window.atlasTheme.preference;
   function draftPalette() { return window.atlasTheme.palettes[draftTheme] || window.atlasTheme.palettes[matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light']; }
   function readSettings() {
@@ -391,44 +400,28 @@
     finally { if (current === revision) $('chart').setAttribute('aria-busy', 'false'); }
   };
 
-  const menu = document.createElement('details');
-  menu.className = 'chart-home-menu';
-  menu.innerHTML = `<summary aria-label="Workspace menu">Workspace <span aria-hidden="true">⌄</span></summary>
-    <div class="chart-home-menu-content">
-      <strong>Chart workspace</strong>
-      <button id="chartShare">Share chart link</button>
-      <button id="chartShortcuts">Keyboard shortcuts</button>
-      <a id="chartResearch" href="/?research=1">Research &amp; portfolio tools ↗</a>
-      <small>Your symbol and range are saved in this browser.</small>
-    </div>`;
-  document.querySelector('.terminal-actions').prepend(menu);
-  menu.addEventListener('toggle', () => {
-    if (!menu.open) return;
-    const box = menu.getBoundingClientRect(), content = menu.querySelector('.chart-home-menu-content');
-    content.style.position = 'fixed';
-    content.style.top = `${box.bottom + 4}px`;
-    content.style.left = `${Math.max(8, Math.min(box.left, innerWidth - 261))}px`;
-  });
-  window.addEventListener('resize', () => { menu.open = false; });
-  // The integrated gateway exposes research tools; static and standalone charts do not.
-  $('chartResearch').hidden = !location.pathname.startsWith('/workspace/');
+  const chartUtilities = document.createElement('div');
+  chartUtilities.className = 'chart-utilities';
+  chartUtilities.innerHTML = '<button type="button" id="chartShare">Share chart link</button><button type="button" id="chartShortcuts">Keyboard shortcuts</button>';
+  $('terminalSettingsDialog').querySelector('.terminal-dialog-foot').before(chartUtilities);
+  let utilityOpener;
   const dialog = document.createElement('dialog');
   dialog.id = 'chartHomeDialog';
   dialog.innerHTML = `<div class="dialog-head"><h2 id="chartHomeTitle">Chart workspace</h2><button id="chartHomeClose" aria-label="Close">×</button></div><div id="chartHomeContent"></div>`;
   dialog.setAttribute('aria-labelledby', 'chartHomeTitle');
   document.body.append(dialog);
-  dialog.addEventListener('close', () => menu.querySelector('summary').focus());
+  dialog.addEventListener('close', () => { $('terminalSettingsDialog').showModal(); utilityOpener?.focus(); });
   $('chartHomeClose').onclick = () => dialog.close();
   dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
   $('chartShortcuts').onclick = () => {
-    menu.open = false;
+    utilityOpener = document.activeElement; $('terminalSettingsDialog').close();
     $('chartHomeTitle').textContent = 'Keyboard shortcuts';
     $('chartHomeContent').innerHTML = `<dl><dt>Search symbols</dt><dd><kbd>/</kbd></dd><dt>Compare symbols</dt><dd><kbd>Alt + C</kbd></dd><dt>Go to date</dt><dd><kbd>Alt + G</kbd></dd><dt>Undo drawing</dt><dd><kbd>Ctrl + Z</kbd></dd><dt>Redo drawing</dt><dd><kbd>Ctrl + Y</kbd></dd><dt>Cancel drawing / close dialog</dt><dd><kbd>Esc</kbd></dd></dl>`;
     dialog.showModal();
   };
   $('chartShare').onclick = () => {
     if (!selected) return;
-    menu.open = false;
+    utilityOpener = document.activeElement; $('terminalSettingsDialog').close();
     const url = new URL(location.href);
     url.search = new URLSearchParams(state()).toString();
     $('chartHomeTitle').textContent = 'Share chart';
@@ -441,6 +434,84 @@
     dialog.showModal();
     $('chartShareUrl').select();
   };
-  document.addEventListener('pointerdown', event => { if (!menu.contains(event.target)) menu.open = false; });
-  document.addEventListener('keydown', event => { if (event.key === 'Escape') menu.open = false; });
+})();
+// A labeled, read-only view of the actual workspace for describing UI changes.
+(() => {
+  'use strict';
+  const sections = [
+    ['top-toolbar', 'Top toolbar', 'Symbol search, chart interval, chart type and indicator controls.', 'main > header'],
+    ['chart-actions', 'Chart action bar', 'Pull data, Compare, Go to date, Snapshot and full-screen controls.', '.terminal-actions'],
+    ['left-ribbon', 'Left ribbon — drawing tools', 'Cursor, trend lines, levels, shapes, measurements and drawing settings.', '.workspace-drawing-rail'],
+    ['chart-canvas', 'Main chart', 'Price candles, indicators, crosshair, time axis and price scale.', '.canvas-wrap'],
+    ['right-panel', 'Right side panel', 'The expanded watchlist, symbol details, notes, objects or analysis library. This is separate from the narrow right ribbon.', '#workspaceSidebar'],
+    ['right-top', 'Right ribbon — top', 'Watchlist and other panel buttons, followed by the analysis icons for portfolio, pairs, options and the other tools.', '.workspace-right-rail'],
+    ['right-bottom', 'Right ribbon — bottom', 'Chart appearance settings and the workspace theme selector.', '#workspaceSettingsDock'],
+    ['quote-card', 'Right panel — quote summary', 'Selected symbol, stored price, daily change and data timestamp at the bottom of the watchlist.', '.overview'],
+    ['range-bar', 'Bottom chart bar', 'Date-range shortcuts and chart scale controls, including log and auto scale.', '.range-toolbar'],
+    ['analysis-tabs', 'Bottom analysis tabs', 'Stock screener, Strategy tester, Markov, Brownian, Returns & risk, Price bars and Analysis tools. The dock controls sit at the right end.', '.workspace-bottom-tabs'],
+    ['analysis-dock', 'Bottom analysis panel', 'The resizable results and controls underneath the chart. It appears when an analysis tab or right-ribbon tool is open.', '#workspaceDock']
+  ];
+  const button = document.getElementById('workspaceEditOverview');
+  const appearance = document.getElementById('terminalSettingsDialog');
+  const dialog = document.createElement('dialog');
+  dialog.id = 'workspaceOverview';
+  dialog.setAttribute('aria-labelledby', 'workspaceOverviewTitle');
+  dialog.innerHTML = `<div id="workspaceOverviewRegions"></div><section class="overview-guide"><div class="overview-guide-head"><div><small>WORKSPACE SECTION GUIDE</small><h2 id="workspaceOverviewTitle">Edit overview</h2></div><button id="workspaceOverviewClose" type="button" aria-label="Back to chart appearance">Close</button></div><p>Select a labeled area or choose a section below. Use its name when describing a change.</p><label for="workspaceOverviewSelect">Workspace section</label><select id="workspaceOverviewSelect"></select><h3 id="workspaceOverviewName"></h3><p id="workspaceOverviewDescription"></p><p id="workspaceOverviewVisibility" role="status"></p><label for="workspaceOverviewReference">Name to use in your request</label><input id="workspaceOverviewReference" readonly><button id="workspaceOverviewCopy" type="button">Copy section name</button><p id="workspaceOverviewCopyStatus" role="status"></p><small>This guide labels the workspace. It does not change your layout or apply appearance settings. Close or press Esc to return.</small></section>`;
+  document.body.append(dialog);
+  const get = id => document.getElementById(id), regions = get('workspaceOverviewRegions');
+  let active = 'right-top', frame = 0, savedScroll = 0;
+  for (const [key, name, description] of sections) {
+    get('workspaceOverviewSelect').add(new Option(name, key));
+    const region = document.createElement('button');
+    region.type = 'button'; region.className = 'overview-region'; region.dataset.section = key;
+    region.setAttribute('aria-label', name + ': ' + description);
+    region.setAttribute('aria-pressed', 'false');
+    const label = document.createElement('span'); label.textContent = name;
+    region.append(label); region.onclick = () => choose(key); regions.append(region);
+  }
+  function bounds(key, selector) {
+    const target = document.querySelector(selector);
+    if (!target || target.hidden || !target.getClientRects().length || getComputedStyle(target).visibility === 'hidden') return null;
+    if (key === 'right-panel' && target.inert) return null;
+    if (key === 'quote-card' && document.getElementById('workspaceSidebar').inert) return null;
+    const box = target.getBoundingClientRect();
+    let left = Math.max(0, box.left), top = Math.max(0, box.top), right = Math.min(innerWidth, box.right), bottom = Math.min(innerHeight, box.bottom);
+    if (key === 'right-top') bottom = Math.min(bottom, get('workspaceSettingsDock').getBoundingClientRect().top);
+    return right > left && bottom > top ? {left, top, width: right-left, height: bottom-top} : null;
+  }
+  function paint() {
+    frame = 0;
+    if (!dialog.open) return;
+    for (const [key,, ,selector] of sections) {
+      const region = regions.querySelector(`[data-section="${key}"]`), box = bounds(key, selector);
+      region.hidden = !box;
+      region.classList.toggle('selected', key === active);
+      region.setAttribute('aria-pressed', String(key === active));
+      if (box) {
+        Object.assign(region.style, {left: box.left+'px', top: box.top+'px', width: box.width+'px', height: box.height+'px'});
+        region.classList.toggle('overview-label-left', key.startsWith('right-') || key === 'quote-card');
+      }
+      if (key === active) get('workspaceOverviewVisibility').textContent = box ? 'Highlighted on your current workspace.' : 'This section is currently collapsed or hidden in this layout. Open it in the workspace to see its position.';
+    }
+  }
+  function choose(key) {
+    active = key;const section = sections.find(s => s[0] === key);
+    get('workspaceOverviewSelect').value = key;
+    get('workspaceOverviewName').textContent = section[1];
+    get('workspaceOverviewDescription').textContent = section[2];
+    get('workspaceOverviewReference').value = section[1];
+    get('workspaceOverviewCopyStatus').textContent = '';
+    paint();
+  }
+  get('workspaceOverviewSelect').onchange = event => choose(event.target.value);
+  get('workspaceOverviewCopy').onclick = async () => {
+    const name = get('workspaceOverviewReference').value;
+    try { await navigator.clipboard.writeText(name); get('workspaceOverviewCopyStatus').textContent = 'Section name copied.'; }
+    catch { get('workspaceOverviewReference').focus();get('workspaceOverviewReference').select();get('workspaceOverviewCopyStatus').textContent = 'Press Ctrl+C or use your device’s Copy command to copy the selected name.'; }
+  };
+  button.onclick = () => { savedScroll = appearance.scrollTop;appearance.close();dialog.showModal();choose(active);get('workspaceOverviewSelect').focus(); };
+  get('workspaceOverviewClose').onclick = () => dialog.close();
+  dialog.addEventListener('close', () => { if(frame)cancelAnimationFrame(frame);frame=0;appearance.showModal();appearance.scrollTop=savedScroll;button.focus({preventScroll:true}); });
+  window.addEventListener('resize', () => { if(dialog.open&&!frame)frame=requestAnimationFrame(paint); });
+  choose(active);
 })();

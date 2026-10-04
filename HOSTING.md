@@ -10,12 +10,8 @@ The former standalone chart website is retired; no second public UI is published
 - Start: `python serve_quantstack.py --host 0.0.0.0`
 - Branch: `main`, with automatic deployment enabled.
 
-The launcher reads Render's `PORT` variable and serves Streamlit and the market
-workspace through the same address. Services still using `streamlit run
-QuantStack-main/app.py` also support the workspace: Streamlit's static-file
-server exposes only its prepared market-data directory, and the page embeds the
-current repository's browser code. Both root and app configuration enable static
-serving. An initial download can take a few minutes if the build step was not run.
+The launcher reads Render's `PORT` variable and serves the native chart workspace.
+The old Streamlit start command is retired; use `python serve_quantstack.py --host 0.0.0.0`.
 
 ## Data publication
 

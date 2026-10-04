@@ -1,11 +1,43 @@
 # QuantStack
 
-QuantStack combines the Streamlit analysis platform in `QuantStack-main/` with
-the market-data collector and chart workspace in this repository. The main
-address opens the full-window **chart workspace**, with charts,
-drawings, comparisons, stock screening, strategy tests, and Markov analysis.
-Existing portfolio, risk, AI, and statistical analysis pages remain available.
-Choose **Workspace → Research & portfolio tools** to open the research dashboard.
+Use **+ Add symbols** in the chart watchlist to enroll stock/ETF tickers or crypto
+USD pairs in the local collector. Paste up to 100 symbols separated by commas or
+spaces; crypto inputs such as `BTC ETH` become `BTC-USD ETH-USD`. Saving merges
+with the existing universe. Prices appear after successful scheduled collection;
+provider ticker availability is checked during collection. Hosted copies cannot
+change local settings. If collection is running, retry saving when it finishes.
+
+The Add symbols dialog previews normalized tickers and duplicates before saving.
+Use **Refresh status** inside the dialog for the latest hourly and daily reports.
+Reports show collection outcomes, not whether Windows tasks are installed.
+
+The default **low background usage** profile uses one hourly worker, two-second
+request pauses, below-normal process priority, and ten-minute hourly and scheduled
+daily work budgets. An in-flight request may finish after the budget. Both Windows
+tasks have a fifteen-minute execution limit. Scheduled daily runs export only
+changed symbols. Unfinished symbols rotate into later cycles, including failed tickers.
+Large universes therefore do not all refresh every hour. Collector controls do
+not poll. The launcher runs only the chart application, without Streamlit.
+
+Run `Install-Schedule.ps1` and `Install-Intraday-Schedule.ps1` to register the
+09:00 daily and hourly Windows tasks. They select a working Python environment,
+run at low priority while logged in, and avoid battery operation. Daily scheduled
+collection uses `--local-only`; it does not publish the website. Existing manual
+`market_data.py sync` publishing behavior remains available. Validate with
+`python -m unittest test_local_scheduler` and `python smoke_scheduler.py`.
+
+QuantStack is a single **chart-focused workspace**. The right rail provides
+an **Analysis library** plus direct icons for portfolio allocation, pairs,
+options, fundamentals, volume/liquidity, forecasting, strategy comparison,
+market overview and a research journal. All open in the chart's resizable dock
+and use the current theme, interval and date range. Existing screener, strategy,
+risk, Markov and Brownian panels remain available. There are no embedded pages.
+
+The separate `/?research=1` page is retired and redirects to the chart. The
+launcher no longer starts Streamlit. See the [page-by-page migration map](docs/native-workspace-migration.md)
+for each rebuilt or consolidated feature and the replacements for unavailable
+feeds and broker tools. Legacy source and databases are preserved, not served.
+
 The Workspace menu also provides shareable symbol/interval/date-range links and
 keyboard shortcuts. The last symbol and range restore automatically in this
 browser; reloading market data preserves the current selection. Shared links
@@ -31,17 +63,13 @@ python -m pip install -r requirements.txt
 python serve_quantstack.py
 ```
 
-Open **http://127.0.0.1:8501**. The launcher serves Streamlit and the workspace
+Open **http://127.0.0.1:8501**. The launcher serves the native chart workspace
 through one address, including on Render. It reads `data/market.sqlite` when
 available. Without stored prices, it serves the merged workspace using the
 published daily snapshot. Daily snapshot mode supports the screener, backtests,
 drawings, comparisons, and Markov analysis; hourly bars and the full indicator
 library require the stored database. `market-snapshot.json` pins and verifies
 the release downloaded by `prepare_snapshot.py`.
-
-The original `streamlit run QuantStack-main/app.py` command also exposes the
-new page using the merged browser code and QuantStack-hosted daily prices. This keeps
-existing Streamlit-only deployments working while their start command is updated.
 
 See [Render deployment and integration checks](docs/quantstack-integration.md).
 
@@ -53,7 +81,7 @@ The main pipeline is `market_data.py`. Daily history is stored in **data/market.
 
 Public website: **https://quantstack.onrender.com/**. Repository: **https://github.com/hsiantw/QuantStack**.
 
-QuantStack stays available when this computer is off. The daily 09:00 local collector publishes fresh data to the QuantStack release and updates its deployment manifest when this computer is on, connected, and logged in. See [HOSTING.md](HOSTING.md) for publishing details.
+QuantStack stays available when this computer is off. The daily 09:00 local collector updates the local dataset when this computer is on, connected, logged in and on AC power. Publishing is a separate manual action. See [HOSTING.md](HOSTING.md) for publishing details.
 
 Open **http://127.0.0.1:8765** while the dashboard is running. To launch it again:
 
@@ -67,9 +95,10 @@ The chart workspace has an expandable drawing toolbar on the left and a persiste
 panel selector on the right for the watchlist, symbol details, symbol notes and
 object tree. Click the arrow above the drawing tools to show their names. Click
 the active right-side icon again to collapse its panel; drag the panel's left edge
-to resize it. Notes are saved locally in this browser for each symbol.
+to resize it. Settings and theme controls sit at the bottom of the right rail.
+Notes are saved locally in this browser for each symbol.
 
-The bottom **Stock screener**, **Strategy tester**, **Markov analysis**, **Brownian motion**, and **Price bars** tabs open a dock beneath the chart.
+The bottom **Stock screener**, **Strategy tester**, **Markov analysis**, **Brownian motion**, **Returns & risk**, and **Price bars** tabs open a dock beneath the chart.
 New browser sessions start with this dock collapsed to give the chart more room.
 **Brownian motion** simulates geometric Brownian price paths from the selected
 chart. Choose historically fitted drift/volatility, zero price drift, or custom
@@ -78,6 +107,13 @@ and adjusted/raw price basis. Pointwise percentile bands, sample paths, an
 inspection slider, loss probabilities, and JSON/CSV exports are available.
 Changes to settings or chart data invalidate results; simulations run in a
 cancelable worker. See [model and coverage notes](docs/brownian-and-assets.md).
+**Returns & risk** consolidates the overlapping legacy risk and time-series
+summaries into chart-context metrics: annualized return and volatility, Sharpe
+and Sortino ratios, maximum drawdown, historical VaR and expected shortfall,
+return-distribution moments, and a CSV of observed returns. The selected chart
+range and price basis define the sample; annualization assumptions are shown in
+the panel. Portfolio, options, and research tools open from the right rail in
+the same chart workspace.
 Drag its top edge to resize it, or use its maximize and collapse buttons. The
 screener's **Filters** button expands presets, rules and saved screens. Panel resize
 handles also support arrow keys. Run `.\.venv\Scripts\python.exe smoke_workspace.py`
@@ -101,6 +137,11 @@ the bars already loaded. **Reset chart view** restores the default zoom.
 **Settings**
 controls grid lines, the last-price line, crosshairs and rising/falling candle
 colors. Styles, settings and comparison symbols persist in this browser.
+At the bottom of **Chart appearance**, **Edit overview** opens a labeled guide
+over the actual workspace. Select a region to highlight it, read its purpose,
+and copy its name when describing changes. The right ribbon's top navigation
+and bottom settings are labeled separately from the wider right side panel.
+Close the guide or press Esc to return without applying unfinished settings.
 The theme picker offers **System**, **Light**, **Dark**, **Midnight**, **Forest**,
 and **Paper** across the workspace. In **Settings**, preview a theme before
 applying it, customize candle wicks/borders, line width, axis label size, grid
@@ -384,12 +425,12 @@ Symbols with only hourly history appear in the local chart catalog and open on
 1H. Daily exports and the hosted static snapshot still use daily histories.
 
 `--symbols AAPL MSFT` limits a run; `--days` sets the initial lookback (1?729);
-`--full` refetches that lookback. Six workers each pause 0.5 seconds between
+`--full` refetches that lookback. The low profile uses one worker with two seconds between
 attempts. Each symbol commits independently, preserves earlier history, retains
 the provider's session alignment, and excludes the currently forming candle.
 Rate-limit responses stop new requests. Other failures retry up to three times.
-The collector stops queuing work after 55 minutes and starts with the oldest
-successful refresh on the next run, so interrupted runs do not starve later symbols.
+The collector stops queuing work after ten minutes and starts with the oldest
+attempt on the next run, so interrupted runs do not starve later symbols.
 An ingestion lock prevents overlap with daily jobs; a busy lock fails the run,
 and the next scheduled hourly run retries. Long daily jobs can therefore delay updates.
 
@@ -402,7 +443,7 @@ represent history-call attempts, which may include internal provider requests.
 Capacity uses successful symbols divided by total run wall time, including
 retries, pacing, validation and storage. `estimated_symbols_per_cycle` projects
 that rate over 60 minutes; `first_symbol_count_over_cycle` is one above it.
-`planning_symbols_per_cycle` uses 80% of the 55-minute collection budget.
+`planning_symbols_per_cycle` uses 80% of the configured collection budget.
 These are observed-throughput estimates, not a guaranteed Yahoo API quota.
 A run that hits rate limits or leaves failures is not evidence that every symbol
 can be kept current. The hourly collector does not publish the static site.
@@ -437,7 +478,7 @@ old 30-minute minute-data schedule:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-Intraday-Schedule.ps1
 ```
 
-The task starts one hour after installation and repeats hourly, with a 59-minute
+The task starts one hour after installation and repeats hourly, with a 15-minute
 execution limit. Provider retention still limits recovery after long offline gaps.
 
 ## Analyze
@@ -471,3 +512,29 @@ python -m venv .venv
 ```
 
 Sources: https://ranaroussi.github.io/yfinance/ and https://github.com/datasets/s-and-p-500-companies
+
+
+### Priority data pulls
+
+Select a stock or crypto chart and click **Pull data**. The default requests the last **7 days** of **1-hour bars**. Choose 1m, 5m, 15m, 1h or daily bars, a rolling number of days, or an inclusive custom UTC date range, then click **Queue priority pull**. Crypto shorthand such as BTC is normalized to BTC-USD. Save named range/interval favorites in the dialog; they apply to whichever symbol you choose and persist in this browser. Delete favorites from the same selector.
+
+The local queue persists in `data/pull-queue.sqlite`. The app starts a worker automatically, and both daily and hourly scheduled collectors drain priority requests before their next regular download. Already-running requests finish first. Interrupted priority jobs return to the queue after restart; provider failures are shown per request and can be resubmitted. The dialog refreshes status only while open. After completion, use the chart Refresh control to load the stored bars. Short requests do not mark a full scheduled backfill complete. Successfully downloaded daily/hourly symbols join the existing tracked-history universe. **Manage scheduled symbols** opens the explicit enrollment controls.
+
+The app enforces conservative lookback limits: 7 days for 1m, 59 days for 5m/15m, 729 days for hourly, and 36,500 days for daily bars. Provider availability may be shorter. This action is local-only; hosted snapshots remain read-only.
+
+The Workspace menu has been removed. Share chart link and Keyboard shortcuts are in chart settings. Analysis tools are organized in one searchable library under Markets & data, Strategies & relationships, Portfolio & risk, Models & forecasts, and Notes & research.
+
+
+### Watchlists and color labels
+
+Use the selector at the top of the right watchlist panel to switch between **All instruments**, existing **Saved favorites**, and named watchlists. Open the **...** menu beside it to create, rename or delete a list. **+ Add symbol** searches stored instruments and adds/removes them in the chosen list; the same dialog links to local collection for missing instruments.
+
+Right-click an instrument, press Shift+F10 while it is focused, or use its **...** row button to open instrument options. Choose one of seven color flags, clear a flag, add/remove the instrument in multiple lists, compare it with the current chart, or open its notes. Right-clicking keeps the current chart selection. The Label filter shows a chosen color or unlabeled instruments. Flags follow the symbol across all lists.
+
+Lists, labels and the selected list/filter are stored in this browser and sync between tabs. Existing Saved favorites remain shared with the chart and screener. Deleting a named list keeps price data, other lists, labels and notes. These controls also work in hosted snapshots; collecting missing data still requires the local app.
+
+To reuse a color group, choose a color in **Label**, click **Save color as watchlist**, and name it (for example, **Red flags**). The saved list appears in the watchlist selector and automatically includes every instrument carrying that color, across all lists. Changing or clearing an instrument's label updates these lists immediately. Adding an instrument through a color watchlist assigns that color, replacing its previous label; removing it clears the label. Deleting the color watchlist itself keeps all labels. Successful label changes display a save confirmation and persist after reloading the browser.
+
+Use **Sort** and its ascending/descending arrow, or click a column heading, to order the entire filtered watchlist before pagination. **Columns ±** adds/removes last price, daily/weekly/monthly percentage changes, market cap, daily volume, and instrument names. Preferences persist in this browser. Extra columns scroll horizontally inside the watchlist, keeping the symbol visible. Missing values show “—” and sort last in both directions.
+
+Watchlist percentage changes use completed daily bars, with adjusted closes when available (raw closes only when the recent history has no adjusted prices). Weekly/monthly returns span 5/21 stored trading sessions for stocks and 7/30 daily bars for crypto. Insufficient or missing prices produce unavailable returns. These fields are separate from the chart's latest intraday quote change. Market cap comes from stored metadata; price and market-cap tooltips show the currency and available timestamps. Values are not converted between currencies for sorting. Hosted snapshots show the metrics included in their most recent build.

@@ -52,7 +52,16 @@
 #brownianRun{background:var(--accent);color:var(--surface);border:0;border-radius:5px;padding:10px 12px;font-weight:600}
 #brownianFan svg{width:100%;max-height:360px;display:block;background:var(--surface)}#brownianFan text{fill:var(--text-muted);font:11px 'Segoe UI',sans-serif}
 .brownian-sample{fill:none;stroke:var(--accent);stroke-width:1;opacity:.22}.brownian-path-toggle{display:flex;gap:8px;align-items:center;margin:12px 0;font-size:12px}
+#workspaceRiskPanel{color:var(--text);background:var(--surface);font-size:12px}
+#riskHistogram{max-width:900px;border:1px solid var(--border);border-radius:6px;background:var(--surface-raised);padding:10px}
+#riskHistogram svg{display:block;width:100%;max-height:280px}
+#riskHistogram text{fill:var(--text-muted);font:11px 'Segoe UI',sans-serif}
+.risk-bar{fill:var(--accent);opacity:.72}
+.risk-zero{stroke:var(--text-muted);stroke-dasharray:3 4}
+.risk-readout{color:var(--text-muted);font-size:11px}
+.risk-readout strong{color:var(--text);font-weight:600}
 #workspaceBrownianPanel{color:var(--text);background:var(--surface);font-size:12px}
+.brownian-signature{margin:0 20px 12px;text-align:right;color:var(--text-muted);font-size:10px}
 #brownianForm label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--text-muted);min-width:0}
 #brownianForm :is(input,select){width:100%;min-width:0;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:8px;font-size:12px}
 #brownianForm :disabled{opacity:.5}#brownianHorizon{width:100%;accent-color:var(--accent)}

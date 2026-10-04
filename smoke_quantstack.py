@@ -1,52 +1,39 @@
-"""Verify the Streamlit page and its same-origin research workspace."""
+"""Verify the unified chart app and retired research route with stored data."""
 import argparse
-from pathlib import Path
-import re
 from playwright.sync_api import sync_playwright, expect
 
 
-def run(url, standalone=False):
+def run(url='http://127.0.0.1:8501'):
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(channel='msedge', headless=True)
-        page = browser.new_page(viewport={'width': 1600, 'height': 1200})
-        errors = []
-        requests = []
-        page.on('pageerror', lambda error: errors.append(str(error)))
-        page.on('request', lambda request: requests.append(request.url))
-        page.goto(url.rstrip('/') + '/market_workspace')
-        expect(page.get_by_role('heading', name='Market workspace', exact=True)).to_be_visible(timeout=30000)
-        frame = page.frame_locator('iframe[srcdoc]' if standalone else 'iframe[src="/workspace/"]')
-        expect(frame.locator('#symbol')).to_have_text('AAPL', timeout=30000)
-        expect(frame.locator('#rangeSummary')).to_contain_text(re.compile(r'\d+ 1d bars'), timeout=30000)
-        frame.locator('#workspaceOpenStrategy').click()
-        frame.locator('#strategyRun').click()
-        expect(frame.locator('#strategyResults')).to_be_visible(timeout=30000)
-        frame.locator('#workspaceOpenMarkov').click()
-        expect(frame.locator('#markovForm')).to_be_visible()
-        frame.locator('#markovRun').click()
-        expect(frame.locator('#markovResults')).to_be_visible(timeout=30000)
-        frame.locator('#workspaceOpenScreener').click()
-        expect(frame.locator('#screenerContent')).to_have_attribute('aria-busy', 'false', timeout=30000)
-        assert frame.locator('#screenerTableBody tr').count() > 0
-        if standalone:
-            expect(frame.locator('[data-interval="1h"]')).to_be_disabled()
-            frame.locator('#workspaceOpenData').click()
-            with page.expect_download() as download:
-                frame.locator('#download').click()
-            assert download.value.suggested_filename == 'AAPL-prices.csv'
-        expect(page.locator('[data-testid="stException"]')).to_have_count(0)
-        Path('data').mkdir(exist_ok=True)
-        page.screenshot(path='data/quantstack-integration.png', full_page=True)
-        assert not errors, errors
-        data_requests = [request for request in requests if request.endswith('.json') or '.json.gz' in request]
-        assert data_requests and all(request.startswith(url.rstrip('/') + '/') for request in data_requests), data_requests
+        browser=playwright.chromium.launch(channel='msedge',headless=True)
+        page=browser.new_page(viewport={'width':1600,'height':1000})
+        errors=[]
+        page.on('pageerror',lambda error:errors.append(str(error)))
+        page.goto(url.rstrip('/')+'/?research=1&symbol=AAPL&period=1Y')
+        assert '/workspace/' in page.url and 'research=1' not in page.url
+        assert page.locator('iframe').count()==0
+        page.wait_for_function("selected?.symbol=='AAPL' && rows.length>100")
+        for key in ['pairs','options','liquidity','forecast','fundamentals']:
+            page.locator(f'.workspace-right-rail [data-research-open={key}]').click()
+            page.locator('#researchRun').click()
+            expect(page.locator('#researchStatus')).to_contain_text('Complete',timeout=60000)
+        page.locator('#workspaceOpenStrategy').click()
+        page.locator('#strategyRun').click()
+        expect(page.locator('#strategyResults')).to_be_visible(timeout=30000)
+        page.locator('#workspaceOpenMarkov').click()
+        page.locator('#markovRun').click()
+        expect(page.locator('#markovResults')).to_be_visible(timeout=30000)
+        page.locator('.chart-home-menu summary').click()
+        page.locator('#chartResearch').click()
+        expect(page.locator('#researchSearch')).to_be_visible()
+        assert page.request.get(url+'/_stcore/health').status==404
+        assert not errors,errors
+        page.screenshot(path='data/quantstack-native-integration.png')
         browser.close()
-        print('PASS: Streamlit navigation, websocket session, embedded charts, strategy test and Markov panel.')
+        print('PASS: native app, retired research route, real-data research, strategy, Markov and library.')
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--url', default='http://127.0.0.1:8501')
-    parser.add_argument('--standalone', action='store_true')
-    args = parser.parse_args()
-    run(args.url, args.standalone)
+if __name__=='__main__':
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--url',default='http://127.0.0.1:8501')
+    run(parser.parse_args().url)

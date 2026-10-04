@@ -1,0 +1,71 @@
+.workspace #workspaceSideWatchlist > .sidebar-heading { gap: 5px; }
+#watchlistSelect { flex: 1; width: 0; min-width: 0; border: 0; background: transparent; color: var(--atlas-text,#202630); font-family: inherit; font-size: 12px; font-weight: 600; padding: 5px 0; text-overflow: ellipsis; }
+#watchlistSelect option { background: var(--atlas-surface,#fff); color: var(--atlas-text,#202630); }
+.workspace #watchlistManage { font-size: 22px; padding: 0 5px; line-height: 24px; border: 0; background: transparent; color: var(--atlas-muted,#77818e); cursor: pointer; }
+.workspace #watchlistManage:hover { background: var(--atlas-hover,#edf2ff); }
+.watchlist-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px 0; }
+.watchlist-controls #watchlistSaveColor { flex-basis: 100%; text-align: left; padding: 6px 0; }
+.watchlist-controls #watchlistSaveColor:disabled { opacity: .45; cursor: default; }
+#watchlistColorHelp { font-size: 12px; color: var(--atlas-muted,#77818e); }
+.watchlist-controls button { flex: none; font-size: 10px; padding: 5px; border: 0; background: transparent; color: var(--atlas-accent,#2962ff); cursor: pointer; }
+#watchlistColor { display: grid; grid-template-columns: repeat(9,minmax(0,1fr)); align-items: center; justify-items: center; gap: 4px; width: 100%; padding: 5px 0; }
+#watchlistColor button { width: 100%; max-width: 24px; height: 24px; padding: 0; border-radius: 4px; color: var(--atlas-text,#202630); }
+#watchlistColor .watchlist-color-dot { width: 18px; max-width: 100%; height: 18px; border-radius: 50%; background: var(--swatch); border: 2px solid var(--atlas-surface,#fff); }
+#watchlistColor .watchlist-color-none { width: 18px; max-width: 100%; height: 18px; border-radius: 50%; border: 1px solid var(--atlas-muted,#77818e); color: var(--atlas-muted,#77818e); line-height: 14px; }
+#watchlistColor button[aria-pressed=true] { outline: 2px solid var(--swatch,var(--atlas-accent,#2962ff)); outline-offset: 2px; }
+#watchlistColor button:focus-visible { outline: 2px solid var(--atlas-text,#202630); outline-offset: 3px; }
+#watchlistColor button:disabled { cursor: default; }
+#watchlistColor button:disabled:not([aria-pressed=true]) { opacity: .35; }
+#watchlistStatus { flex: none; margin: 8px 10px 0; font-size: 11px; color: var(--atlas-muted,#667180); overflow-wrap: anywhere; }
+.watchlist-row { position: relative; }
+.workspace .watchlist-row .asset { padding-right: 29px; padding-left: 13px; }
+.workspace .watchlist-row .asset-info { min-width: 0; }
+.workspace .watchlist-row .asset-info small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.watchlist-flag { position: absolute; top: 0; left: 0; bottom: 0; width: 3px; background: var(--symbol-label); pointer-events: none; z-index: 1; }
+.watchlist-flag::after { content: ''; position: absolute; top: 5px; left: 0; width: 8px; height: 11px; background: var(--symbol-label); clip-path: polygon(0 0,100% 0,100% 100%,50% 75%,0 100%); }
+.workspace .watchlist-row-menu { position: absolute; top: 9px; right: 3px; width: 24px; height: 28px; border: 0; border-radius: 4px; padding: 0; background: transparent; color: var(--atlas-muted,#77818e); font-size: 18px; cursor: pointer; opacity: 0; }
+.workspace .watchlist-row:is(:hover,:focus-within) .watchlist-row-menu { opacity: 1; }
+.workspace .watchlist-row-menu:hover { background: var(--atlas-hover,#edf2ff); color: var(--atlas-text,#202630); }
+.watchlist-menu { position: fixed; z-index: 1000; width: 282px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); overflow: auto; box-sizing: border-box; padding: 7px 0; border: 1px solid var(--atlas-border,#dce1e8); border-radius: 8px; background: var(--atlas-surface,#fff); color: var(--atlas-text,#202630); box-shadow: 0 8px 28px #0003; font-size: 12px; }
+.watchlist-menu[hidden], .watchlist-dialog [hidden], #watchlistStatus[hidden] { display: none; }
+.watchlist-menu-title { padding: 7px 14px; color: var(--atlas-muted,#667180); font-size: 11px; overflow-wrap: anywhere; }
+.watchlist-menu-title strong { color: var(--atlas-text,#202630); }
+.watchlist-menu > button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; background: transparent; color: inherit; border: 0; border-radius: 0; padding: 10px 14px; font: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.watchlist-menu > button:is(:hover,:focus-visible) { background: var(--atlas-hover,#edf2ff); }
+.watchlist-menu button:disabled { opacity: .45; cursor: default; }
+.watchlist-menu hr { border: 0; border-top: 1px solid var(--atlas-border,#dce1e8); margin: 6px 0; }
+.watchlist-swatches { display: flex; justify-content: space-between; gap: 8px; padding: 10px 14px; }
+.watchlist-swatches button { flex: none; width: 22px; height: 22px; padding: 0; border: 3px solid var(--atlas-surface,#fff); border-radius: 50%; background: var(--swatch); cursor: pointer; }
+.watchlist-swatches button[aria-checked=true] { outline: 2px solid var(--swatch); }
+.watchlist-swatches button:focus-visible { outline: 2px solid var(--atlas-text,#202630); outline-offset: 2px; }
+.watchlist-dialog { width: min(440px,calc(100vw - 24px)); max-height: 85dvh; overflow: auto; box-sizing: border-box; color: var(--atlas-text,#202630); background: var(--atlas-surface,#fff); }
+.watchlist-dialog label { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+.watchlist-dialog input, .watchlist-dialog select { width: 100%; box-sizing: border-box; background: var(--atlas-surface,#fff); color: inherit; border: 1px solid var(--atlas-border,#dce1e8); border-radius: 4px; padding: 9px; }
+#watchlistNameError { color: var(--atlas-negative,#df3d4b); }
+#watchlistAddResults { max-height: 36dvh; overflow: auto; }
+#watchlistAddResults button { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; padding: 10px; background: transparent; border: 0; border-bottom: 1px solid var(--atlas-border,#dce1e8); color: inherit; text-align: left; cursor: pointer; }
+#watchlistAddResults button:hover { background: var(--atlas-hover,#edf2ff); }
+#watchlistAddResults button small { display: block; font-size: 11px; color: var(--atlas-muted,#77818e); }
+#watchlistCollect { border-top: 1px solid var(--atlas-border,#dce1e8); margin-top: 12px; padding-top: 6px; color: var(--atlas-muted,#77818e); font-size: 11px; }
+@media (hover:none), (max-width:900px) { .workspace .watchlist-row-menu { opacity: 1; } }
+
+.watchlist-display-tools { display: flex; align-items: center; gap: 5px; padding: 6px 10px; flex: none; }
+.watchlist-display-tools label { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1; font-size: 10px; color: var(--atlas-muted); }
+.watchlist-display-tools select { min-width: 0; width: 100%; padding: 4px; border: 1px solid var(--atlas-border); border-radius: 4px; background: var(--atlas-surface); color: var(--atlas-text); font-size: 10px; }
+.watchlist-display-tools button { flex: none; padding: 5px; border: 1px solid var(--atlas-border); background: var(--atlas-surface); color: var(--atlas-text); border-radius: 4px; font-size: 10px; cursor: pointer; }
+.workspace .assets.watchlist-table { overflow-x: auto; }
+.watchlist-table .watchlist-row { min-width: var(--watchlist-table-width); width: 100%; }
+.workspace .watchlist-table .watchlist-table-asset, .watchlist-column-head { box-sizing: border-box; display: grid; grid-template-columns: var(--watchlist-grid); column-gap: 0; align-items: center; padding: 6px 29px 6px 13px; text-align: left; }
+.workspace .watchlist-table .watchlist-table-asset { border-left-width: 0; }
+.watchlist-table .watchlist-cell { font-size: 11px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 5px; }
+.watchlist-column-head { position: sticky; top: 0; min-width: var(--watchlist-table-width); width: 100%; z-index: 3; background: var(--atlas-raised); border-bottom: 1px solid var(--atlas-border); }
+.watchlist-column-head button { font-size: 10px; text-align: right; padding: 4px 0; border: 0; background: transparent; color: var(--atlas-muted); cursor: pointer; }
+.watchlist-column-head button:first-child { text-align: left; }
+.watchlist-column-head button[aria-pressed=true] { color: var(--atlas-accent); }
+.watchlist-table .asset-info { position: sticky; left: 0; z-index: 1; background: var(--atlas-surface); padding-right: 5px; }
+.watchlist-table .asset.active .asset-info { background: var(--atlas-hover); }
+.watchlist-table .asset:hover .asset-info { background: var(--atlas-raised); }
+.watchlist-column-head button:first-child { position: sticky; left: 0; z-index: 1; background: var(--atlas-raised); }
+#watchlistColumnChoices label { flex-direction: row; align-items: start; gap: 10px; padding: 8px 0; margin: 0; }
+#watchlistColumnChoices input { width: 16px; height: 16px; flex: none; margin: 2px 0; accent-color: var(--atlas-accent); }
+#watchlistColumnChoices small { display: block; color: var(--atlas-muted); font-size: 11px; margin-top: 4px; }

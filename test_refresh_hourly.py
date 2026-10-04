@@ -86,6 +86,9 @@ class HourlyTests(unittest.TestCase):
                 self.assertEqual(mock.call_count, 1)
                 result = json.loads((root/'hourly-refresh.json').read_text())
                 self.assertEqual((result['status'], result['pending'], result['rate_limit_events']), ('rate_limited', 2, 1))
+                # The failed first ticker must not monopolize every later cycle.
+                self.assertEqual(hourly.refresh(), 1)
+                self.assertEqual(mock.call_args.args[0], 'B')
 
 
 if __name__ == '__main__':

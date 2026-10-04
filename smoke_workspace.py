@@ -11,6 +11,11 @@ def run(url='http://127.0.0.1:8765'):
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(url)
         page.wait_for_function("typeof rows !== 'undefined' && rows.length > 0")
+        settings_button = page.locator("#workspaceSettingsDock #terminalSettings")
+        expect(settings_button).to_be_visible()
+        settings_button.click()
+        expect(page.locator("#terminalSettingsDialog")).to_be_visible()
+        page.locator("#terminalCancelSettings").click()
         expect(page.locator("#workspaceExpandTools")).to_be_visible()
         initial_width = page.locator("#chart").bounding_box()["width"]
         page.locator("#workspaceExpandTools").click()
@@ -79,6 +84,15 @@ def run(url='http://127.0.0.1:8765'):
         page.screenshot(path="data/workspace-desktop.png")
         page.locator("#workspaceOpenData").click()
         page.screenshot(path="data/workspace-dock.png")
+        page.locator("#workspaceOpenRisk").click()
+        expect(page.locator("#workspaceRiskPanel")).to_be_visible()
+        expect(page.locator("#workspaceOpenRisk")).to_have_attribute("aria-selected", "true")
+        page.locator("#riskRun").click()
+        expect(page.locator("#riskResults")).to_be_visible()
+        expect(page.locator("#riskMetrics")).to_contain_text("Annualized volatility")
+        with page.expect_download() as download:
+            page.locator("#riskCSV").click()
+        assert download.value.suggested_filename.endswith("-returns-risk.csv")
         page.locator("#workspaceCloseDock").click()
 
         for width, height in [(1024, 768), (768, 900), (390, 844)]:

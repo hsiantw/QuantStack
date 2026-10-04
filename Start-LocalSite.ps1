@@ -26,11 +26,11 @@ if (-not (Test-LocalSite)) {
     foreach ($candidate in $candidates) {
         if (-not (Test-Path -LiteralPath $candidate)) { continue }
         # Probe in a child process so a stale virtual environment cannot stop fallback.
-        $probe = Start-Process -FilePath $candidate -ArgumentList '-c "import streamlit, aiohttp"' -WindowStyle Hidden -Wait -PassThru -RedirectStandardOutput "$logDirectory\preview-runtime.log" -RedirectStandardError "$logDirectory\preview-runtime-errors.log"
+        $probe = Start-Process -FilePath $candidate -ArgumentList '-c "import aiohttp"' -WindowStyle Hidden -Wait -PassThru -RedirectStandardOutput "$logDirectory\preview-runtime.log" -RedirectStandardError "$logDirectory\preview-runtime-errors.log"
         if ($probe.ExitCode -eq 0) { $previewPython = $candidate; break }
     }
     if (-not $previewPython) {
-        throw 'No working Python environment with Streamlit and aiohttp. Install requirements.txt in a virtual environment, then retry.'
+        throw 'No working Python environment with aiohttp. Install requirements.txt in a virtual environment, then retry.'
     }
     $arguments = '"' + (Join-Path $PSScriptRoot 'serve_quantstack.py') + '" --host 127.0.0.1 --port ' + $Port
     $process = Start-Process -FilePath $previewPython -ArgumentList $arguments -WorkingDirectory $PSScriptRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput "$logDirectory\local-site-$Port.log" -RedirectStandardError "$logDirectory\local-site-$Port-errors.log"
@@ -48,6 +48,6 @@ if (-not (Test-LocalSite)) {
 }
 
 Write-Host "Local preview: $address"
-Write-Host "Research tools: $address/?research=1"
+Write-Host 'Analysis tools are integrated into the chart workspace right rail.'
 Write-Host 'Refresh the browser after frontend edits. Restart the preview after Python changes.'
 if (-not $NoBrowser) { Start-Process $address }

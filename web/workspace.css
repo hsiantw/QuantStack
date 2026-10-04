@@ -177,6 +177,13 @@ body.workspace{--workspace-left-width:48px;--workspace-right-width:46px;--worksp
 .workspace-right-rail>button:hover{background:var(--atlas-hover,#f1f3f7);color:var(--atlas-text,#20242c)}
 .workspace-right-rail>button.active{color:var(--atlas-accent,#2962ff);background:var(--atlas-hover,#edf2ff)}
 .workspace-right-rail>button.active:after{content:'';position:absolute;right:-5px;top:6px;bottom:6px;width:2px;background:var(--atlas-accent,#2962ff)}
+#workspaceSettingsDock{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;margin-top:auto;padding-top:8px;border-top:1px solid var(--line)}
+.workspace #workspaceSettingsDock #terminalSettings{display:grid;place-items:center;width:36px;height:36px;padding:7px;border:0;border-radius:5px;background:transparent;color:var(--atlas-text,#596271)}
+.workspace #workspaceSettingsDock #terminalSettings:hover{background:var(--atlas-hover,#f1f3f7);color:var(--atlas-text,#20242c)}
+.workspace #workspaceSettingsDock #terminalSettings span{display:none}
+.workspace #workspaceSettingsDock .workspace-theme{margin:0;padding:0;border:0}
+.workspace #workspaceSettingsDock .workspace-theme>span{display:none}
+.workspace #workspaceSettingsDock .workspace-theme select{width:38px;max-width:38px;padding:3px 0;text-align:center;font-size:9px}
 .workspace .workspace-drawing-rail{grid-row:2/5;overflow:hidden;padding-top:6px}
 .workspace .drawing-tools{align-items:stretch;gap:3px;padding:5px 6px 8px;overflow-x:hidden}
 .workspace .drawing-tools button{display:flex;justify-content:center;align-items:center;gap:12px;min-height:34px;width:100%;padding:6px;white-space:nowrap;font-size:12px}
@@ -259,3 +266,28 @@ body.workspace{--workspace-left-width:48px;--workspace-right-width:46px;--worksp
 .workspace-dock .screener-active-filters:empty{display:none}
 .workspace-dock .screener-column-sets button{padding-block:8px}
 @media(max-width:1200px){.workspace .chart-types button{width:28px;padding:5px}.workspace .chart-types button span{display:none}.workspace .chart-types button:first-letter{font-size:inherit}}
+.scheduler-add { margin-left: auto; font-size: 11px; padding: 4px 8px; }
+.sidebar-heading:has(.scheduler-add) { display: flex; align-items: center; gap: 8px; }
+#schedulerDialog { width: min(560px, calc(100vw - 24px)); max-height: 90dvh; overflow: auto; }
+#schedulerDialog label { display: grid; gap: 6px; margin: 14px 0; font-weight: 600; }
+#schedulerDialog textarea, #schedulerDialog select { width: 100%; padding: 10px; font: inherit; color: inherit; background: var(--surface, #fff); border: 1px solid var(--border, #363d50); border-radius: 6px; box-sizing: border-box; }
+#schedulerDialog textarea { resize: vertical; }
+.scheduler-profile { display: grid; gap: 6px; padding: 12px; border: 1px solid var(--border, #363d50); border-radius: 6px; }
+.scheduler-profile span, .scheduler-list { font-size: 12px; line-height: 1.6; }
+.scheduler-list { max-height: 150px; overflow: auto; overflow-wrap: anywhere; }
+#schedulerStatus { min-height: 2.6em; }
+.scheduler-preview { font-size: 12px; overflow-wrap: anywhere; max-height: 100px; overflow: auto; }
+.scheduler-progress { margin: 16px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.scheduler-progress button { margin-left: auto; font-size: 11px; }
+#schedulerProgress { flex-basis: 100%; white-space: pre-line; line-height: 1.7; margin: 0; font-size: 12px; }
+
+/* Data collection uses one responsive dialog. */
+#pullDialog { width: min(720px, calc(100vw - 24px)); max-height: 90dvh; overflow: auto; box-sizing: border-box; }
+.pull-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+#pullDialog label { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+#pullDialog input, #pullDialog select { width: 100%; box-sizing: border-box; }
+#pullDialog [hidden] { display: none; }
+.pull-presets, .chart-utilities { display: flex; align-items: end; gap: 8px; margin: 14px 0; flex-wrap: wrap; }
+.pull-presets label { flex: 1; }
+#pullRequests { max-height: 220px; overflow: auto; overflow-wrap: anywhere; font-size: 12px; }
+@media(max-width: 520px) { .pull-fields { grid-template-columns: 1fr; } #pullDialog .dialog-actions { flex-wrap: wrap; } }

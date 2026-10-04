@@ -25,7 +25,7 @@
       <p>The bands are pointwise simulated 5–95% and 25–75% price percentiles. The loss probability counts terminal prices below the starting price at the inspected bar; it is not the chance of losing at any time along a path. The sample mean and percentiles vary with the seed and path count. Theoretical horizon mean is S₀ exp(μh), median is S₀ exp((μ−σ²/2)h), and log-price standard deviation is σ√h.</p>
       <p>This model assumes independent Gaussian log returns and constant parameters. It omits jumps, volatility clustering, liquidity, transaction costs, and parameter uncertainty. Historical drift is noisy, and raw prices can contain corporate-action jumps. Extreme shocks can fall outside these scenario ranges. This tool does not estimate investment suitability or validate a trading strategy.</p>
       <p><a href="https://www.columbia.edu/~ks20/FE-Notes/4700-07-Notes-GBM.pdf" target="_blank" rel="noopener">Reference: Columbia University — Geometric Brownian motion</a></p>
-    </details>`;
+    </details><p class="brownian-signature">ian.h</p>`;
   let worker=null,result=null,snapshot=null,revision=0;
   let prefs={...AtlasBrownian.defaults};
   try{prefs=AtlasBrownian.options(JSON.parse(localStorage.getItem('atlas.brownian.v1')||'{}'));}catch{}

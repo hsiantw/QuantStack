@@ -1,23 +1,20 @@
-"""Serve the Streamlit app and market workspace on one public port."""
+"""Serve the unified chart workspace without a Streamlit process."""
 import argparse
 import asyncio
-import contextlib
+from contextlib import closing
 import os
 from pathlib import Path
 import re
-import socket
 import sqlite3
-import sys
 import threading
 from http.server import ThreadingHTTPServer
 
-from aiohttp import ClientError, ClientSession, ClientTimeout, WSMsgType, web
+from aiohttp import ClientError, ClientSession, ClientTimeout, web
 
 from dashboard import Handler
 from prepare_snapshot import data_file, prepare
 
 ROOT = Path(__file__).resolve().parent
-STREAMLIT = web.AppKey('streamlit', str)
 DASHBOARD = web.AppKey('dashboard', str)
 SNAPSHOT_PATH = web.AppKey('snapshot_path', Path)
 CLIENT = web.AppKey('client', ClientSession)
@@ -30,21 +27,11 @@ def forwarded_headers(headers):
     return [(key, value) for key, value in headers.items() if key.lower() not in excluded]
 
 
-async def relay(source, destination):
-    async for message in source:
-        if message.type == WSMsgType.TEXT:
-            await destination.send_str(message.data)
-        elif message.type == WSMsgType.BINARY:
-            await destination.send_bytes(message.data)
-        elif message.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.ERROR):
-            break
-
-
 def has_market_data(path):
     if not path.is_file():
         return False
     try:
-        with contextlib.closing(sqlite3.connect(path.as_uri() + '?mode=ro', uri=True)) as connection:
+        with closing(sqlite3.connect(path.as_uri() + '?mode=ro', uri=True)) as connection:
             return any(connection.execute(f'SELECT 1 FROM {table} LIMIT 1').fetchone()
                        for table in ('prices', 'intraday_prices'))
     except sqlite3.Error:
@@ -61,6 +48,8 @@ async def snapshot(request):
         index = index.replace('<script src="./app.js">',
                               '<script src="./static-data.js"></script><script src="./app.js">')
         return web.Response(text=index, content_type='text/html')
+    if name == 'interview-prep.html':
+        return web.FileResponse(ROOT / 'web' / name, headers={'X-Content-Type-Options': 'nosniff'})
     if re.fullmatch(r'[a-z-]+\.(js|css)', name) and (ROOT / 'web' / name).is_file():
         return web.FileResponse(ROOT / 'web' / name)
     if not data_file(name):
@@ -72,48 +61,30 @@ async def snapshot(request):
 
 
 async def proxy(request):
-    if request.path == '/' and request.method in ('GET', 'HEAD') and request.query.get('research') != '1':
+    if request.path in ('/workspace/api/local-scheduler', '/workspace/api/pull-queue'):
+        from local_scheduler import local_request
+        if not local_request(request.remote, request.host, request.headers.get('Origin')):
+            raise web.HTTPForbidden(text='Collector settings are available locally only.')
+    if request.path == '/' and request.method in ('GET', 'HEAD'):
         target = '/workspace/'
-        if request.query_string:
-            target += '?' + request.query_string
+        query = request.query.copy()
+        query.popall('research', None)
+        if query:
+            from urllib.parse import urlencode
+            target += '?' + urlencode(list(query.items()))
         raise web.HTTPFound(target)
     workspace = request.path == '/workspace' or request.path.startswith('/workspace/')
     if request.path == '/workspace':
         raise web.HTTPPermanentRedirect('/workspace/')
     if workspace and request.app[SNAPSHOT_PATH]:
         return await snapshot(request)
-    upstream = request.app[DASHBOARD] if workspace else request.app[STREAMLIT]
+    if not workspace:
+        raise web.HTTPNotFound(text='This application now uses the chart workspace.')
+    upstream = request.app[DASHBOARD]
     path = request.raw_path[len('/workspace'):] if workspace else request.raw_path
     url = upstream + path
     session = request.app[CLIENT]
     headers = forwarded_headers(request.headers)
-    if request.headers.get('Upgrade', '').lower() == 'websocket':
-        # Reject cross-origin browser connections before forwarding Streamlit sessions.
-        origin = request.headers.get('Origin')
-        if origin:
-            from urllib.parse import urlsplit
-            if urlsplit(origin).netloc != request.host:
-                raise web.HTTPForbidden(text='WebSocket origin does not match this site.')
-        protocols = [p.strip() for p in request.headers.get('Sec-WebSocket-Protocol', '').split(',') if p.strip()]
-        headers = [(k, v) for k, v in headers if not k.lower().startswith('sec-websocket-')]
-        try:
-            async with session.ws_connect(url, headers=headers, protocols=protocols,
-                                          max_msg_size=200 * 1024**2) as backend:
-                frontend = web.WebSocketResponse(protocols=[backend.protocol] if backend.protocol else (),
-                                                  max_msg_size=200 * 1024**2)
-                await frontend.prepare(request)
-                tasks = [asyncio.create_task(relay(frontend, backend)),
-                         asyncio.create_task(relay(backend, frontend))]
-                try:
-                    await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-                finally:
-                    for task in tasks:
-                        task.cancel()
-                    await asyncio.gather(*tasks, return_exceptions=True)
-                    await frontend.close()
-                return frontend
-        except (ClientError, OSError, asyncio.TimeoutError) as exc:
-            raise web.HTTPBadGateway(text='QuantStack is starting. Please retry.') from exc
     try:
         body = request.content.iter_chunked(64 * 1024) if request.can_read_body else None
         async with session.request(request.method, url, headers=headers, data=body,
@@ -128,9 +99,9 @@ async def proxy(request):
         raise web.HTTPBadGateway(text='QuantStack is starting. Please retry.') from exc
 
 
-def create_app(streamlit_url, dashboard_url, snapshot_dir=None):
+def create_app(dashboard_url, snapshot_dir=None):
     app = web.Application(client_max_size=200 * 1024**2)
-    app[STREAMLIT], app[DASHBOARD] = streamlit_url, dashboard_url
+    app[DASHBOARD] = dashboard_url
     app[SNAPSHOT_PATH] = snapshot_dir
 
     async def client_context(application):
@@ -144,56 +115,23 @@ def create_app(streamlit_url, dashboard_url, snapshot_dir=None):
 
 
 async def serve(host, port):
+    from pull_queue import start_worker
+    start_worker()
     use_snapshot = not has_market_data(ROOT / 'data' / 'market.sqlite')
     snapshot_dir = await asyncio.to_thread(prepare) if use_snapshot else None
     dashboard = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
     threading.Thread(target=dashboard.serve_forever, daemon=True).start()
-    with socket.socket() as reservation:
-        reservation.bind(('127.0.0.1', 0))
-        streamlit_port = reservation.getsockname()[1]
-    environment = dict(os.environ, QUANTSTACK_WORKSPACE_URL='/workspace/',
-                       QUANTSTACK_WORKSPACE_MODE='snapshot' if use_snapshot else 'stored')
-    process = None
     runner = None
     try:
-        process = await asyncio.create_subprocess_exec(
-            sys.executable, '-m', 'streamlit', 'run', str(ROOT / 'QuantStack-main' / 'app.py'),
-            '--server.address=127.0.0.1', f'--server.port={streamlit_port}',
-            '--server.headless=true', '--server.enableStaticServing=true', '--server.enableCORS=false',
-            '--server.enableXsrfProtection=true', '--browser.gatherUsageStats=false',
-            cwd=ROOT, env=environment)
-        streamlit_url = f'http://127.0.0.1:{streamlit_port}'
-        async with ClientSession() as session:
-            for _ in range(120):
-                if process.returncode is not None:
-                    raise RuntimeError('Streamlit exited during startup.')
-                try:
-                    async with session.get(streamlit_url + '/_stcore/health') as response:
-                        if response.status == 200:
-                            break
-                except (ClientError, OSError):
-                    pass
-                await asyncio.sleep(.5)
-            else:
-                raise RuntimeError('Streamlit did not become ready within 60 seconds.')
-        app = create_app(streamlit_url, f'http://127.0.0.1:{dashboard.server_port}', snapshot_dir)
+        app = create_app(f'http://127.0.0.1:{dashboard.server_port}', snapshot_dir)
         runner = web.AppRunner(app)
         await runner.setup()
         await web.TCPSite(runner, host, port).start()
         print(f'QuantStack ready at http://{host}:{port}', flush=True)
-        await process.wait()
-        raise RuntimeError(f'Streamlit stopped (exit {process.returncode}).')
+        await asyncio.Event().wait()
     finally:
         if runner:
             await runner.cleanup()
-        if process and process.returncode is None:
-            with contextlib.suppress(ProcessLookupError):
-                process.terminate()
-            try:
-                await asyncio.wait_for(process.wait(), timeout=10)
-            except asyncio.TimeoutError:
-                process.kill()
-                await process.wait()
         await asyncio.to_thread(dashboard.shutdown)
         dashboard.server_close()
 

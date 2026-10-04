@@ -668,6 +668,7 @@
     };
     // The chart and the screener share the same browser-local watchlist.
     byId('save').addEventListener('click', () => renderResults());
+    window.addEventListener('watchlist-favorites-changed', () => renderResults());
     window.addEventListener('storage', event => {
       if (event.key !== 'atlas.saved' && event.key !== null) return;
       try {

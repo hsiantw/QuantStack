@@ -397,15 +397,30 @@ def persist(db, symbol, rows, full, started, empty):
                    (symbol, started, 'full' if full else 'incremental', 'ok', len(rows), empty))
 
 
-def ingest(db, config, symbols, force=False, end=None):
+def ingest(db, config, symbols, force=False, end=None, budget_minutes=None, progress=None):
     import yfinance as yf
     failed = []
+    deadline = time.monotonic() + budget_minutes * 60 if budget_minutes is not None else float('inf')
+    if budget_minutes is not None and budget_minutes <= 0:
+        raise ValueError('Daily budget must be positive')
+    # Include failed attempts in rotation so bad tickers cannot starve the queue.
+    if budget_minutes is not None:
+        attempts = dict(db.execute("SELECT symbol,MAX(started) FROM attempts WHERE mode IN ('full','incremental') GROUP BY symbol"))
+        symbols = sorted(set(symbols), key=lambda symbol: (attempts.get(symbol, ''), symbol))
+    progress = progress if progress is not None else {}
+    progress.update(total=len(symbols), completed=0, succeeded=0, skipped=0, failed=failed, updated=[])
     for number, symbol in enumerate(symbols, 1):
+        from pull_queue import drain
+        drain(db, config, ROOT)
+        if time.monotonic() >= deadline:
+            break
         started = datetime.now(timezone.utc).isoformat()
         state = db.execute('SELECT last_full,last_success,error FROM state WHERE symbol=?', (symbol,)).fetchone()
         full = force or not state or not state[0] or (datetime.now(timezone.utc) - datetime.fromisoformat(state[0])).days >= config['full_refresh_days']
         latest = db.execute('SELECT MAX(date) FROM prices WHERE symbol=?', (symbol,)).fetchone()[0]
         if not force and state and state[1] and not state[2] and datetime.fromisoformat(state[1]).date() == datetime.now(timezone.utc).date() and not full:
+            progress['completed'] += 1
+            progress['skipped'] += 1
             continue
         for attempt in range(config['attempts']):
             try:
@@ -429,10 +444,12 @@ def ingest(db, config, symbols, force=False, end=None):
                     frame = ticker.history(period='max', **{k: v for k, v in kwargs.items() if k not in ('start', 'period')})
                     rows, empty = normalize(symbol, frame, meta, datetime.now(ZoneInfo(zone)).date())
                 persist(db, symbol, rows, full, started, empty)
+                progress['succeeded'] += 1
+                progress['updated'].append(symbol)
                 logging.info('[%s/%s] %s: %s rows, %s empty records, %s', number, len(symbols), symbol, len(rows), empty, 'full' if full else 'incremental')
                 break
             except Exception as exc:
-                if attempt + 1 < config['attempts']:
+                if attempt + 1 < config['attempts'] and time.monotonic() + 10 * 2 ** attempt < deadline:
                     delay = 10 * 2 ** attempt
                     logging.warning('%s attempt %s failed: %s; retry in %ss', symbol, attempt + 1, exc, delay)
                     time.sleep(delay)
@@ -442,14 +459,20 @@ def ingest(db, config, symbols, force=False, end=None):
                         db.execute('INSERT INTO state(symbol,error) VALUES (?,?) ON CONFLICT(symbol) DO UPDATE SET error=excluded.error', (symbol, str(exc)))
                         db.execute('INSERT INTO attempts(symbol,started,mode,status,error) VALUES (?,?,?,?,?)', (symbol, started, 'full' if full else 'incremental', 'failed', str(exc)))
                     logging.error('%s failed: %s', symbol, exc)
-        time.sleep(config['request_pause_seconds'])
+                    break
+        progress['completed'] += 1
+        time.sleep(min(config['request_pause_seconds'], max(0, deadline - time.monotonic())))
+    progress['pending'] = progress['total'] - progress['completed']
+    progress['status'] = 'budget_exhausted' if progress['pending'] else ('complete_with_errors' if failed else 'complete')
+    progress['updated_at'] = datetime.now(timezone.utc).isoformat()
     return failed
 
 
-def export(db):
+def export(db, symbols=None):
     folder = DATA / 'exports'
     folder.mkdir(exist_ok=True)
-    for (symbol,) in db.execute('SELECT DISTINCT symbol FROM prices'):
+    symbols = symbols if symbols is not None else [row[0] for row in db.execute('SELECT DISTINCT symbol FROM prices')]
+    for symbol in symbols:
         # Quote punctuation for Windows-safe filenames.
         from urllib.parse import quote
         path = folder / (quote(symbol, safe='-._') + '.csv')
@@ -467,11 +490,14 @@ def main():
     parser.add_argument('command', choices=['sync', 'intraday', 'status', 'export'])
     parser.add_argument('--symbols', nargs='+', help='Override configured universe for this run')
     parser.add_argument('--full', action='store_true', help='Force complete history refresh')
+    parser.add_argument('--local-only', action='store_true', help='Collect locally without publishing a deployment')
     args = parser.parse_args()
     DATA.mkdir(exist_ok=True)
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s',
                         handlers=[logging.StreamHandler(), RotatingFileHandler(DATA / 'ingestion.log', maxBytes=10_000_000, backupCount=5, encoding='utf-8')])
     config = json.loads((ROOT / 'config.json').read_text())
+    from local_scheduler import lower_priority
+    lower_priority(config)
     if args.command == 'intraday':
         # Keep existing scheduled-task entrypoints, but stop routine minute pulls.
         from refresh_hourly import refresh
@@ -490,13 +516,19 @@ def main():
                 return 0
             symbols = sorted(set(args.symbols)) if args.symbols else universe(db, config)
             logging.info('Starting sync for %s symbols', len(symbols))
-            failed = ingest(db, config, symbols, args.full)
-            export(db)
+            progress = {}
+            budget = config.get('daily_budget_minutes', 10) if args.local_only and config.get('background_usage') == 'low' else None
+            failed = ingest(db, config, symbols, args.full, budget_minutes=budget, progress=progress)
+            # Scheduled runs export only changed symbols, avoiding a full-database scan.
+            export(db, progress['updated'] if args.local_only else None)
+            temporary = DATA / 'daily-refresh.tmp'
+            temporary.write_text(json.dumps(progress, indent=2), encoding='utf-8')
+            temporary.replace(DATA / 'daily-refresh.json')
             logging.info('Sync finished: %s failed symbols: %s', len(failed), failed)
-            if (ROOT / 'deployment.json').exists():
+            if not args.local_only and (ROOT / 'deployment.json').exists():
                 from publish_site import publish
                 publish()
-            return 1 if failed else 0
+            return 1 if failed or progress['pending'] else 0
 
 
 if __name__ == '__main__':

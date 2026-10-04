@@ -38,7 +38,7 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
         self.backend = TestServer(backend)
         await self.backend.start_server()
         url = str(self.backend.make_url('')).rstrip('/')
-        self.gateway = TestServer(create_app(url, url))
+        self.gateway = TestServer(create_app(url))
         await self.gateway.start_server()
         self.client = ClientSession()
         self.temporary = tempfile.TemporaryDirectory()
@@ -49,13 +49,12 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
         await self.backend.close()
         self.temporary.cleanup()
 
-    async def test_streamlit_upload_and_cookies(self):
-        async with self.client.post(self.gateway.make_url('/_stcore/upload_file?a=1'),
-                                    data=b'uploaded content', headers={'Cookie': 'session=example'}) as response:
-            self.assertEqual(response.status, 200)
-            self.assertIn('session=test', response.headers['Set-Cookie'])
-            self.assertEqual(await response.json(), {'path': '/_stcore/upload_file?a=1',
-                             'body': 'uploaded content', 'cookie': 'session=example'})
+    async def test_legacy_runtime_is_not_served(self):
+        for path in ('/_stcore/health', '/_stcore/stream', '/portfolio_manager'):
+            async with self.client.get(self.gateway.make_url(path)) as response:
+                self.assertEqual(response.status, 404)
+        async with self.client.post(self.gateway.make_url('/_stcore/upload_file'), data=b'old upload') as response:
+            self.assertEqual(response.status, 404)
 
     async def test_workspace_prefix_and_query(self):
         async with self.client.get(self.gateway.make_url('/workspace/api/history?symbol=AAPL')) as response:
@@ -64,26 +63,18 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(response.status, 308)
             self.assertEqual(response.headers['Location'], '/workspace/')
 
-    async def test_chart_is_home_and_research_remains_accessible(self):
-        async with self.client.get(self.gateway.make_url('/?symbol=MSFT&interval=1d'), allow_redirects=False) as response:
-            self.assertEqual(response.status, 302)
-            self.assertEqual(response.headers['Location'], '/workspace/?symbol=MSFT&interval=1d')
-        async with self.client.get(self.gateway.make_url('/?research=1')) as response:
-            self.assertEqual((await response.json())['path'], '/?research=1')
+    async def test_old_research_link_redirects_into_chart(self):
+        for path, target in [('/?research=1', '/workspace/'),
+                             ('/?research=1&symbol=MSFT&interval=1d', '/workspace/?symbol=MSFT&interval=1d')]:
+            async with self.client.get(self.gateway.make_url(path), allow_redirects=False) as response:
+                self.assertEqual(response.status, 302)
+                self.assertEqual(response.headers['Location'], target)
 
-    async def test_streamlit_binary_websocket_and_subprotocol(self):
-        async with self.client.ws_connect(self.gateway.make_url('/_stcore/stream'),
-                                           protocols=['streamlit'], origin=str(self.gateway.make_url('')).rstrip('/')) as socket:
-            self.assertEqual(socket.protocol, 'streamlit')
-            await socket.send_bytes(b'protobuf payload')
-            self.assertEqual((await socket.receive(timeout=3)).data, b'protobuf payload')
-            await socket.send_str('rerun')
-            self.assertEqual((await socket.receive(timeout=3)).data, 'rerun')
-
-    async def test_reject_cross_origin_websocket(self):
-        with self.assertRaises(WSServerHandshakeError) as raised:
-            await self.client.ws_connect(self.gateway.make_url('/_stcore/stream'), origin='https://unrelated.example')
-        self.assertEqual(raised.exception.status, 403)
+    async def test_local_settings_reject_remote_host_and_origin(self):
+        for headers in ({'Host': 'public.example'}, {'Origin': 'https://public.example'}):
+            async with self.client.post(self.gateway.make_url('/workspace/api/local-scheduler'),
+                                        headers=headers, json={'symbols': 'MSFT'}) as response:
+                self.assertEqual(response.status, 403)
 
     async def use_snapshot(self):
         await self.gateway.close()
@@ -92,7 +83,7 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
         (directory / 'prices').mkdir(exist_ok=True)
         (directory / 'symbols.json').write_text('[{"symbol":"AAPL"}]')
         (directory / 'prices' / 'AAPL.json.gz').write_bytes(gzip.compress(b'{"rows": []}'))
-        self.gateway = TestServer(create_app(url, url, snapshot_dir=directory))
+        self.gateway = TestServer(create_app(url, snapshot_dir=directory))
         await self.gateway.start_server()
 
     async def test_snapshot_serves_current_ui_and_local_prices(self):
@@ -116,6 +107,9 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
         async with self.client.get(self.gateway.make_url('/workspace/markov-worker.js')) as response:
             self.assertEqual(response.status, 200)
             self.assertIn('importScripts', await response.text())
+        for name in ('research.js', 'research.css', 'research-worker.js', 'research-engine.js', 'risk.js'):
+            async with self.client.get(self.gateway.make_url('/workspace/' + name)) as response:
+                self.assertEqual(response.status, 200, name)
 
 
 if __name__ == '__main__':

@@ -47,15 +47,6 @@
 @media(max-width:600px){.terminal-actions{padding-inline:5px}.terminal-actions button{padding-inline:6px;font-size:10px}.terminal-actions #terminalSettings span,.terminal-actions #terminalSnapshot span{display:none}#comparisonCanvas{height:100px}.comparison-heading{padding-inline:8px}#comparisonLegend{padding-inline:8px;gap:8px}.workspace #terminalStyle{max-width:80px;font-size:10px}.terminal-dialog{padding:18px!important}}
 @media(max-height:650px){#comparisonCanvas{height:85px}}
 /* Compact navigation keeps the chart at the center of the application. */
-.chart-home-menu{position:relative;flex:none;color:var(--ink)}
-.chart-home-menu summary{cursor:pointer;list-style:none;padding:7px 10px;font-size:11px;font-weight:600;border-right:1px solid var(--line)}
-.chart-home-menu summary::-webkit-details-marker{display:none}
-.chart-home-menu-content{position:absolute;top:34px;left:0;z-index:60;display:grid;width:245px;padding:10px;background:var(--surface,#fff);border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 28px #0002;white-space:normal}
-.chart-home-menu-content strong{padding:8px;font-size:12px}
-.chart-home-menu-content :is(button,a){display:block;padding:10px!important;text-align:left;text-decoration:none;color:var(--ink);font-size:12px;font-family:inherit;border:0;background:transparent;border-radius:4px}
-.chart-home-menu-content [hidden]{display:none}
-.chart-home-menu-content :is(button,a):hover{background:var(--surface-hover,#edf2ff)}
-.chart-home-menu-content small{padding:10px 8px;color:var(--muted);font-size:11px;line-height:1.6;border-top:1px solid var(--line)}
 #chartHomeDialog{width:min(470px,calc(100vw - 32px));padding:22px;background:var(--surface,#fff);color:var(--ink);border:1px solid var(--line);border-radius:10px}
 #chartHomeDialog p{font-size:12px;line-height:1.7;color:var(--muted);margin:12px 0}
 #chartHomeDialog button{border:1px solid var(--line);border-radius:4px;background:var(--surface-raised,#f7f9fc);color:var(--ink);padding:8px 12px}
@@ -94,3 +85,25 @@
 .appearance-sections{display:flex;gap:6px;position:sticky;top:-24px;z-index:3;background:var(--surface);padding:10px 0;margin-bottom:12px;border-bottom:1px solid var(--border)}
 .appearance-sections button{padding:7px 10px;font-size:11px;white-space:nowrap}.appearance-controls>fieldset{scroll-margin-top:58px}
 @media(max-width:600px){.appearance-sections{top:-18px;gap:4px}.appearance-sections button{padding:7px;font-size:10px}}
+.workspace #workspaceOverview{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:var(--text);overflow:hidden}
+#workspaceOverview::backdrop{background:#10182755;backdrop-filter:none}
+.overview-region{position:fixed;border:1px dashed var(--accent,#2962ff);border-radius:3px;background:transparent;padding:0;cursor:pointer;color:var(--text);text-align:left}
+.overview-region.selected{border:3px solid var(--accent,#2962ff);background:color-mix(in srgb,var(--accent,#2962ff) 12%,transparent);z-index:2;pointer-events:none}
+.overview-region>span{position:absolute;top:3px;left:4px;width:max-content;max-width:210px;padding:4px 7px;border-radius:4px;background:var(--surface,#fff);color:var(--text,#20242c);border:1px solid var(--border,#ccc);font:11px/1.4 'Segoe UI',sans-serif;box-shadow:0 2px 6px #0002;pointer-events:auto}
+.overview-region.overview-label-left>span{left:auto;right:calc(100% + 5px)}
+.overview-region.selected>span{background:var(--accent,#2962ff);color:white;font-weight:600}
+.overview-guide{position:fixed;z-index:5;left:70px;top:155px;width:330px;max-height:calc(100dvh - 220px);box-sizing:border-box;overflow:auto;padding:18px;border:1px solid var(--border);border-radius:10px;background:var(--surface);box-shadow:0 10px 40px #0003;font:12px/1.5 'Segoe UI',sans-serif}
+.overview-guide-head{display:flex;justify-content:space-between;align-items:start;gap:10px}
+.overview-guide h2{font-size:20px;margin:2px 0 8px}.overview-guide h3{font-size:15px;margin:14px 0 5px}
+.overview-guide p{margin:8px 0 12px}.overview-guide small,.overview-guide p{color:var(--text-muted)}
+.overview-guide label{display:block;margin:10px 0 5px;font-weight:600}
+.overview-guide select,.overview-guide input{width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--border);border-radius:4px;background:var(--surface-raised);color:var(--text);font:inherit}
+.overview-guide button{padding:7px 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface-raised);color:var(--text);cursor:pointer}
+#workspaceOverviewCopy{margin-top:8px}.overview-region:focus-visible,.overview-guide :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#terminalSettingsDialog .terminal-dialog-foot{flex-wrap:wrap}#terminalSettingsDialog .terminal-dialog-foot>div{flex-wrap:wrap}
+@media(max-width:600px){.overview-guide{left:48px;top:auto;bottom:40px;width:calc(100vw - 96px);max-height:48dvh;padding:12px}.overview-region:not(.selected)>span{display:none}.overview-region>span{max-width:190px;font-size:10px}}
+
+.terminal-settings-extras{display:flex;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:11px}
+.terminal-settings-extras a{color:var(--text-muted);text-decoration:none;padding:4px 0}
+.terminal-settings-extras a:hover{color:var(--text);text-decoration:underline}
+.terminal-settings-extras a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}

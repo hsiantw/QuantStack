@@ -75,12 +75,14 @@
   ],
   "overlap_days": 14,
   "full_refresh_days": 30,
-  "request_pause_seconds": 1.0,
+  "background_usage": "low",
+  "request_pause_seconds": 2.0,
   "attempts": 3,
   "intraday_interval": "60m",
   "hourly_lookback_days": 365,
-  "hourly_workers": 6,
-  "hourly_pause_seconds": 0.5,
+  "hourly_workers": 1,
+  "hourly_pause_seconds": 2.0,
   "hourly_cycle_minutes": 60,
-  "hourly_budget_minutes": 55
+  "hourly_budget_minutes": 10,
+  "daily_budget_minutes": 10
 }

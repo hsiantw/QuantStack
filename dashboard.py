@@ -26,6 +26,22 @@ def database():
         connection.close()
 
 
+def daily_performance(bars, crypto=False):
+    """Completed daily-bar returns, newest first; never splice adjusted/raw prices."""
+    def positive(value):
+        return isinstance(value, (float, int)) and not isinstance(value, bool) and math.isfinite(value) and value > 0
+    adjusted = any(positive(row['adjusted_close']) for row in bars)
+    field = 'adjusted_close' if adjusted else 'close'
+    result = {'performance_asof': bars[0]['date'] if bars else None,
+              'performance_basis': 'adjusted' if adjusted else 'unadjusted'}
+    for key, periods in (('change_1d_pct', 1), ('return_1w_pct', 7 if crypto else 5), ('return_1m_pct', 30 if crypto else 21)):
+        window = bars[:periods + 1]
+        valid = len(window) == periods + 1 and all(positive(row[field]) for row in window)
+        value = (window[0][field] / window[-1][field] - 1) * 100 if valid else None
+        result[key] = value if value is not None and math.isfinite(value) else None
+    return result
+
+
 def catalog():
     names = {'2330.TW': 'Taiwan Semiconductor', 'BTC-USD': 'Bitcoin', 'ETH-USD': 'Ethereum'}
     source = ROOT / 'data' / 'constituents.csv'
@@ -33,16 +49,24 @@ def catalog():
         with source.open(encoding='utf-8-sig') as handle:
             names.update({r['Symbol'].replace('.', '-'): r['Security'] for r in csv.DictReader(handle)})
     with database() as db:
+        metadata = {}
         if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='stock_metadata'").fetchone():
-            names.update({row['symbol']: row['name'] for row in db.execute('SELECT symbol,name FROM stock_metadata WHERE name IS NOT NULL')})
+            metadata = {row['symbol']: dict(row) for row in db.execute('SELECT * FROM stock_metadata')}
+            names.update({symbol: row['name'] for symbol, row in metadata.items() if row.get('name')})
         symbols = db.execute('''SELECT symbol,last_success,error FROM state UNION ALL
-          SELECT symbol,last_success,error FROM intraday_state WHERE interval='60m'
-          AND symbol NOT IN (SELECT symbol FROM state) ORDER BY symbol''').fetchall()
+          SELECT symbol,MAX(last_success),error FROM intraday_state
+          WHERE symbol NOT IN (SELECT symbol FROM state) GROUP BY symbol ORDER BY symbol''').fetchall()
         result = []
         for symbol in symbols:
-            latest = db.execute('SELECT date,close,currency,exchange FROM prices WHERE symbol=? ORDER BY date DESC LIMIT 2', (symbol['symbol'],)).fetchall()
-            hourly = db.execute('''SELECT timestamp,close,currency,exchange FROM intraday_prices
-              WHERE symbol=? AND interval='60m' ORDER BY timestamp DESC LIMIT 1''', (symbol['symbol'],)).fetchone()
+            bars = db.execute('SELECT date,close,adjusted_close,volume,currency,exchange FROM prices WHERE symbol=? ORDER BY date DESC LIMIT 31', (symbol['symbol'],)).fetchall()
+            latest = bars[:2]
+            performance = daily_performance(bars, symbol['symbol'].endswith('-USD'))
+            meta = metadata.get(symbol['symbol'], {})
+            market_cap = meta.get('market_cap')
+            if not isinstance(market_cap, (int, float)) or not math.isfinite(market_cap) or market_cap < 0:
+                market_cap = None
+            hourly = db.execute('''SELECT timestamp,close,currency,exchange,interval FROM intraday_prices
+              WHERE symbol=? ORDER BY (interval='60m') DESC, timestamp DESC LIMIT 1''', (symbol['symbol'],)).fetchone()
             has_daily = bool(latest)
             if not latest and not hourly:
                 continue
@@ -54,13 +78,16 @@ def catalog():
             quote = hourly if use_hourly else latest
             baseline = (latest['close'] if has_daily else None) if use_hourly else (previous['close'] if previous else None)
             change = (quote['close'] / baseline - 1) * 100 if baseline else None
-            daily = dict(latest)
+            daily = {key: latest[key] for key in ('date', 'close', 'currency', 'exchange')}
             daily.update(close=quote['close'], currency=quote['currency'], exchange=quote['exchange'])
             result.append(dict(symbol=symbol['symbol'], name=names.get(symbol['symbol'], symbol['symbol']),
                                **daily, quote_timestamp=quote['timestamp'] if use_hourly else latest['date'],
-                               quote_interval='1h' if use_hourly else '1d', change=change,
+                               quote_interval=('1h' if hourly['interval'] == '60m' else hourly['interval']) if use_hourly else '1d', change=change,
                                has_daily=has_daily,
-                               kind='Crypto' if symbol['symbol'] in ('BTC-USD', 'ETH-USD') else 'Stocks',
+                               **performance, market_cap=market_cap,
+                               market_cap_currency=meta.get('currency'), market_cap_asof=meta.get('fetched_at'),
+                               volume=bars[0]['volume'] if bars else None,
+                               kind='Crypto' if symbol['symbol'].endswith('-USD') else 'Stocks',
                                updated=symbol['last_success'], error=symbol['error']))
     return result
 
@@ -83,14 +110,15 @@ def history(query):
             return [dict(row) for row in rows]
         lower = start + 'T00:00:00+00:00'
         upper = (date.fromisoformat(end) + timedelta(days=1)).isoformat() + 'T00:00:00+00:00' if end != '9999-12-31' else '9999-12-31T23:59:59+00:00'
-        if interval == '1h':
+        if interval in ('1h', '5m', '15m'):
             # Native provider candles retain their exchange/session alignment.
             # Do not mix them with UTC-hour rollups of partial minute coverage.
             native = db.execute('''SELECT timestamp AS date,open,high,low,close,adjusted_close,
               volume,NULL AS dividends,NULL AS splits,source FROM intraday_prices
-              WHERE symbol=? AND interval='60m' AND timestamp>=? AND timestamp<?
-              ORDER BY timestamp''', (symbol, lower, upper)).fetchall()
-            return [dict(row) for row in native[-10000:]]
+              WHERE symbol=? AND interval=? AND timestamp>=? AND timestamp<?
+              ORDER BY timestamp''', (symbol, '60m' if interval == '1h' else interval, lower, upper)).fetchall()
+            if native or interval == '1h':
+                return [dict(row) for row in native[-10000:]]
         if symbol == 'BTC-USD':
             exchange_rows = db.execute('''SELECT timestamp,source,open,high,low,close,volume
               FROM crypto_exchange_prices WHERE symbol=? AND interval='1m'
@@ -384,6 +412,35 @@ def indicator_data(query):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def scheduler_allowed(self):
+        from local_scheduler import local_request
+        return local_request(self.client_address[0], self.headers.get('Host', ''), self.headers.get('Origin'))
+
+    def do_POST(self):
+        if urlparse(self.path).path not in ('/api/local-scheduler', '/api/pull-queue'):
+            self.send(404, b'Not found', 'text/plain')
+            return
+        if not self.scheduler_allowed() or self.headers.get('Content-Type') != 'application/json':
+            self.send(403, b'{"error":"Local same-origin JSON requests only."}', 'application/json')
+            return
+        try:
+            size = int(self.headers.get('Content-Length', '0'))
+            if not 0 < size <= 8192:
+                raise ValueError('Invalid request size.')
+            from local_scheduler import enroll
+            payload = json.loads(self.rfile.read(size))
+            if urlparse(self.path).path == '/api/pull-queue':
+                from pull_queue import enqueue, start_worker
+                value = enqueue(payload)
+                start_worker()
+            else:
+                value = enroll(payload)
+            self.send(200, json.dumps(value).encode(), 'application/json')
+        except (ValueError, RuntimeError) as exc:
+            self.send(400, json.dumps({'error': str(exc)}).encode(), 'application/json')
+        except OSError:
+            self.send(500, b'{"error":"Could not save collector settings."}', 'application/json')
+
     def send(self, status, content, mime, attachment=False):
         self.send_response(status)
         self.send_header('Content-Type', mime)
@@ -398,7 +455,15 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
         try:
-            if url.path == '/api/symbols':
+            if url.path in ('/api/local-scheduler', '/api/pull-queue'):
+                if not self.scheduler_allowed():
+                    self.send(403, b'{"error":"Available on the local app only."}', 'application/json')
+                    return
+                from local_scheduler import status
+                if url.path == '/api/pull-queue':
+                    from pull_queue import status
+                value = status()
+            elif url.path == '/api/symbols':
                 value = catalog()
             elif url.path == '/api/screener':
                 from screener import snapshot
@@ -425,13 +490,17 @@ class Handler(BaseHTTPRequestHandler):
                     self.send(200, output.getvalue().encode(), 'text/csv; charset=utf-8', True)
                     return
             else:
-                files = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'),
+                files = {'/interview-prep.html': ('interview-prep.html', 'text/html'),
+                         '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'),
                          '/indicators.js': ('indicators.js', 'text/javascript'),
                          '/drawings.js': ('drawings.js', 'text/javascript'),
                          '/chart-scale.js': ('chart-scale.js', 'text/javascript'),
                          '/chart-scale.css': ('chart-scale.css', 'text/css'),
                          '/workspace.js': ('workspace.js', 'text/javascript'),
                          '/terminal.js': ('terminal.js', 'text/javascript'),
+                         '/data-pulls.js': ('data-pulls.js', 'text/javascript'),
+                         '/watchlists.js': ('watchlists.js', 'text/javascript'),
+                         '/watchlists.css': ('watchlists.css', 'text/css'),
                          '/theme.js': ('theme.js', 'text/javascript'),
                          '/theme.css': ('theme.css', 'text/css'),
                          '/strategy-engine.js': ('strategy-engine.js', 'text/javascript'),
@@ -443,6 +512,12 @@ class Handler(BaseHTTPRequestHandler):
                          '/brownian-engine.js': ('brownian-engine.js', 'text/javascript'),
                          '/brownian-worker.js': ('brownian-worker.js', 'text/javascript'),
                          '/brownian.js': ('brownian.js', 'text/javascript'),
+                         '/risk-engine.js': ('risk-engine.js', 'text/javascript'),
+                         '/risk.js': ('risk.js', 'text/javascript'),
+                         '/research.js': ('research.js', 'text/javascript'),
+                         '/research-engine.js': ('research-engine.js', 'text/javascript'),
+                         '/research-worker.js': ('research-worker.js', 'text/javascript'),
+                         '/research.css': ('research.css', 'text/css'),
                          '/terminal.css': ('terminal.css', 'text/css'),
                          '/workspace.css': ('workspace.css', 'text/css'),
                          '/indicators.css': ('indicators.css', 'text/css'), '/style.css': ('style.css', 'text/css'),
@@ -465,4 +540,6 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=8765)
     args = parser.parse_args()
     print(f'QuantStack is running at http://127.0.0.1:{args.port}', flush=True)
+    from pull_queue import start_worker
+    start_worker()
     ThreadingHTTPServer(('127.0.0.1', args.port), Handler).serve_forever()

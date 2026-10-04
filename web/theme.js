@@ -32,7 +32,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     const label = document.createElement('label'); label.className = 'workspace-theme';
     label.innerHTML = '<span aria-hidden="true">◐</span><select id="workspaceTheme" aria-label="Workspace theme"><option value="system">System theme</option><option value="light">Light</option><option value="dark">Dark</option><option value="midnight">Midnight</option><option value="forest">Forest</option><option value="paper">Paper</option></select>';
-    document.querySelector('.terminal-actions').append(label);
+    document.getElementById('workspaceSettingsDock').append(label);
     document.getElementById('workspaceTheme').value = preference;
     document.getElementById('workspaceTheme').onchange = event => apply(event.target.value, true);
   });

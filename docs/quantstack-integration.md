@@ -1,12 +1,8 @@
 # Consolidated QuantStack workspace
 
-The Streamlit application in `QuantStack-main/`, the collector, shared database,
-and browser workspace form one project and one public site:
-https://quantstack.onrender.com/.
-
-Open **Market workspace** from the home screen or navigation for charts,
-drawings, comparisons, screening, strategy backtests, and Markov analysis.
-Existing portfolio, AI, risk, and statistical analysis pages remain available.
+The collector, database and native browser workspace form one project.
+All supported analysis tools open within the chart workspace from the right rail.
+See the [migration map](native-workspace-migration.md) for every former page.
 
 ## Running and deploying
 
@@ -18,13 +14,14 @@ python serve_quantstack.py
 
 Open http://127.0.0.1:8501. On Render, use `--host 0.0.0.0`; the launcher reads
 `PORT`. See [hosting and publication](../HOSTING.md) for build and deployment
-settings. The original Streamlit-only start command is also supported.
+settings. The former Streamlit launcher is retired.
 
-The launcher keeps Streamlit and the database API on loopback ports and proxies
-them through one public port. `/workspace/` serves the browser workspace; other
-routes serve Streamlit, including websocket sessions and uploads. Closing the
-launcher stops both services. Public workspace endpoints contain market data,
-not account or portfolio records.
+The launcher keeps the database API on a loopback port and proxies it through
+one public port. `/workspace/` serves the native browser workspace. The root,
+including old `?research=1` links, redirects there. Old Streamlit routes, uploads
+and websockets return 404. No Streamlit subprocess is started. Collector writes
+are restricted to the local host and same-origin requests. Portfolio holdings
+and research notes are browser-local; user databases are not exposed.
 
 ## Data ownership and availability
 
@@ -40,30 +37,17 @@ daily snapshot. Restart after initially provisioning a database to switch modes.
 Snapshot mode disables hourly bars, collector usage, and the full indicator
 library. Data timestamps remain visible; deployment is not a price refresh.
 
-Streamlit-only mode uses the same prepared release through
-`/app/static/market-data/<version>/`, with the current browser code embedded in
-its page. Static serving is enabled by the checked-in configuration. Generated
-files are excluded from Git. Browser-local favorites, drawings, and settings
-keep their existing storage keys to avoid discarding saved work.
+Browser-local favorites, drawings and settings keep their existing storage keys.
+The prepared snapshot retains its existing on-disk location for cache reuse.
+Native portfolio, pairs, options, liquidity and forecasting calculations also
+work on daily snapshots. Fundamentals show unavailable data explicitly.
 
 ## Verification
 
 Install `requirements.txt` and `playwright`. Browser checks use Microsoft Edge.
 
 ```powershell
-python -m unittest test_quantstack_gateway test_snapshot -v
-python serve_quantstack.py --port 8510
-# In a separate terminal:
-python smoke_quantstack.py --url http://127.0.0.1:8510
-python smoke_workspace.py --url http://127.0.0.1:8510/workspace/
-python smoke_strategy.py --url http://127.0.0.1:8510/workspace/
-python smoke_markov.py --url http://127.0.0.1:8510/workspace/
-python smoke_markov.py --static
-# For a Streamlit-only server started on port 8511:
-python smoke_quantstack.py --url http://127.0.0.1:8511 --standalone
+python -m unittest test_quantstack_gateway test_snapshot test_research test_local_scheduler
+python smoke_research_workspace.py
+python smoke_quantstack.py --url http://127.0.0.1:8501
 ```
-
-Tests cover HTTP paths, uploads, cookies, binary websocket messages, subprotocols,
-origin checks, local snapshot serving, archive validation, and actual browser
-research workflows. The integration browser check saves a local screenshot at
-`data/quantstack-integration.png`.

@@ -17,7 +17,9 @@ def rate_limited(error):
     return any(part in message for part in ('rate limit', 'too many requests', '429'))
 
 
-def fetch_hourly(symbol, start, end, attempts=3, pause=0.5, stop=None):
+def fetch_bars(symbol, start, end, attempts=3, pause=0.5, stop=None, interval="60m"):
+    from market_data import normalize
+    from zoneinfo import ZoneInfo
     import yfinance as yf
     events = []
     for attempt in range(attempts):
@@ -26,12 +28,15 @@ def fetch_hourly(symbol, start, end, attempts=3, pause=0.5, stop=None):
         request = (datetime.now(timezone.utc).isoformat(), time.perf_counter())
         try:
             ticker = yf.Ticker(symbol)
-            frame = ticker.history(start=start, end=end, interval='60m', auto_adjust=False,
-                                   actions=False, keepna=True, raise_errors=True, timeout=30)
+            frame = ticker.history(start=start, end=end, interval=interval, auto_adjust=False,
+                                   actions=interval == '1d', keepna=True, raise_errors=True, timeout=30)
             meta = ticker.get_history_metadata()
-            rows, empty = normalize_intraday(symbol, frame, meta, '60m', end)
+            if interval == '1d':
+                rows, empty = normalize(symbol, frame, meta, datetime.now(ZoneInfo(meta['exchangeTimezoneName'])).date())
+            else:
+                rows, empty = normalize_intraday(symbol, frame, meta, interval, datetime.now(timezone.utc))
             if not rows:
-                raise ValueError('Provider returned no completed hourly candles in the requested range')
+                raise ValueError('Provider returned no completed candles in the requested range')
             events.append((request, 'ok', len(rows), None, int((time.perf_counter()-request[1])*1000)))
             return rows, empty, events, None
         except Exception as error:
@@ -45,6 +50,10 @@ def fetch_hourly(symbol, start, end, attempts=3, pause=0.5, stop=None):
             time.sleep(10 * 2**attempt)
         finally:
             time.sleep(pause)
+
+
+def fetch_hourly(symbol, start, end, attempts=3, pause=0.5, stop=None):
+    return fetch_bars(symbol, start, end, attempts, pause, stop)
 
 
 def tracked_symbols(db, config):
@@ -83,6 +92,8 @@ def refresh(symbols=None, days=None, workers=None, resume=False, full=False):
     DATA.mkdir(exist_ok=True)
     yf.set_tz_cache_location(str(DATA / 'provider-cache'))
     config = json.loads((ROOT / 'config.json').read_text(encoding='utf-8'))
+    from local_scheduler import lower_priority
+    lower_priority(config)
     days = days if days is not None else config.get('hourly_lookback_days', 365)
     workers = workers if workers is not None else config.get('hourly_workers', 6)
     pause = config.get('hourly_pause_seconds', 0.5)
@@ -96,6 +107,8 @@ def refresh(symbols=None, days=None, workers=None, resume=False, full=False):
     progress_path = DATA / 'hourly-refresh.json'
     stop = threading.Event()
     with process_lock(DATA / 'ingestion.lock'), closing(connect(DATA / 'market.sqlite')) as db:
+        from pull_queue import drain
+        drain(db, config, ROOT)
         symbols = sorted(set(symbols)) if symbols is not None else tracked_symbols(db, config)
         progress = dict(started_at=started, status='running', total=len(symbols), completed=0,
                         succeeded=0, skipped=0, failed={}, rows=0, days=days, workers=workers,
@@ -109,6 +122,7 @@ def refresh(symbols=None, days=None, workers=None, resume=False, full=False):
             temporary.write_text(json.dumps(progress, indent=2), encoding='utf-8')
             temporary.replace(progress_path)
         jobs = []
+        last_attempts = dict(db.execute("SELECT symbol,MAX(started) FROM attempts WHERE mode='intraday-60m' GROUP BY symbol"))
         for symbol in symbols:
             state = db.execute("SELECT last_success,error FROM intraday_state WHERE symbol=? AND interval='60m'", (symbol,)).fetchone()
             if resume and not full and state and not state[1] and state[0] and datetime.fromisoformat(state[0]) >= now - timedelta(minutes=cycle):
@@ -118,12 +132,14 @@ def refresh(symbols=None, days=None, workers=None, resume=False, full=False):
             latest = db.execute("SELECT MAX(timestamp) FROM intraday_prices WHERE symbol=? AND interval='60m'", (symbol,)).fetchone()[0]
             earliest = now - timedelta(days=days)
             start = max(earliest, datetime.fromisoformat(latest) - timedelta(days=7)) if latest and not full else earliest
-            # Oldest successful refresh first prevents starvation after an interrupted cycle.
-            jobs.append((state[0] if state and state[0] else '', symbol, start, not latest))
+            # Rotate failed tickers too, so a small budget cannot retry the same
+            # unavailable symbols forever and starve the rest of the universe.
+            jobs.append((last_attempts.get(symbol) or (state[0] if state and state[0] else ''), symbol, start, not latest))
         jobs.sort()
         queue = iter(jobs)
         report()
         def submit(pool, futures):
+            drain(db, config, ROOT)
             if stop.is_set() or time.perf_counter()-clock_start >= budget*60:
                 return
             job = next(queue, None)
