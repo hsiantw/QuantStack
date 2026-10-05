@@ -107,3 +107,11 @@
 .terminal-settings-extras a{color:var(--text-muted);text-decoration:none;padding:4px 0}
 .terminal-settings-extras a:hover{color:var(--text);text-decoration:underline}
 .terminal-settings-extras a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.chart-context-menu{position:fixed;z-index:200;width:272px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);overflow-y:auto;padding:6px 0;border:1px solid var(--atlas-border);border-radius:8px;background:var(--atlas-surface);color:var(--atlas-text);box-shadow:0 8px 32px #0003;font:12px 'Segoe UI',sans-serif}
+.chart-context-menu[hidden]{display:none!important}
+.chart-context-menu button{display:flex;align-items:center;gap:8px;width:100%;min-height:32px;padding:6px 12px;border:0;border-radius:0;background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}
+.chart-context-menu button:not(:disabled):hover,.chart-context-menu button:focus-visible{background:var(--atlas-hover);outline:2px solid var(--atlas-accent);outline-offset:-2px}
+.chart-context-menu button:disabled{opacity:.4;cursor:default}
+.chart-context-menu .context-check{width:14px;flex-shrink:0;color:var(--atlas-accent)}
+.chart-context-menu kbd{margin-left:auto;white-space:nowrap;color:var(--atlas-muted);font:10px 'Segoe UI',sans-serif}
+.chart-context-menu hr{border:0;border-top:1px solid var(--atlas-border);margin:5px 0}

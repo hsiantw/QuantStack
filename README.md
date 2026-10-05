@@ -44,6 +44,9 @@ The Workspace menu also provides shareable symbol/interval/date-range links and
 keyboard shortcuts. The last symbol and range restore automatically in this
 browser; reloading market data preserves the current selection. Shared links
 override saved selections. Drawings and notes remain private to the browser.
+Right-click the chart (or focus it and press Shift+F10) for chart settings,
+reset view, scale controls, indicators, comparisons, drawing tools, undo,
+image export and full screen. Escape closes the menu.
 The chart interval selector supports daily (1D), weekly (1W) and monthly (1M)
 bars built from daily history, as well as hourly bars on the local dashboard.
 For crypto USD pairs, the **LIQ** study records Binance USD-M public force-order

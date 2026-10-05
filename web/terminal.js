@@ -1,3 +1,95 @@
+// Right-click actions reuse the workspace controls and their saved preferences.
+(() => {
+  const chart = $('chart'), menu = document.createElement('div');
+  menu.id = 'chartContextMenu'; menu.className = 'chart-context-menu';
+  menu.hidden = true; menu.setAttribute('role', 'menu'); menu.setAttribute('aria-label', 'Chart actions');
+  chart.setAttribute('aria-haspopup', 'menu'); chart.setAttribute('aria-controls', menu.id);
+  chart.setAttribute('aria-expanded', 'false');
+  const items = [
+    ['settings', 'Chart settings…', 'terminalSettings'],
+    ['reset', 'Reset chart view', 'chartResetView', 'Alt R'],
+    ['auto', 'Auto scale', 'chartAutoScale'],
+    ['log', 'Logarithmic scale', 'chartLogScale'],
+    ['scale', 'More scale settings…', 'chartScaleMenuButton'],
+    null,
+    ['indicators', 'Indicators…', 'indicatorLibrary'],
+    ['compare', 'Compare symbols…', 'terminalCompare', 'Alt C'],
+    ['date', 'Go to date…', 'terminalGo', 'Alt G'],
+    null,
+    ['horizontal', 'Draw horizontal line', null],
+    ['trend', 'Draw trend line', null],
+    ['measure', 'Measure price and bars', null],
+    ['undo', 'Undo drawing', 'undoDrawing', 'Ctrl Z'],
+    ['clear', 'Remove all drawings', 'clearDrawings'],
+    null,
+    ['snapshot', 'Download chart image', 'terminalSnapshot'],
+    ['fullscreen', 'Full screen', 'terminalFullscreen'],
+  ];
+  for (const item of items) {
+    if (!item) { const divider = document.createElement('hr'); divider.setAttribute('role', 'separator'); menu.append(divider); continue; }
+    const [key, label, , shortcut = ''] = item, button = document.createElement('button');
+    button.type = 'button'; button.dataset.action = key; button.tabIndex = -1;
+    button.setAttribute('role', ['auto', 'log'].includes(key) ? 'menuitemcheckbox' : 'menuitem');
+    button.innerHTML = `<span class="context-check" aria-hidden="true"></span><span>${label}</span><kbd>${shortcut}</kbd>`;
+    menu.append(button);
+  }
+  document.body.append(menu);
+  function close(restore = false) {
+    menu.hidden = true; chart.setAttribute('aria-expanded', 'false');
+    if (restore) chart.focus({preventScroll: true});
+  }
+  function open(x, y) {
+    setTool('cursor'); closeScaleMenu(); $('tooltip').hidden = true;
+    for (const button of menu.querySelectorAll('button')) {
+      const key = button.dataset.action, target = items.find(item => item?.[0] === key)?.[2];
+      button.disabled = (['reset', 'auto', 'log', 'date', 'horizontal', 'trend', 'measure', 'snapshot'].includes(key) && !rows.length)
+        || (key === 'undo' && !drawingUndo.length) || (key === 'clear' && !drawings.length)
+        || !!(target && $(target)?.disabled);
+      if (['auto', 'log'].includes(key)) {
+        const checked = key === 'auto' ? chartScale.auto : chartScale.mode === 'log';
+        button.setAttribute('aria-checked', String(checked));
+        button.querySelector('.context-check').textContent = checked ? '✓' : '';
+      }
+      if (key === 'fullscreen') button.children[1].textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+    }
+    menu.hidden = false; menu.scrollTop = 0;
+    const box = menu.getBoundingClientRect();
+    menu.style.left = `${Math.max(8, Math.min(x, innerWidth - box.width - 8))}px`;
+    menu.style.top = `${Math.max(8, Math.min(y, innerHeight - box.height - 8))}px`;
+    chart.setAttribute('aria-expanded', 'true'); menu.querySelector('button').focus({preventScroll: true});
+  }
+  chart.addEventListener('contextmenu', event => {
+    event.preventDefault();
+    const box = chart.getBoundingClientRect();
+    open(event.clientX || box.left + box.width / 2, event.clientY || box.top + box.height / 2);
+  });
+  chart.addEventListener('keydown', event => {
+    if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+      event.preventDefault(); event.stopPropagation();
+      const box = chart.getBoundingClientRect(); open(box.left + box.width / 2, box.top + box.height / 2);
+    }
+  });
+  menu.addEventListener('click', event => {
+    const button = event.target.closest('button'); if (!button || button.disabled) return;
+    const [key, , target] = items.find(item => item?.[0] === button.dataset.action);
+    close(true);
+    if (target) $(target).click(); else setTool(key);
+  });
+  menu.addEventListener('keydown', event => {
+    event.stopPropagation();
+    if (event.key === 'Escape') { event.preventDefault(); close(true); }
+    else if (event.key === 'Tab') close(true);
+    else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault();
+      const buttons = [...menu.querySelectorAll('button:not(:disabled)')], index = buttons.indexOf(document.activeElement);
+      buttons[event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length].focus();
+    }
+  });
+  document.addEventListener('pointerdown', event => { if (!menu.hidden && !menu.contains(event.target)) close(); });
+  window.addEventListener('resize', () => close());
+  window.addEventListener('blur', () => close());
+})();
+
 // Analysis tools share the chart's viewport and use the existing history API.
 (() => {
   'use strict';

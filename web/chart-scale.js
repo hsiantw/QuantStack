@@ -320,10 +320,6 @@ $('chart').addEventListener('dblclick', event => {
   if (px >= g.left + g.pw) { chartScale.auto = true; chartScale.bounds = null; draw(); }
   else resetChartView();
 });
-$('chart').addEventListener('contextmenu', event => {
-  const g = geometry(); if (event.clientX - g.box.left < g.left + g.pw) return;
-  event.preventDefault(); event.stopImmediatePropagation(); openScaleMenu(event.clientX, event.clientY);
-}, true);
 document.addEventListener('keydown', event => {
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName) || event.target.isContentEditable || document.querySelector('dialog[open]')) return;
   if (event.key === 'Escape') { finishChartNavigation(); closeScaleMenu(); }

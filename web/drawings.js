@@ -224,7 +224,6 @@ $('chart').addEventListener('pointercancel',()=>{cancelDrawingGesture();syncDraw
 $('chart').addEventListener('lostpointercapture',finishDrawingGesture);
 window.addEventListener('blur',finishDrawingGesture);
 $('chart').addEventListener('pointerleave',()=>{if(!drag&&!drawingGesture){hover=-1;hoverY=null;hoverAnchor=null;draw();}});
-$('chart').addEventListener('contextmenu',e=>{e.preventDefault();setTool('cursor');});
 $('chart').addEventListener('wheel',e=>{
   if(!rows.length)return;e.preventDefault();if(drawingGesture||drag)return;
   const old=viewCount;viewCount=Math.max(Math.min(20,rows.length),Math.min(rows.length,Math.round(old*(e.deltaY>0?1.2:.8))));
