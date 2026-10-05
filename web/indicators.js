@@ -5,7 +5,8 @@ const quickStudies = {
   sma: {name: 'Simple moving average', parameters: {timeperiod: 20}, outputs: ['sma'], colors: ['#f5c451'], sources: studySources},
   ema: {name: 'Exponential moving average', parameters: {timeperiod: 50}, outputs: ['ema'], colors: ['#4c8dff'], sources: studySources},
   bb: {name: 'Bollinger Bands', parameters: {timeperiod: 20, multiplier: 2}, outputs: ['upper', 'middle', 'lower'], colors: ['#a879ff', '#c3a3ff', '#a879ff'], sources: studySources},
-  volume: {name: 'Volume', parameters: {height: 22}, outputs: ['up', 'down'], colors: ['#26a69a', '#ef5350'], sources: [], transparency: 76}
+  volume: {name: 'Volume', parameters: {height: 22}, outputs: ['up', 'down'], colors: ['#26a69a', '#ef5350'], sources: [], transparency: 76},
+  liquidations: {name: 'Observed liquidations', parameters: {height: 22}, outputs: ['longs', 'shorts'], colors: ['#ef5350', '#26a69a'], sources: [], transparency: 8}
 };
 const studyConfigurations = new Map();
 const wantedAdvanced = new Set();
@@ -16,6 +17,7 @@ let catalogPromise = null;
 let settingsStudy = 'sma';
 let settingsSession = 0;
 let quickSeriesCache = {rows: null, entries: new Map()};
+let liquidationData = null;
 
 function studyDescriptor(id) {
   return quickStudies[id] || advancedCatalog.find(item => item.id === id);
@@ -80,6 +82,7 @@ function saveStudySettings() {
 function indicatorLabel(id) {
   const config = studyConfig(id);
   if (id === 'volume') return 'Volume';
+  if (id === 'liquidations') return 'Liquidations';
   if (quickStudies[id]) return `${id.toUpperCase()} ${config.params.timeperiod}`;
   const descriptor = studyDescriptor(id);
   const values = Object.keys(descriptor?.parameters || {}).map(key => config.params[key]);
@@ -156,6 +159,88 @@ function studyContext() {
   return selected ? `${generation}:${query().toString()}` : '';
 }
 
+function liquidationBucketKey(value) {
+  const instant = new Date(value);
+  if (interval === '1mo') return `${instant.getUTCFullYear()}-${String(instant.getUTCMonth() + 1).padStart(2, '0')}-01`;
+  if (interval === '1w') {
+    instant.setUTCDate(instant.getUTCDate() - ((instant.getUTCDay() + 6) % 7));
+    return instant.toISOString().slice(0, 10);
+  }
+  if (interval === '1d') return value.slice(0, 10);
+  const span = interval === '1h' ? 3600000 : interval === '15m' ? 900000 : interval === '5m' ? 300000 : 60000;
+  return new Date(Math.floor(instant.getTime() / span) * span).toISOString().replace('.000Z', '+00:00');
+}
+
+async function reloadLiquidations() {
+  liquidationData = null;
+  if (!indicators.has('liquidations') || !selected) {
+    syncAdvancedPanels();
+    return;
+  }
+  if (window.ATLAS_STATIC) {
+    studyErrors.set('liquidations', 'Live liquidation capture is available on the local dashboard only.');
+    renderStudyChips();
+    syncAdvancedPanels();
+    return;
+  }
+  if (!selected.symbol.endsWith('-USD')) {
+    studyErrors.set('liquidations', 'Observed liquidations are available only for crypto USD pairs.');
+    renderStudyChips();
+    syncAdvancedPanels();
+    return;
+  }
+  const context = studyContext();
+  try {
+    const result = await api('/api/liquidations?' + query());
+    if (context !== studyContext()) return;
+    liquidationData = result;
+    studyErrors.delete('liquidations');
+  } catch (error) {
+    if (context !== studyContext()) return;
+    studyErrors.set('liquidations', error.message);
+  }
+  syncAdvancedPanels();
+  renderStudyChips();
+}
+
+function drawLiquidationPanel() {
+  const panel = document.querySelector('[data-panel="liquidations"]');
+  if (!panel || !selected?.symbol.endsWith('-USD')) return;
+  const canvas = panel.querySelector('canvas'), box = canvas.getBoundingClientRect();
+  const mainGeometry = geometry(), dpr = devicePixelRatio || 1, w = box.width, h = box.height;
+  const left = mainGeometry.left, right = mainGeometry.right, top = 28, bottom = 20;
+  const pw = w - left - right, ph = h - top - bottom;
+  canvas.width = Math.max(1, w * dpr);
+  canvas.height = Math.max(1, h * dpr);
+  const context = canvas.getContext('2d');
+  context.scale(dpr, dpr);
+  context.fillStyle = chartPalette().surface;
+  context.fillRect(0, 0, w, h);
+  if (pw <= 0 || ph <= 0) return;
+  const buckets = new Map((liquidationData?.bars || []).map(bar => [bar.date, bar]));
+  const values = mainGeometry.data.map(row => buckets.get(liquidationBucketKey(row.date)) || {longs: 0, shorts: 0, count: 0});
+  const maximum = Math.max(0, ...values.flatMap(value => [value.longs, value.shorts]));
+  const center = top + ph / 2, scale = Math.log1p(maximum) || 1;
+  context.strokeStyle = chartPalette().grid;
+  context.beginPath(); context.moveTo(left, center); context.lineTo(w - right, center); context.stroke();
+  const width = Math.max(1, Math.min(12, pw / Math.max(1, values.length) * 0.64));
+  values.forEach((value, index) => {
+    const x = mainGeometry.x(index), longHeight = Math.log1p(value.longs) / scale * (ph * 0.44);
+    const shortHeight = Math.log1p(value.shorts) / scale * (ph * 0.44);
+    context.fillStyle = studyColor(studyConfig('liquidations'), 'longs');
+    context.fillRect(x - width / 2, center, width, longHeight);
+    context.fillStyle = studyColor(studyConfig('liquidations'), 'shorts');
+    context.fillRect(x - width / 2, center - shortHeight, width, shortHeight);
+  });
+  if (!liquidationData?.event_count) {
+    context.fillStyle = chartPalette().muted;
+    context.font = '10px Segoe UI';
+    context.textAlign = 'center';
+    context.fillText('No liquidation events captured in this chart range yet.', left + pw / 2, center + 4);
+    context.textAlign = 'left';
+  }
+}
+
 function drawIndicators(c, g) {
   for (const id of ['bb', 'sma', 'ema']) {
     if (!indicators.has(id)) continue;
@@ -221,15 +306,25 @@ async function reloadAdvanced() {
 }
 
 function syncAdvancedPanels() {
-  $('indicatorPanels').innerHTML = [...advanced.values()].filter(item => !item.overlay && item.chartContext === studyContext()).map(item => `
+  const studies = [...advanced.values()].filter(item => !item.overlay && item.chartContext === studyContext()).map(item => `
     <div class="indicator-panel" data-panel="${esc(item.id)}">
       <button class="indicator-panel-label study-panel-settings" data-study-settings="${esc(item.id)}" title="Edit ${esc(item.name)} settings">${esc(indicatorLabel(item.id))} · ${esc(item.name)} <span aria-hidden="true">⚙</span></button>
       <button class="indicator-panel-close" data-remove-indicator="${esc(item.id)}" aria-label="Remove ${esc(item.id)}">×</button><canvas aria-label="${esc(item.name)} indicator"></canvas>
     </div>`).join('');
+  const liquidations = !window.ATLAS_STATIC && indicators.has('liquidations') && selected?.symbol.endsWith('-USD') ? `
+    <div class="indicator-panel liquidation-panel" data-panel="liquidations">
+      <button class="indicator-panel-label study-panel-settings" data-study-settings="liquidations">Liquidations · Binance USD-M · observed locally <span aria-hidden="true">⚙</span></button>
+      <button class="indicator-panel-close" data-remove-study="liquidations" aria-label="Remove liquidations">×</button>
+      <canvas aria-label="Observed Binance long and short liquidation notional"></canvas>
+      <span class="liquidation-legend"><i></i> Longs · sell <i></i> Shorts · buy · log scale, USDT notional</span>
+    </div>` : '';
+  $('indicatorPanels').innerHTML = studies + liquidations;
   drawAdvancedPanels();
+  drawLiquidationPanel();
 }
 
 function drawAdvancedPanels() {
+  drawLiquidationPanel();
   for (const item of advanced.values()) {
     if (item.overlay || item.chartContext !== studyContext()) continue;
     const panel = document.querySelector(`[data-panel="${CSS.escape(item.id)}"]`);
@@ -322,6 +417,12 @@ function removeAdvanced(id) {
   wantedAdvanced.delete(id); advanced.delete(id); studyErrors.delete(id); pendingStudies.delete(id);
   studyRequests.set(id, (studyRequests.get(id) || 0) + 1);
   saveStudySettings(); syncAdvancedPanels(); renderAdvancedList(); renderStudyChips(); render();
+}
+
+function removeQuickStudy(id) {
+  indicators.delete(id);
+  if (id === 'liquidations') liquidationData = null;
+  saveStudySettings(); renderStudyChips(); syncAdvancedPanels(); render();
 }
 
 async function toggleAdvanced(id) {
@@ -449,7 +550,7 @@ function installStudyControls() {
     if (edit) openStudySettings(edit.dataset.studySettings);
     if (remove) {
       const id = remove.dataset.removeStudy;
-      if (quickStudies[id]) { indicators.delete(id); saveStudySettings(); renderStudyChips(); render(); }
+      if (quickStudies[id]) removeQuickStudy(id);
       else removeAdvanced(id);
     }
   };
@@ -457,8 +558,17 @@ function installStudyControls() {
     const button = event.target.closest('[data-indicator]');
     if (!button) return;
     const id = button.dataset.indicator;
+    if (id === 'liquidations' && window.ATLAS_STATIC) {
+      showError('Live liquidation capture is available on the local dashboard only.');
+      return;
+    }
+    if (id === 'liquidations' && !selected?.symbol.endsWith('-USD')) {
+      showError('Observed liquidations are available only for crypto USD pairs.');
+      return;
+    }
     indicators.has(id) ? indicators.delete(id) : indicators.add(id);
-    saveStudySettings(); renderStudyChips(); render();
+    if (id === 'liquidations') { liquidationData = null; reloadLiquidations(); }
+    saveStudySettings(); renderStudyChips(); syncAdvancedPanels(); render();
   };
   $('indicatorLibrary').onclick = async () => {
     $('indicatorDialog').showModal();
@@ -468,9 +578,10 @@ function installStudyControls() {
   $('closeIndicators').onclick = () => $('indicatorDialog').close();
   $('indicatorSearch').oninput = renderAdvancedList;
   const libraryClick = event => {
-    const add = event.target.closest('[data-advanced]'), remove = event.target.closest('[data-remove-indicator]'), edit = event.target.closest('[data-study-settings]');
+    const add = event.target.closest('[data-advanced]'), remove = event.target.closest('[data-remove-indicator]'), removeQuick = event.target.closest('[data-remove-study]'), edit = event.target.closest('[data-study-settings]');
     if (edit) openStudySettings(edit.dataset.studySettings);
     else if (remove) removeAdvanced(remove.dataset.removeIndicator);
+    else if (removeQuick) removeQuickStudy(removeQuick.dataset.removeStudy);
     else if (add) toggleAdvanced(add.dataset.advanced);
   };
   $('indicatorList').onclick = $('activeAdvanced').onclick = $('indicatorPanels').onclick = libraryClick;

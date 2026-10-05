@@ -12,6 +12,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from sector_rotation import SectorRotationError
+
 ROOT = Path(__file__).resolve().parent
 DATABASE = ROOT / 'data' / 'market.sqlite'
 
@@ -56,8 +58,14 @@ def catalog():
         symbols = db.execute('''SELECT symbol,last_success,error FROM state UNION ALL
           SELECT symbol,MAX(last_success),error FROM intraday_state
           WHERE symbol NOT IN (SELECT symbol FROM state) GROUP BY symbol ORDER BY symbol''').fetchall()
+        by_symbol = {row['symbol']: dict(row) for row in symbols}
+        config_path = ROOT / 'config.json'
+        if config_path.exists():
+            config = json.loads(config_path.read_text(encoding='utf-8'))
+            for configured in config.get('symbols', []):
+                by_symbol.setdefault(configured, {'symbol': configured, 'last_success': None, 'error': None})
         result = []
-        for symbol in symbols:
+        for symbol in sorted(by_symbol.values(), key=lambda item: item['symbol']):
             bars = db.execute('SELECT date,close,adjusted_close,volume,currency,exchange FROM prices WHERE symbol=? ORDER BY date DESC LIMIT 31', (symbol['symbol'],)).fetchall()
             latest = bars[:2]
             performance = daily_performance(bars, symbol['symbol'].endswith('-USD'))
@@ -69,6 +77,14 @@ def catalog():
               WHERE symbol=? ORDER BY (interval='60m') DESC, timestamp DESC LIMIT 1''', (symbol['symbol'],)).fetchone()
             has_daily = bool(latest)
             if not latest and not hourly:
+                result.append(dict(symbol=symbol['symbol'], name=names.get(symbol['symbol'], symbol['symbol']),
+                                   date=None, close=None, currency=None, exchange=None,
+                                   quote_timestamp=None, quote_interval='1d', change=None,
+                                   has_daily=False, has_data=False,
+                                   **performance, market_cap=market_cap,
+                                   market_cap_currency=meta.get('currency'), market_cap_asof=meta.get('fetched_at'),
+                                   volume=None, kind='Crypto' if symbol['symbol'].endswith('-USD') else 'Stocks',
+                                   updated=symbol['last_success'], error=symbol['error']))
                 continue
             latest, previous = (latest[0], latest[1] if len(latest) > 1 else None) if latest else (
                 dict(date=hourly['timestamp'][:10], close=hourly['close'], currency=hourly['currency'], exchange=hourly['exchange']), None)
@@ -84,6 +100,7 @@ def catalog():
                                **daily, quote_timestamp=quote['timestamp'] if use_hourly else latest['date'],
                                quote_interval=('1h' if hourly['interval'] == '60m' else hourly['interval']) if use_hourly else '1d', change=change,
                                has_daily=has_daily,
+                               has_data=True,
                                **performance, market_cap=market_cap,
                                market_cap_currency=meta.get('currency'), market_cap_asof=meta.get('fetched_at'),
                                volume=bars[0]['volume'] if bars else None,
@@ -92,22 +109,49 @@ def catalog():
     return result
 
 
+def aggregate_daily_bars(rows, interval):
+    grouped = {}
+    for row in rows:
+        day = date.fromisoformat(row['date'])
+        if interval == '1w':
+            period_start = day - timedelta(days=day.weekday())
+            key = period_start.isoformat()
+        else:
+            key = day.strftime('%Y-%m')
+            period_start = day.replace(day=1)
+        bar = grouped.get(key)
+        if bar is None:
+            grouped[key] = dict(row, date=period_start.isoformat())
+        else:
+            bar['high'] = max(bar['high'], row['high'])
+            bar['low'] = min(bar['low'], row['low'])
+            bar['close'] = row['close']
+            bar['adjusted_close'] = row['adjusted_close']
+            bar['volume'] += row['volume']
+            bar['dividends'] = (bar['dividends'] or 0) + (row['dividends'] or 0)
+            if row['splits']:
+                bar['splits'] = row['splits'] if not bar['splits'] else bar['splits'] * row['splits']
+    return list(grouped.values())
+
+
 def history(query):
     symbol = query.get('symbol', ['AAPL'])[0]
     interval = query.get('interval', ['1d'])[0]
-    intervals = {'1m': 1, '5m': 5, '15m': 15, '1h': 60, '1d': 0}
+    intervals = {'1m': 1, '5m': 5, '15m': 15, '1h': 60, '1d': 0, '1w': 0, '1mo': 0}
     if interval not in intervals:
-        raise ValueError('Interval must be 1m, 5m, 15m, 1h, or 1d.')
+        raise ValueError('Interval must be 1m, 5m, 15m, 1h, 1d, 1w, or 1mo.')
     start, end = query.get('start', ['0001-01-01'])[0], query.get('end', ['9999-12-31'])[0]
     date.fromisoformat(start)
     date.fromisoformat(end)
     if start > end:
         raise ValueError('Start date must be before the end date.')
     with database() as db:
-        if interval == '1d':
+        if interval in ('1d', '1w', '1mo'):
             rows = db.execute('''SELECT date,open,high,low,close,adjusted_close,volume,dividends,splits
               FROM prices WHERE symbol=? AND date>=? AND date<=? ORDER BY date''', (symbol, start, end)).fetchall()
-            return [dict(row) for row in rows]
+            if interval == '1d':
+                return [dict(row) for row in rows]
+            return aggregate_daily_bars(rows, interval)
         lower = start + 'T00:00:00+00:00'
         upper = (date.fromisoformat(end) + timedelta(days=1)).isoformat() + 'T00:00:00+00:00' if end != '9999-12-31' else '9999-12-31T23:59:59+00:00'
         if interval in ('1h', '5m', '15m'):
@@ -471,8 +515,25 @@ class Handler(BaseHTTPRequestHandler):
                 progress = ROOT / 'data' / 'stock-expansion.json'
                 if progress.exists():
                     value['expansion'] = json.loads(progress.read_text(encoding='utf-8'))
+            elif url.path == '/api/sector-rotation':
+                from sector_rotation import snapshot
+                value = snapshot()
             elif url.path == '/api/usage':
                 value = api_usage()
+            elif url.path == '/api/liquidations':
+                query = parse_qs(url.query)
+                symbol = query.get('symbol', [''])[0]
+                interval = query.get('interval', ['1d'])[0]
+                start, end = query.get('start', ['0001-01-01'])[0], query.get('end', ['9999-12-31'])[0]
+                date.fromisoformat(start)
+                date.fromisoformat(end)
+                if start > end:
+                    raise ValueError('Start date must be before the end date.')
+                lower = start + 'T00:00:00+00:00'
+                upper = ((date.fromisoformat(end) + timedelta(days=1)).isoformat() +
+                         'T00:00:00+00:00') if end != '9999-12-31' else '9999-12-31T23:59:59+00:00'
+                from liquidations import read_liquidations
+                value = read_liquidations(DATABASE, symbol, lower, upper, interval)
             elif url.path == '/api/indicators':
                 value = indicator_catalog()
             elif url.path == '/api/indicator':
@@ -531,6 +592,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send(200, json.dumps(value, allow_nan=False).encode(), 'application/json')
         except ValueError as exc:
             self.send(400, json.dumps({'error': str(exc)}).encode(), 'application/json')
+        except SectorRotationError as exc:
+            self.send(502, json.dumps({'error': str(exc)}).encode(), 'application/json')
         except Exception:
             self.send(500, b'{"error":"Could not read the local dataset. Check that the database exists."}', 'application/json')
 

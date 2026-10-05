@@ -99,7 +99,7 @@ async def proxy(request):
         raise web.HTTPBadGateway(text='QuantStack is starting. Please retry.') from exc
 
 
-def create_app(dashboard_url, snapshot_dir=None):
+def create_app(dashboard_url, snapshot_dir=None, liquidation_symbols=()):
     app = web.Application(client_max_size=200 * 1024**2)
     app[DASHBOARD] = dashboard_url
     app[SNAPSHOT_PATH] = snapshot_dir
@@ -110,6 +110,21 @@ def create_app(dashboard_url, snapshot_dir=None):
             yield
 
     app.cleanup_ctx.append(client_context)
+    if liquidation_symbols:
+        async def liquidation_context(application):
+            from liquidations import collect_force_orders
+            task = asyncio.create_task(collect_force_orders(
+                application[CLIENT], ROOT / 'data' / 'market.sqlite', liquidation_symbols))
+            try:
+                yield
+            finally:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+        app.cleanup_ctx.append(liquidation_context)
     app.router.add_route('*', '/{path:.*}', proxy)
     return app
 
@@ -119,11 +134,18 @@ async def serve(host, port):
     start_worker()
     use_snapshot = not has_market_data(ROOT / 'data' / 'market.sqlite')
     snapshot_dir = await asyncio.to_thread(prepare) if use_snapshot else None
+    liquidation_symbols = ()
+    if host in ('127.0.0.1', 'localhost', '::1'):
+        import json
+        config = json.loads((ROOT / 'config.json').read_text(encoding='utf-8'))
+        liquidation_symbols = tuple(symbol for symbol in config.get('symbols', [])
+                                    if isinstance(symbol, str) and symbol.endswith('-USD'))
     dashboard = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
     threading.Thread(target=dashboard.serve_forever, daemon=True).start()
     runner = None
     try:
-        app = create_app(f'http://127.0.0.1:{dashboard.server_port}', snapshot_dir)
+        app = create_app(f'http://127.0.0.1:{dashboard.server_port}', snapshot_dir,
+                         liquidation_symbols)
         runner = web.AppRunner(app)
         await runner.setup()
         await web.TCPSite(runner, host, port).start()

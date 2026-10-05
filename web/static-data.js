@@ -2,6 +2,33 @@
 window.ATLAS_STATIC = true;
 const historyCache = new Map();
 const snapshotResource = path => window.ATLAS_DATA_BASE ? new URL(path, new URL(window.ATLAS_DATA_BASE, document.baseURI)).href : path;
+function aggregateBars(rows, interval) {
+    const grouped = new Map();
+    for (const row of rows) {
+        const day = new Date(`${row.date}T00:00:00Z`);
+        let key, date;
+        if (interval === '1w') {
+            day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7));
+            date = day.toISOString().slice(0, 10);
+            key = date;
+        } else {
+            key = row.date.slice(0, 7);
+            date = `${key}-01`;
+        }
+        const bar = grouped.get(key);
+        if (!bar) grouped.set(key, {...row, date});
+        else {
+            bar.high = Math.max(bar.high, row.high);
+            bar.low = Math.min(bar.low, row.low);
+            bar.close = row.close;
+            bar.adjusted_close = row.adjusted_close;
+            bar.volume += row.volume;
+            bar.dividends = (bar.dividends || 0) + (row.dividends || 0);
+            if (row.splits) bar.splits = bar.splits ? bar.splits * row.splits : row.splits;
+        }
+    }
+    return [...grouped.values()];
+}
 window.atlasApi = async function(url) {
     const route = new URL(url, 'http://local');
     if (route.pathname === '/api/symbols') {
@@ -16,6 +43,7 @@ window.atlasApi = async function(url) {
         return response.json();
     }
     const symbol = route.searchParams.get('symbol');
+    const interval = route.searchParams.get('interval') || '1d';
     const start = route.searchParams.get('start') || '0001-01-01';
     const end = route.searchParams.get('end') || '9999-12-31';
     if (start > end) throw Error('Start date must be before the end date.');
@@ -29,5 +57,6 @@ window.atlasApi = async function(url) {
         if (historyCache.size >= 5) historyCache.delete(historyCache.keys().next().value);
         historyCache.set(symbol, records);
     }
-    return historyCache.get(symbol).filter(row=>row.date>=start && row.date<=end);
+    const rows = historyCache.get(symbol).filter(row=>row.date>=start && row.date<=end);
+    return interval === '1w' || interval === '1mo' ? aggregateBars(rows, interval) : rows;
 };

@@ -25,12 +25,31 @@ class DashboardTests(unittest.TestCase):
             persist_intraday(db, 'NEW', '60m', [
                 ('NEW', '2026-01-02T14:30:00+00:00', '60m', 10., 15., 9., 14., 14., 1000, 'USD', 'NMS', 'America/New_York', 'now')], 'now', 0)
             db.close()
-            with patch.object(dashboard, 'DATABASE', path):
+            with patch.object(dashboard, 'DATABASE', path), patch.object(dashboard, 'ROOT', Path(directory)):
                 asset = dashboard.catalog()[0]
                 self.assertEqual((asset['symbol'], asset['close'], asset['quote_interval']), ('NEW', 14., '1h'))
                 self.assertFalse(asset['has_daily'])
                 self.assertIsNone(asset['change'])
                 self.assertEqual(len(dashboard.history({'symbol': ['NEW'], 'interval': ['1h']})), 1)
+
+    def test_configured_symbols_are_visible_before_their_first_collection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'config.json').write_text(json.dumps({'symbols': ['BTC-USD', 'DOGE-USD']}))
+            path = root / 'market.sqlite'
+            db = connect(path)
+            persist(db, 'BTC-USD', [
+                ('BTC-USD', '2026-01-01', 10., 11., 9., 10., 10., 100, 0., 0., 'USD', 'CCC', 'UTC', 'now')
+            ], True, 'now', 0)
+            db.close()
+            with patch.object(dashboard, 'DATABASE', path), patch.object(dashboard, 'ROOT', root):
+                assets = {asset['symbol']: asset for asset in dashboard.catalog()}
+            self.assertEqual(set(assets), {'BTC-USD', 'DOGE-USD'})
+            self.assertEqual(assets['BTC-USD']['close'], 10.)
+            self.assertTrue(assets['BTC-USD']['has_data'])
+            self.assertIsNone(assets['DOGE-USD']['close'])
+            self.assertFalse(assets['DOGE-USD']['has_data'])
+            self.assertEqual(assets['DOGE-USD']['kind'], 'Crypto')
 
     def test_native_hourly_history_precedes_minute_rollups(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -55,6 +74,41 @@ class DashboardTests(unittest.TestCase):
                 db.close()
                 self.assertEqual(dashboard.history({'symbol': ['TEST'], 'interval': ['1h']}), [])
 
+    def test_weekly_and_monthly_history_aggregates_daily_bars(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'market.sqlite'
+            db = connect(path)
+            rows = [
+                ('TEST', day.isoformat(), 10. + index, 12. + index, 9. + index,
+                 11. + index, 10. + index, 100 + index, 1., 0., 'USD', 'NMS',
+                 'America/New_York', 'now')
+                for index, day in enumerate([
+                    date(2026, 1, 30), date(2026, 2, 2), date(2026, 2, 3),
+                    date(2026, 2, 27), date(2026, 3, 2)])
+            ]
+            persist(db, 'TEST', rows, True, 'now', 0)
+            db.close()
+            with patch.object(dashboard, 'DATABASE', path):
+                weekly = dashboard.history({'symbol': ['TEST'], 'interval': ['1w']})
+                monthly = dashboard.history({'symbol': ['TEST'], 'interval': ['1mo']})
+                limited = dashboard.history({
+                    'symbol': ['TEST'], 'interval': ['1mo'], 'start': ['2026-02-01'], 'end': ['2026-02-28']
+                })
+            self.assertEqual([bar['date'] for bar in weekly],
+                             ['2026-01-26', '2026-02-02', '2026-02-23', '2026-03-02'])
+            self.assertEqual((weekly[1]['open'], weekly[1]['high'], weekly[1]['low'],
+                              weekly[1]['close'], weekly[1]['volume'], weekly[1]['dividends']),
+                             (11., 14., 10., 13., 203, 2.))
+            self.assertEqual([bar['date'] for bar in monthly],
+                             ['2026-01-01', '2026-02-01', '2026-03-01'])
+            self.assertEqual((monthly[1]['open'], monthly[1]['high'], monthly[1]['low'],
+                              monthly[1]['close'], monthly[1]['volume']),
+                             (11., 15., 10., 14., 306))
+            self.assertEqual(len(limited), 1)
+            self.assertEqual(limited[0]['volume'], 306)
+            with self.assertRaises(ValueError):
+                dashboard.history({'symbol': ['TEST'], 'interval': ['1q']})
+
     def test_api_filters_exports_and_rejects_invalid_dates(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'market.sqlite'
@@ -68,7 +122,7 @@ class DashboardTests(unittest.TestCase):
             persist_intraday(db, 'TEST', '60m', [
                 ('TEST', '2026-01-02T14:30:00+00:00', '60m', 10., 13., 9., 12., 12., 300, 'USD', 'NMS', 'America/New_York', 'now')], 'now', 0)
             db.close()
-            with patch.object(dashboard, 'DATABASE', path):
+            with patch.object(dashboard, 'DATABASE', path), patch.object(dashboard, 'ROOT', Path(directory)):
                 server = ThreadingHTTPServer(('127.0.0.1', 0), dashboard.Handler)
                 worker = threading.Thread(target=server.serve_forever, daemon=True)
                 worker.start()

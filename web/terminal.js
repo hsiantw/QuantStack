@@ -371,7 +371,8 @@
     try { prefs = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch {}
     const params = new URLSearchParams(location.search);
     if (params.has('symbol')) prefs = Object.fromEntries(params);
-    interval = !window.ATLAS_STATIC && prefs.interval === '1h' ? '1h' : '1d';
+    const intervals = window.ATLAS_STATIC ? ['1d', '1w', '1mo'] : ['1d', '1h', '1w', '1mo'];
+    interval = intervals.includes(prefs.interval) ? prefs.interval : '1d';
     period = periods.includes(prefs.period) ? prefs.period : '1Y';
     if (period === 'CUSTOM') {
       if ((prefs.start === '' || validDate(prefs.start)) && (prefs.end === '' || validDate(prefs.end)) &&

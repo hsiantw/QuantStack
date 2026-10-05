@@ -10,6 +10,8 @@ change local settings. If collection is running, retry saving when it finishes.
 The Add symbols dialog previews normalized tickers and duplicates before saving.
 Use **Refresh status** inside the dialog for the latest hourly and daily reports.
 Reports show collection outcomes, not whether Windows tasks are installed.
+Configured symbols appear in the watchlist immediately; assets without collected
+price history remain listed and are marked as unavailable from the data provider.
 
 The default **low background usage** profile uses one hourly worker, two-second
 request pauses, below-normal process priority, and ten-minute hourly and scheduled
@@ -42,6 +44,13 @@ The Workspace menu also provides shareable symbol/interval/date-range links and
 keyboard shortcuts. The last symbol and range restore automatically in this
 browser; reloading market data preserves the current selection. Shared links
 override saved selections. Drawings and notes remain private to the browser.
+The chart interval selector supports daily (1D), weekly (1W) and monthly (1M)
+bars built from daily history, as well as hourly bars on the local dashboard.
+For crypto USD pairs, the **LIQ** study records Binance USD-M public force-order
+events to the local database while the local server is running. It displays
+observed long/short liquidation notional in USDT on a logarithmic panel. The
+feed is partial, venue-specific, unavailable historically before local capture,
+and is not a complete exchange-wide liquidation total.
 Watchlists render 100 assets at a time to keep large datasets responsive;
 search always covers the entire dataset, and **Show next** loads more rows.
 
@@ -76,6 +85,12 @@ See [Render deployment and integration checks](docs/quantstack-integration.md).
 ## Stock and crypto datasets
 
 The main pipeline is `market_data.py`. Daily history is stored in **data/market.sqlite** and exported to **data/exports/** as one CSV per symbol. No editor extensions are required.
+
+`config.json` includes USD-pair tickers for 99 ASCII-symbol assets in CoinMarketCap's
+top 100 by market capitalization, based on the listing checked on 2026-10-05.
+The remaining asset uses a non-ASCII ticker that is not compatible with this
+Yahoo Finance ticker pipeline. New symbols are collected by the existing
+scheduled refresh; they appear in charts after successful collection.
 
 ## Web interface
 
@@ -118,6 +133,19 @@ Drag its top edge to resize it, or use its maximize and collapse buttons. The
 screener's **Filters** button expands presets, rules and saved screens. Panel resize
 handles also support arrow keys. Run `.\.venv\Scripts\python.exe smoke_workspace.py`
 to check the workspace in desktop and mobile layouts with headless Edge.
+
+The **Sector rotation** research tool reads Finviz's public Group Screener
+performance view, ranks sectors across weekly, monthly, quarterly, half-year,
+YTD and yearly returns, and flags weekly rank improvement or cooling against
+the quarterly rank. Results are snapshots (cached locally for five minutes),
+not historical sector-index data or trading signals. Finviz's reported delays
+and availability apply; use the linked Finviz page as the source of record.
+The live data panel is available on the local dashboard; hosted snapshots link
+to Finviz directly.
+The **Idea notebook** keeps titled notes in browser storage, with categories,
+optional related tickers, search and edit/delete controls. It is separate from
+the per-symbol notes panel and the Research journal, and does not sync across
+browsers or devices.
 
 Use **Compare** (Alt+C) to add up to three symbols to a linked performance pane.
 All plotted series start at 0% on the first visible timestamp shared by the

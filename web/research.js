@@ -13,6 +13,8 @@
     forecast:{title:'Forecast lab',icon:'M3 18l5-6 4 2 4-8M16 6l5-3M16 6l5 5',description:'Walk-forward AR(1) evaluation against a no-change baseline.'},
     compare:{title:'Strategy comparison',icon:'M4 20V4M4 20h17M7 16l4-7 4 3 6-8',description:'Compare the native strategy presets on the same bars and costs.'},
     markets:{title:'Market overview',icon:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M3 12h18M12 3v18',description:'Stocks, crypto and other stored instruments; daily change and data freshness.'},
+    rotation:{title:'Sector rotation',icon:'M4 19V5m0 14h17M7 15l4-5 4 3 6-8',description:'Rank Finviz sector performance across multiple timeframes and track relative momentum shifts.'},
+    ideas:{title:'Idea notebook',icon:'M5 4h14v16H5zM8 8h8M8 12h8M8 16h5',description:'Save, organize, search and revisit market ideas in this browser.'},
     journal:{title:'Research journal',icon:'M5 3h14v18H5zM8 7h8M8 11h8M8 15h5',description:'Symbol notes and source links saved in this browser.'}
   };
   const existing=[
@@ -27,11 +29,11 @@
   library.insertAdjacentHTML('beforeend','<div class="research-library"><input id="researchSearch" type="search" placeholder="Find an analysis tool" aria-label="Search analysis tools"><div id="researchLibraryList"></div></div>');
   const entries=[...Object.entries(tools).map(([key,t])=>[key,t.title,t.description]),...existing];
   const groups = [
-    ['Markets & data', ['markets','screener','fundamentals','liquidity','data']],
+    ['Markets & data', ['markets','rotation','screener','fundamentals','liquidity','data']],
     ['Strategies & relationships', ['strategy','compare','pairs']],
     ['Portfolio & risk', ['portfolio','risk','options']],
     ['Models & forecasts', ['forecast','markov','brownian']],
-    ['Notes & research', ['journal']]
+    ['Notes & research', ['ideas','journal']]
   ];
   function showLibrary() {
     const q=el('researchSearch').value.toLowerCase();
@@ -52,6 +54,9 @@
   const drafts=new Map();
   let holdings={};try{const saved=JSON.parse(localStorage.getItem('atlas.portfolios.v1')||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))holdings=saved;}catch{}
   let screener=null;
+  const ideaNotesKey='atlas.ideaNotes.v1';
+  let ideaNotes=[];
+  let selectedIdeaId=null;
   const input=(id,label,value,min,max,step='any')=>`<label>${label}<input id="rt-${id}" type="number" value="${value}" min="${min}" max="${max}" step="${step}" required></label>`;
   const basis=()=>'<label>Price basis<select id="rt-adjusted"><option value="true">Adjusted close</option><option value="false">Raw close</option></select></label>';
   const get=id=>el('rt-'+id),num=id=>Number(get(id).value);
@@ -75,6 +80,7 @@
     forecast:'AR(1) models log returns. The final 20% is evaluated one bar at a time using only earlier observations, then the full sample is fitted for the forward path. MAE is measured in log returns. The baseline predicts no price change. This is an experimental model, not a promise of price performance.',
     compare:'Uses the same next-open execution engine as Strategy tester. Each preset retains its own warmup. Results are in-sample and may have different first trade dates; ranking does not establish future performance. Open a preset in Strategy tester to inspect its rules and trades.',
     markets:'Latest stored daily changes and timestamps. Prices in different currencies are not aggregated. No live quotes, on-chain metrics, futures curves or macro calendar are inferred.',
+    rotation:'Finviz Group Screener sector returns are snapshots, not a historical sector-index series. Rotation compares each sector’s Finviz weekly performance rank with its quarterly rank: a rise of at least two places is Improving, a fall of at least two is Cooling, otherwise Steady. Performance is delayed as reported by Finviz and is not a trading signal.',
     journal:'Keep research alongside the selected chart. Notes use the same browser storage as the Notes panel. Source links are your references; no automatic news feed or sentiment score is generated.'
   };
   function context(){if(el('researchContext'))el('researchContext').textContent=`${selected?.symbol||'Select a symbol'} · ${interval} · ${rows.length.toLocaleString()} loaded bars${rows.length?' · '+rows[0].date+' to '+rows.at(-1).date:''}`;}
@@ -86,16 +92,19 @@
     if(key==='forecast')return `${input('horizon','Forward horizon · bars',20,1,120,1)}${basis()}`;
     if(key==='compare')return `${input('capital','Initial capital',10000,100,1e9)}${input('commission','Commission %',.1,0,10)}${input('slippage','Slippage %',.05,0,10)}${basis()}`;
     if(key==='markets')return '<label>Asset group<select id="rt-group"><option value="All">All assets</option><option value="Stocks">Stocks</option><option value="Crypto">Crypto</option><option value="Saved">Saved watchlist</option></select></label><label class="research-wide">Search<input id="rt-search" placeholder="Company or ticker"></label>';
+    if(key==='rotation')return '<label>Sort by<select id="rt-period"><option value="change_1d_pct">Day</option><option value="week_pct">Week</option><option value="month_pct">Month</option><option value="quarter_pct">Quarter</option><option value="half_year_pct">Half-year</option><option value="ytd_pct">Year to date</option><option value="year_pct">Year</option></select></label>';
     if(key==='journal')return '<label class="research-wide">Symbol notes<textarea id="rt-notes" rows="5" maxlength="20000"></textarea></label><label class="research-wide">Source URL (optional)<input id="rt-source" type="url" placeholder="https://…"></label>';
     return '';
   }
   function renderTool(key){
     if(el('researchForm')&&active!=='journal') drafts.set(active,Object.fromEntries([...el('researchForm').querySelectorAll('input,textarea,select')].map(field=>[field.id,field.value])));
     invalidate();active=key;
-    pane.innerHTML=`<section class="research-tool"><div class="research-heading"><div><span class="eyebrow">CHART ANALYSIS</span><h2>${E(tools[key].title)}</h2><p id="researchContext"></p></div><button id="researchExport" disabled>Export result JSON</button></div><form id="researchForm" class="research-controls">${form(key)}<button type="submit" id="researchRun">${key==='journal'?'Save research':key==='markets'?'Refresh overview':'Run analysis'}</button><button type="button" id="researchCancel">Cancel</button></form><p class="research-help">${E(help[key])}</p><p id="researchStatus" role="status" aria-live="polite">Ready. Calculations run only when requested.</p><div id="researchOutput"></div></section>`;
+    if(key==='ideas') { renderIdeaNotebook(); return; }
+    pane.innerHTML=`<section class="research-tool"><div class="research-heading"><div><span class="eyebrow">CHART ANALYSIS</span><h2>${E(tools[key].title)}</h2><p id="researchContext"></p></div><button id="researchExport" disabled>Export result JSON</button></div><form id="researchForm" class="research-controls">${form(key)}<button type="submit" id="researchRun">${key==='journal'?'Save research':key==='markets'?'Refresh overview':key==='rotation'?'Refresh sector data':'Run analysis'}</button><button type="button" id="researchCancel">Cancel</button></form><p class="research-help">${E(help[key])}</p><p id="researchStatus" role="status" aria-live="polite">Ready. Calculations run only when requested.</p><div id="researchOutput"></div></section>`;
     if(drafts.has(key))for(const [id,value] of Object.entries(drafts.get(key)))if(el(id))el(id).value=value;
     context();el('researchForm').oninput=()=>invalidate();el('researchForm').onsubmit=run;el('researchCancel').onclick=()=>invalidate('Canceled.');
     el('researchExport').onclick=()=>{if(!result)return;const url=URL.createObjectURL(new Blob([JSON.stringify(result,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=`quantstack-${active}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+    if(key==='rotation'&&window.ATLAS_STATIC){el('researchRun').disabled=true;el('researchStatus').textContent='Sector rotation snapshots are available on the local dashboard only.';el('researchOutput').innerHTML='<p class="research-help">Open the <a href="https://finviz.com/groups?g=sector&v=140" target="_blank" rel="noopener noreferrer">Finviz sector performance screener</a>.</p>';}
     if(key==='portfolio') {
       get('save').onclick=()=>{try{parseHoldings();const name=get('name').value.trim();if(!name)throw Error('Enter a portfolio name.');if(Object.keys(holdings).length>=30&&!Object.hasOwn(holdings,name))throw Error('Save up to 30 portfolios.');holdings={...holdings,[name]:get('holdings').value};localStorage.setItem('atlas.portfolios.v1',JSON.stringify(holdings));get('saved').innerHTML='<option value="">Choose…</option>'+Object.keys(holdings).map(n=>`<option>${E(n)}</option>`).join('');get('saved').value=name;el('researchStatus').textContent='Holdings saved in this browser.';}catch(e){statusError(e);}};
       get('saved').onchange=()=>{const n=get('saved').value;if(Object.hasOwn(holdings,n)){get('name').value=n;get('holdings').value=holdings[n];invalidate();}};
@@ -104,6 +113,94 @@
     if(key==='journal') {
       try{get('notes').value=localStorage.getItem('atlas.notes.'+selected?.symbol)||'';get('source').value=localStorage.getItem('atlas.source.'+selected?.symbol)||'';}catch{}
     }
+  }
+  function renderIdeaNotebook() {
+    pane.innerHTML=`<section class="research-tool idea-notebook"><div class="research-heading"><div><span class="eyebrow">NOTES & RESEARCH</span><h2>${E(tools.ideas.title)}</h2><p>Keep ideas organized and available for later in this browser.</p></div><button id="ideaNew" type="button">New note</button></div><div class="idea-notebook-layout"><section class="idea-notes-list"><label for="ideaSearch">Find a note</label><input id="ideaSearch" type="search" placeholder="Search title, ticker or text"><label for="ideaCategoryFilter">Category</label><select id="ideaCategoryFilter"><option value="">All categories</option><option>Idea</option><option>Research</option><option>To do</option><option>Watchlist</option></select><div id="ideaNotesList" aria-label="Saved notes"></div></section><form id="ideaEditor" class="idea-note-editor"><label for="ideaTitle">Title</label><input id="ideaTitle" maxlength="120" required placeholder="Give this note a useful title"><label for="ideaCategory">Category</label><select id="ideaCategory"><option>Idea</option><option>Research</option><option>To do</option><option>Watchlist</option></select><label for="ideaSymbol">Related symbol (optional)</label><input id="ideaSymbol" maxlength="30" placeholder="e.g. NVDA"><label for="ideaBody">Notes</label><textarea id="ideaBody" maxlength="20000" rows="12" placeholder="Capture the thesis, questions, links or next steps…" required></textarea><p id="ideaNoteDate" class="idea-note-date"></p><div class="idea-note-actions"><button id="ideaSave" type="submit">Save note</button><button id="ideaDelete" type="button" class="secondary" disabled>Delete</button></div></form></div><p id="ideaStatus" role="status" aria-live="polite">Notes are saved in this browser.</p></section>`;
+    const list=el('ideaNotesList'), editor=el('ideaEditor'), status=el('ideaStatus');
+    const field=id=>el(id);
+    const formatDate=value=>value?new Date(value).toLocaleString():'';
+    function showStatus(message,isError=false) {
+      status.textContent=message;
+      status.dataset.error=String(isError);
+    }
+    function loadIdeas() {
+      try {
+        const stored=localStorage.getItem(ideaNotesKey);
+        const parsed=stored?JSON.parse(stored):[];
+        if(!Array.isArray(parsed)||parsed.some(note=>!note||typeof note.id!=='string'||typeof note.title!=='string'||typeof note.category!=='string'||typeof note.body!=='string'||typeof note.updatedAt!=='string'))
+          throw Error('Saved notes have an invalid format. They have not been changed.');
+        ideaNotes=parsed;
+        showStatus(`${ideaNotes.length} saved ${ideaNotes.length===1?'note':'notes'} · stored in this browser.`);
+      } catch(error) {
+        ideaNotes=[];
+        showStatus(error instanceof SyntaxError?'Saved notes could not be read because the browser data is invalid.':error.message||'Browser storage is unavailable. Notes have not been changed.',true);
+        return false;
+      }
+      return true;
+    }
+    function clearEditor() {
+      selectedIdeaId=null;
+      editor.reset();
+      field('ideaCategory').value='Idea';
+      field('ideaSymbol').value=selected?.symbol||'';
+      field('ideaNoteDate').textContent='New note';
+      field('ideaDelete').disabled=true;
+      list.querySelectorAll('[data-idea-open]').forEach(button=>button.classList.remove('active'));
+    }
+    function openIdea(id) {
+      const note=ideaNotes.find(item=>item.id===id);
+      if(!note)return;
+      selectedIdeaId=id;
+      field('ideaTitle').value=note.title;
+      field('ideaCategory').value=note.category;
+      field('ideaSymbol').value=note.symbol||'';
+      field('ideaBody').value=note.body;
+      field('ideaNoteDate').textContent=`Updated ${formatDate(note.updatedAt)}`;
+      field('ideaDelete').disabled=false;
+      list.querySelectorAll('[data-idea-open]').forEach(button=>button.classList.toggle('active',button.dataset.ideaOpen===id));
+      showStatus(`Editing “${note.title}”.`);
+    }
+    function renderList() {
+      const search=field('ideaSearch').value.trim().toLowerCase(),category=field('ideaCategoryFilter').value;
+      const visible=ideaNotes.filter(note=>(!category||note.category===category)&&`${note.title} ${note.symbol||''} ${note.category} ${note.body}`.toLowerCase().includes(search))
+        .sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+      list.innerHTML=visible.map(note=>`<button type="button" data-idea-open="${E(note.id)}" class="idea-note-item ${selectedIdeaId===note.id?'active':''}"><strong>${E(note.title)}</strong><small>${E(note.category)}${note.symbol?' · '+E(note.symbol):''} · ${E(formatDate(note.updatedAt))}</small><span>${E(note.body.slice(0,110))}</span></button>`).join('')||'<p class="research-help">No saved notes match. Create a note to keep an idea for later.</p>';
+    }
+    const notesAvailable=loadIdeas();
+    if(notesAvailable) {
+      renderList();
+      if(ideaNotes.length)openIdea(ideaNotes.find(note=>note.id===selectedIdeaId)?.id||ideaNotes.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))[0].id);
+      else clearEditor();
+    } else {
+      renderList();
+      clearEditor();
+      editor.inert=true;
+      field('ideaNew').disabled=true;
+    }
+    field('ideaSearch').oninput=renderList;
+    field('ideaCategoryFilter').onchange=renderList;
+    field('ideaNew').onclick=()=>{clearEditor();showStatus('New note. Save it to keep it in this browser.');field('ideaTitle').focus();};
+    list.onclick=event=>{const button=event.target.closest('[data-idea-open]');if(button)openIdea(button.dataset.ideaOpen);};
+    editor.onsubmit=event=>{
+      event.preventDefault();
+      if(!editor.reportValidity())return;
+      const now=new Date().toISOString(),existing=ideaNotes.find(note=>note.id===selectedIdeaId);
+      const note={id:existing?.id||crypto.randomUUID(),title:field('ideaTitle').value.trim(),category:field('ideaCategory').value,symbol:field('ideaSymbol').value.trim().toUpperCase(),body:field('ideaBody').value.trim(),createdAt:existing?.createdAt||now,updatedAt:now};
+      if(!note.title||!note.body){showStatus('Add a title and note before saving.',true);return;}
+      const updated=[note,...ideaNotes.filter(item=>item.id!==note.id)];
+      try { localStorage.setItem(ideaNotesKey,JSON.stringify(updated)); }
+      catch { showStatus('Could not save this note. Browser storage is unavailable or full.',true);return; }
+      ideaNotes=updated;selectedIdeaId=note.id;field('ideaNoteDate').textContent=`Updated ${formatDate(now)}`;field('ideaDelete').disabled=false;
+      renderList();showStatus(`Saved “${note.title}” in this browser.`);
+    };
+    field('ideaDelete').onclick=()=>{
+      const note=ideaNotes.find(item=>item.id===selectedIdeaId);
+      if(!note||!window.confirm(`Delete “${note.title}”?`))return;
+      const updated=ideaNotes.filter(item=>item.id!==note.id);
+      try { localStorage.setItem(ideaNotesKey,JSON.stringify(updated)); }
+      catch { showStatus('Could not delete this note from browser storage.',true);return; }
+      ideaNotes=updated;selectedIdeaId=null;renderList();clearEditor();showStatus(`Deleted “${note.title}”.`);
+    };
   }
   function statusError(error){el('researchStatus').textContent=error.message;el('researchStatus').dataset.error='true';}
   function open(key){if(tools[key]){if(key!==active||!el('researchForm'))renderTool(key);ChartWorkspace.openDock('tools');}else ChartWorkspace.openDock(key);syncRail(tools[key]?'tools':key);}
@@ -121,7 +218,7 @@
     event.preventDefault();invalidate('Running analysis…');const token=revision,key=active,ctx={symbol:selected?.symbol,interval,start:rows[0]?.date,end:rows.at(-1)?.date};el('researchRun').disabled=true;
     const adjusted=get('adjusted')?.value!=='false';let data,html='';
     try {
-      if(!selected)throw Error('Select a chart symbol first.');
+      if(!selected&&key!=='rotation')throw Error('Select a chart symbol first.');
       if(key==='portfolio') {
         const h=parseHoldings(),catalog=h.map(v=>assets.find(a=>a.symbol===v.symbol));
         if(catalog.some(a=>!a?.currency)||new Set(catalog.map(a=>a.currency)).size!==1)throw Error('All holdings must have the same known currency; currency conversion is not available.');
@@ -154,6 +251,12 @@
         if(!screener)screener=await api('/api/screener');data=screener.rows.find(r=>r.symbol===selected.symbol);if(!data)throw Error('No company fundamentals stored for this instrument. Price-based tools remain available.');
         const fields=['name','sector','industry','country','exchange','currency','market_cap','pe','forward_pe','pb','dividend_yield','revenue_growth','profit_margin','beta','metadata_date','metadata_source'];
         html=table(['Company field','Stored value'],fields.map(k=>[k.replaceAll('_',' '),data[k]==null?'Unavailable':typeof data[k]==='number'?number(data[k],4):data[k]]));
+      } else if(key==='rotation') {
+        data=await api('/api/sector-rotation');
+        const period=get('period').value,labels={change_1d_pct:'Day',week_pct:'Week',month_pct:'Month',quarter_pct:'Quarter',half_year_pct:'Half-year',ytd_pct:'YTD',year_pct:'Year'};
+        const sorted=data.sectors.slice().sort((a,b)=>(b[period]??-Infinity)-(a[period]??-Infinity));
+        const pctCell=value=>Number.isFinite(value)?`<span class="${value>=0?'positive':'negative'}">${E(number(value))}%</span>`:'Unavailable';
+        html=metrics([['Sectors',data.sectors.length],['Top sector',sorted[0]?.name||'Unavailable'],['Top '+labels[period],Number.isFinite(sorted[0]?.[period])?number(sorted[0][period])+'%':'Unavailable'],['Finviz snapshot',new Date(data.generated_at).toLocaleString()]])+`<div class="research-table"><table><thead><tr>${['Rank','Sector','Day','Week','Month','Quarter','Half-year','YTD','Year','Rotation'].map(h=>`<th>${E(h)}</th>`).join('')}</tr></thead><tbody>${sorted.map((sector,index)=>`<tr><td>${index+1}</td><td>${E(sector.name)}</td><td>${pctCell(sector.change_1d_pct)}</td><td>${pctCell(sector.week_pct)}</td><td>${pctCell(sector.month_pct)}</td><td>${pctCell(sector.quarter_pct)}</td><td>${pctCell(sector.half_year_pct)}</td><td>${pctCell(sector.ytd_pct)}</td><td>${pctCell(sector.year_pct)}</td><td>${E(sector.rotation)}</td></tr>`).join('')}</tbody></table></div><p class="research-help">Source: <a href="${E(data.source)}" target="_blank" rel="noopener noreferrer">Finviz Group Screener · Sector Performance</a></p>`;
       } else if(key==='markets') {
         const group=get('group').value,q=get('search').value.toLowerCase();data=assets.filter(a=>(group==='All'||a.kind===group||group==='Saved'&&saved.has(a.symbol))&&`${a.symbol} ${a.name}`.toLowerCase().includes(q)).slice().sort((a,b)=>(b.change??-Infinity)-(a.change??-Infinity));
         html=metrics([['Matching assets',data.length],['Display limit',100],['Positive daily change',data.filter(a=>a.change>0).length],['Negative daily change',data.filter(a=>a.change<0).length]])+table(['Symbol','Name','Close','Currency','Daily change %','As of'],data.slice(0,100).map(a=>[a.symbol,a.name,number(a.close),a.currency||'Unknown',number(a.change),a.quote_timestamp||a.date]))+'<div class="research-links">'+data.slice(0,20).map(a=>`<button data-research-symbol="${E(a.symbol)}">${E(a.symbol)} chart</button>`).join('')+'</div>';
@@ -163,7 +266,7 @@
         html='<p>Research saved in this browser.</p>'+(source?`<a href="${E(source)}" target="_blank" rel="noopener noreferrer">Open saved source</a>`:'');
       }
       if(token!==revision)return;
-      result={tool:key,context:ctx,priceBasis:adjusted?'adjusted':'raw',result:data};el('researchOutput').innerHTML=html;el('researchExport').disabled=false;el('researchStatus').textContent='Complete · '+ctx.symbol+' · '+ctx.interval;
+      result={tool:key,context:ctx,priceBasis:adjusted?'adjusted':'raw',result:data};el('researchOutput').innerHTML=html;el('researchExport').disabled=false;el('researchStatus').textContent=ctx.symbol?'Complete · '+ctx.symbol+' · '+ctx.interval:'Complete · Sector rotation';
     }catch(error){if(token===revision)statusError(error);}finally{if(token===revision)el('researchRun').disabled=false;}
   }
   const oldLoad=loadHistory;loadHistory=async function(){invalidate();await oldLoad();context();if(active==='journal'){try{get('notes').value=localStorage.getItem('atlas.notes.'+selected?.symbol)||'';get('source').value=localStorage.getItem('atlas.source.'+selected?.symbol)||'';}catch{}}if(active==='options'&&rows.length){get('spot').value=rows.at(-1).close;get('strike').value=rows.at(-1).close;}};

@@ -53,6 +53,15 @@ def connect(path):
         source TEXT NOT NULL, open REAL, high REAL, low REAL, close REAL,
         volume REAL, fetched_at TEXT, PRIMARY KEY(symbol,timestamp,interval,source));
       CREATE INDEX IF NOT EXISTS crypto_exchange_timestamp ON crypto_exchange_prices(symbol,timestamp);
+      CREATE TABLE IF NOT EXISTS liquidation_events (
+        symbol TEXT NOT NULL, timestamp TEXT NOT NULL, order_id TEXT NOT NULL,
+        side TEXT NOT NULL CHECK(side IN ('long','short')), price REAL NOT NULL,
+        quantity REAL NOT NULL, notional REAL NOT NULL, quote_asset TEXT NOT NULL,
+        PRIMARY KEY(symbol,order_id,side));
+      CREATE INDEX IF NOT EXISTS liquidation_events_time ON liquidation_events(symbol,timestamp);
+      CREATE TABLE IF NOT EXISTS liquidation_collector_state (
+        id INTEGER PRIMARY KEY CHECK(id=1), status TEXT NOT NULL,
+        started_at TEXT, connected_at TEXT, last_event_at TEXT, error TEXT);
       CREATE TABLE IF NOT EXISTS api_requests (
         id INTEGER PRIMARY KEY, provider TEXT NOT NULL, endpoint TEXT NOT NULL,
         requested_at TEXT NOT NULL, status TEXT NOT NULL, rows INTEGER,
