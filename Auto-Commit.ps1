@@ -6,8 +6,17 @@ try {
     $lock = [System.IO.File]::Open("$PSScriptRoot\data\auto-commit.lock", 'OpenOrCreate', 'ReadWrite', 'None')
     function Invoke-Git {
         param([string[]]$GitArgs)
-        $output = & git @GitArgs 2>&1
-        if ($LASTEXITCODE -ne 0) { throw "git $GitArgs failed: $output" }
+        # Windows PowerShell treats native stderr warnings as errors under Stop.
+        # Let Git's exit code distinguish harmless warnings from failures.
+        $previousPreference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            $output = & git @GitArgs 2>&1
+            $gitExitCode = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $previousPreference
+        }
+        if ($gitExitCode -ne 0) { throw "git $GitArgs failed: $output" }
         return $output
     }
     # Leave a user's staged work and in-progress Git operations alone.

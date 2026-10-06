@@ -497,6 +497,12 @@ The prices table includes OHLC, adjusted close, volume, dividends, splits, curre
 
 ### Desktop updates and automatic Git checkpoints
 
+User preferences persist on the device through browser `localStorage`: chart
+appearance, selected chart/range, indicators, drawings, watchlists, notes and
+workspace layout. Return using the same browser profile and site address
+(including port). Clearing site data removes these preferences; private browsing
+does not retain them after the session ends. No IP-based account is required.
+
 Run `Update QuantStack Charts.bat` on the Desktop and choose **H** or **L**.
 High uses six workers, 0.5-second pauses and a 45-minute collection budget.
 Low uses one worker, two-second pauses and a 10-minute budget at reduced process
