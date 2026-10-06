@@ -11,6 +11,15 @@ LOW = {'background_usage': 'low', 'hourly_workers': 1,
        'hourly_budget_minutes': 10, 'daily_budget_minutes': 10}
 
 
+def resource_profile(name):
+    if name == 'low':
+        return dict(LOW)
+    if name == 'high':
+        return {'background_usage': 'high', 'hourly_workers': 6,
+                'hourly_pause_seconds': 0.5, 'hourly_budget_minutes': 45}
+    raise ValueError('Resource profile must be high or low')
+
+
 def local_request(peer, host, origin=None):
     """Reject remote clients, DNS rebinding and cross-origin browser writes."""
     try:

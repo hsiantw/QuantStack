@@ -495,6 +495,36 @@ The prices table includes OHLC, adjusted close, volume, dividends, splits, curre
 
 ## Daily schedule
 
+### Desktop updates and automatic Git checkpoints
+
+Run `Update QuantStack Charts.bat` on the Desktop and choose **H** or **L**.
+High uses six workers, 0.5-second pauses and a 45-minute collection budget.
+Low uses one worker, two-second pauses and a 10-minute budget at reduced process
+priority. Both collect native hourly candles for the existing universe. Modes
+apply only to that run; provider rate limits still stop new requests. A run that
+reaches its budget saves its progress and returns status 1; later runs rotate
+through remaining instruments. These snapshots and updates remain local.
+
+`Install-Update-Automation.ps1` installs the Desktop launcher, hourly Low updates
+(`MarketData-IntradaySync`), and daily Git checkpoints at **09:30 Asia/Taipei**
+(`QuantStack-AutoCommit`). Pass `-Mode high` to schedule High instead. Tasks run
+while this user is logged in, with missed starts caught up when available.
+
+The Git task exports `chart-snapshots/`: each instrument's latest **30 daily**
+and **48 hourly** stored candles, split into deterministic CSV files. These are
+bounded chart snapshots, not backups of the full SQLite database. It commits
+these snapshots and changes/deletions to already tracked source files. New
+source files must first be added to Git manually. It never pushes to a remote.
+Staged changes or an in-progress Git operation cause the task to skip with an
+error in `data/auto-commit.log`, preserving manual staging. Chart collection
+progress and provider errors remain in `data/hourly-refresh.log` and JSON.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-Update-Automation.ps1
+.\Update-Charts.bat high
+.\Update-Charts.bat low
+```
+
 `Install-Schedule.ps1` registers **MarketData-DailySync** at **09:00 computer-local time**, while the current user is logged in. Missed starts run when available. The computer must be on and connected. Check Windows Task Scheduler and the ingestion log for results.
 
 ```powershell

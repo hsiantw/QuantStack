@@ -8,3 +8,4 @@ deployment.json
 QuantStack-main/static/market-data/
 
 .test-tmp/
+chart-snapshots/*.tmp

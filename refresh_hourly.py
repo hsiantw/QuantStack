@@ -87,11 +87,16 @@ def capacity(progress, elapsed, cycle_minutes, budget_minutes):
                       'History calls can include extra internal HTTP requests. Shared daily jobs can delay starts.')
 
 
-def refresh(symbols=None, days=None, workers=None, resume=False, full=False):
+def refresh(symbols=None, days=None, workers=None, resume=False, full=False, profile=None, budget_minutes=None):
     import yfinance as yf
     DATA.mkdir(exist_ok=True)
     yf.set_tz_cache_location(str(DATA / 'provider-cache'))
     config = json.loads((ROOT / 'config.json').read_text(encoding='utf-8'))
+    if profile is not None:
+        from local_scheduler import resource_profile
+        config.update(resource_profile(profile))
+    if budget_minutes is not None:
+        config['hourly_budget_minutes'] = budget_minutes
     from local_scheduler import lower_priority
     lower_priority(config)
     days = days if days is not None else config.get('hourly_lookback_days', 365)
@@ -200,8 +205,11 @@ if __name__ == '__main__':
     parser.add_argument('--workers', type=int, choices=range(1, 9), metavar='1-8')
     parser.add_argument('--resume', action='store_true', help='Skip successful collections from the last update cycle')
     parser.add_argument('--full', action='store_true', help='Refetch the complete configured hourly lookback')
+    parser.add_argument('--profile', choices=['high', 'low'], help='Resource settings for this run only')
+    parser.add_argument('--budget-minutes', type=float, help='Override the collection time budget')
     args = parser.parse_args()
     DATA.mkdir(exist_ok=True)
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s',
                         handlers=[logging.StreamHandler(), logging.FileHandler(DATA / 'hourly-refresh.log', encoding='utf-8')])
-    raise SystemExit(refresh(args.symbols, args.days, args.workers, args.resume, args.full))
+    raise SystemExit(refresh(args.symbols, args.days, args.workers, args.resume, args.full,
+                             args.profile, args.budget_minutes))
