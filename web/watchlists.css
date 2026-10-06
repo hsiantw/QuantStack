@@ -17,6 +17,9 @@
 #watchlistColor button:disabled { cursor: default; }
 #watchlistColor button:disabled:not([aria-pressed=true]) { opacity: .35; }
 #watchlistStatus { flex: none; margin: 8px 10px 0; font-size: 11px; color: var(--atlas-muted,#667180); overflow-wrap: anywhere; }
+.watchlist-collection { flex: none; display: grid; gap: 6px; margin: 4px 10px 10px; padding: 10px; border: 1px solid var(--atlas-border,#dce1e8); border-radius: 6px; }
+.watchlist-collection .eyebrow { font-size: 10px; }
+.watchlist-collection #schedulerButton { width: 100%; margin: 0; min-height: 32px; text-align: left; }
 .watchlist-row { position: relative; }
 .workspace .watchlist-row .asset { padding-right: 29px; padding-left: 13px; }
 .workspace .watchlist-row .asset-info { min-width: 0; }

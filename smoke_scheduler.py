@@ -20,7 +20,8 @@ def run():
                 page.wait_for_function("typeof rows !== 'undefined' && rows.length > 0")
                 if width < 600:
                     page.locator('#workspaceSymbol').click()
-                page.locator('#watchlistAddSymbol').click()
+                expect(page.locator('#workspaceSideWatchlist #schedulerButton')).to_be_visible()
+                expect(page.locator('#watchlistCollectionTitle')).to_have_text('LOCAL DATA COLLECTION')
                 page.locator('#schedulerButton').click()
                 expect(page.locator('#schedulerSubmit')).to_be_enabled()
                 expect(page.locator('#schedulerDialog')).to_be_visible()
@@ -46,6 +47,14 @@ def run():
                 assert box['x'] >= 0 and box['x'] + box['width'] <= width
                 page.locator('#schedulerClose').click()
                 expect(page.locator('#schedulerDialog')).not_to_be_visible()
+                expect(page.locator('#schedulerButton')).to_be_focused()
+                page.unroute('**/api/local-scheduler', save)
+                page.locator('#watchlistAddSymbol').click()
+                page.locator('#watchlistCollectButton').click()
+                expect(page.locator('#watchlistAddDialog')).not_to_be_visible()
+                expect(page.locator('#schedulerDialog')).to_be_visible()
+                expect(page.locator('#schedulerSubmit')).to_be_enabled()
+                page.locator('#schedulerClose').click()
                 assert not errors, errors
                 page.close()
             browser.close()

@@ -640,6 +640,12 @@ The Workspace menu has been removed. Share chart link and Keyboard shortcuts are
 
 ### Watchlists and color labels
 
+The watchlist includes a **LOCAL DATA COLLECTION** section with an **Add symbols**
+button. Open it directly to enroll stocks or crypto for local scheduled downloads.
+The existing **+ Add symbol** picker also links to these collection controls for
+instruments that have not been downloaded yet. Hosted snapshots show the controls
+but require the local app to save collection changes.
+
 Use the selector at the top of the right watchlist panel to switch between **All instruments**, existing **Saved favorites**, and named watchlists. Open the **...** menu beside it to create, rename or delete a list. **+ Add symbol** searches stored instruments and adds/removes them in the chosen list; the same dialog links to local collection for missing instruments.
 
 Right-click an instrument, press Shift+F10 while it is focused, or use its **...** row button to open instrument options. Choose one of seven color flags, clear a flag, add/remove the instrument in multiple lists, compare it with the current chart, or open its notes. Right-clicking keeps the current chart selection. The Label filter shows a chosen color or unlabeled instruments. Flags follow the symbol across all lists.

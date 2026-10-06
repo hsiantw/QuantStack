@@ -255,7 +255,28 @@
   $('watchlistColumnsReset').onclick=()=>{if(mutate(next=>{next.view.columns=defaultView().columns;next.view.names=true;},'')){renderColumnChoices();$('watchlistColumnsStatus').textContent='Default columns restored.';}};
   for(const id of ['watchlistColumnsClose','watchlistColumnsDone'])$(id).onclick=()=>columnDialog.close();
   columnDialog.addEventListener('close',()=>$('watchlistColumns').focus());
-  document.addEventListener('DOMContentLoaded',()=>{const button=$('schedulerButton');if(button){$('watchlistCollect').append(button);button.addEventListener('click',()=>addDialog.close(),true);}});
+  document.addEventListener('DOMContentLoaded', () => {
+    const button = $('schedulerButton');
+    if (!button) return;
+    const collection = document.createElement('section');
+    collection.className = 'watchlist-collection';
+    collection.setAttribute('aria-labelledby', 'watchlistCollectionTitle');
+    collection.innerHTML = '<span id="watchlistCollectionTitle" class="eyebrow">LOCAL DATA COLLECTION</span>';
+    button.setAttribute('aria-haspopup', 'dialog');
+    button.setAttribute('aria-controls', 'schedulerDialog');
+    collection.append(button);
+    heading.after(collection);
+    // Keep the missing-instrument shortcut in the existing watchlist picker.
+    const shortcut = document.createElement('button');
+    shortcut.id = 'watchlistCollectButton';
+    shortcut.type = 'button';
+    shortcut.textContent = '+ Add symbols to local collection';
+    shortcut.setAttribute('aria-haspopup', 'dialog');
+    shortcut.setAttribute('aria-controls', 'schedulerDialog');
+    shortcut.onclick = () => { addDialog.close(); button.click(); };
+    $('watchlistCollect').append(shortcut);
+    $('schedulerDialog').addEventListener('close', () => button.focus());
+  });
   window.addEventListener('storage',event=>{
     if(event.key===key||event.key===null){state=read();closeMenu(false);refresh();}
     if(event.key==='atlas.saved'){
