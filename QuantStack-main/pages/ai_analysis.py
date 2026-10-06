@@ -15,6 +15,7 @@ from utils.time_series_analysis import TimeSeriesAnalysis
 from utils.tooltips import get_tooltip_help
 from utils.ai_strategy_optimizer import AIStrategyOptimizer
 from utils.pinescript_generator import PineScriptGenerator
+from utils.claude_client import ClaudeClient
 
 # Page configuration
 st.set_page_config(
@@ -95,6 +96,16 @@ training_years = st.sidebar.slider(
 )
 
 # Model selection
+st.sidebar.subheader("AI Provider")
+provider_options = ["Claude Sonnet", "Disabled"]
+selected_provider = st.sidebar.selectbox(
+    "Narrative analysis provider",
+    provider_options,
+    index=0 if os.getenv("ANTHROPIC_API_KEY") else 1,
+    help="Use Anthropic Claude to summarize the model results when the API key is configured."
+)
+claude_client = ClaudeClient() if selected_provider == "Claude Sonnet" else None
+
 st.sidebar.subheader("Model Configuration")
 
 models_to_train = st.sidebar.multiselect(
@@ -642,6 +653,27 @@ if model_results:
                     
             except Exception as e:
                 st.error(f"Error generating predictions: {str(e)}")
+
+# Claude summary
+if claude_client is not None:
+    if claude_client.is_configured():
+        st.subheader("🧠 Claude Market Summary")
+        with st.spinner("Generating Claude narrative summary..."):
+            try:
+                market_summary = claude_client.summarize_market_analysis(
+                    ticker_input,
+                    model_results,
+                    prediction_horizon=prediction_horizon,
+                    training_period=selected_period,
+                )
+                st.markdown(market_summary)
+            except Exception as exc:
+                st.warning(f"Claude analysis unavailable: {exc}")
+    else:
+        st.info(
+            "Set the ANTHROPIC_API_KEY environment variable to enable Claude narrative summaries. "
+            "The app will still train the models locally."
+        )
 
 # Pattern Recognition
 st.header("🎨 Pattern Recognition")

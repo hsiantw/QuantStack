@@ -121,6 +121,27 @@ address = "0.0.0.0"
 port = 5000
 ```
 
+### Anthropic Claude integration
+
+For the AI Analysis page to generate narrative summaries with Claude, set an Anthropic API key before launching Streamlit:
+
+```bash
+export ANTHROPIC_API_KEY="your_anthropic_api_key"
+# optional override
+export ANTHROPIC_MODEL="claude-sonnet-4-20250514"
+streamlit run app.py
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:ANTHROPIC_API_KEY = "your_anthropic_api_key"
+$env:ANTHROPIC_MODEL = "claude-sonnet-4-20250514"
+streamlit run app.py
+```
+
+If the key is missing, the app continues to train the local models and shows a guidance message instead of the Claude summary.
+
 ## 📈 Data Sources
 
 - **Market Data**: Yahoo Finance (via yfinance library)

@@ -1,3 +1,4 @@
+anthropic>=0.54.0
 asyncio-throttle>=1.0.2
 numpy>=2.3.2
 openai>=1.99.9
