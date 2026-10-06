@@ -1,0 +1,9 @@
+{
+  "rows": {
+    "daily": 104124,
+    "hourly": 237678
+  },
+  "daily_bars_per_symbol": 30,
+  "hourly_bars_per_symbol": 48,
+  "scope": "Latest stored completed daily and hourly candles; full history remains in local SQLite."
+}
