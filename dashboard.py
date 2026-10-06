@@ -576,6 +576,7 @@ class Handler(BaseHTTPRequestHandler):
                          '/risk-engine.js': ('risk-engine.js', 'text/javascript'),
                          '/risk.js': ('risk.js', 'text/javascript'),
                          '/research.js': ('research.js', 'text/javascript'),
+                         '/accounts.js': ('accounts.js', 'text/javascript'),
                          '/research-engine.js': ('research-engine.js', 'text/javascript'),
                          '/research-worker.js': ('research-worker.js', 'text/javascript'),
                          '/research.css': ('research.css', 'text/css'),

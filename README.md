@@ -495,7 +495,33 @@ The prices table includes OHLC, adjusted close, volume, dividends, splits, curre
 
 ## Daily schedule
 
-### Desktop updates and automatic Git checkpoints
+### Accounts and saved workspaces
+
+Start the app with `Run-Local-Website.bat` and click **Account** in the chart
+toolbar. Create a username/password account or sign in, then choose **Save to
+account** to upload the current browser workspace. This includes symbol notes,
+saved notebook entries, drawings, watchlists, portfolios and preferences. Save
+notebook edits before saving the workspace. Account saving is explicit; browser
+changes do not automatically overwrite the account copy. Each account has a
+2 MB workspace limit.
+
+On another device connected to the same app server, sign in and select **Load
+saved workspace**. Loading replaces that browser's personal workspace after
+confirmation. A newer save from another device causes a conflict instead of
+silently overwriting it. Sign out clears the browser workspace after confirmation;
+save local changes first. Market prices remain shared server data.
+
+Accounts persist in `data/accounts.sqlite`, excluded from Git. These are new
+chart-workspace accounts, separate from the retired Streamlit `users.db`.
+Passwords use salted scrypt hashes; seven-day sessions use HttpOnly, SameSite
+cookies with hashed tokens stored on the server. Sign-in requests are rate
+limited. Password recovery and email verification are not implemented.
+
+For hosted access, configure HTTPS and a persistent account database as described
+in `HOSTING.md`. A local account is available on this app server, not automatically
+on a separately hosted instance. Static previews have no account backend.
+
+### Device settings and update automation
 
 User preferences persist on the device through browser `localStorage`: chart
 appearance, selected chart/range, indicators, drawings, watchlists, notes and
@@ -512,7 +538,8 @@ of saved notebook entries, symbol notes, source links and drawings. **Restore
 backup** validates the file and asks before replacing matching entries; other
 saved work stays intact. Restoration reloads the app, so save notebook edits
 first. Backups exclude market prices and unsaved edits. Personal work stays in
-the browser and is not included in repository commits or pushes.
+the browser unless you explicitly save it to your account; neither browser work
+nor the account database is included in repository commits or pushes.
 
 Run `Update QuantStack Charts.bat` on the Desktop and choose **H** or **L**.
 High uses six workers, 0.5-second pauses and a 45-minute collection budget.

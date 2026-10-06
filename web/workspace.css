@@ -294,4 +294,11 @@ body.workspace{--workspace-left-width:48px;--workspace-right-width:46px;--worksp
 .personal-work-actions { display: grid; gap: 8px; margin-top: 12px; }
 .personal-work-actions button { white-space: normal; }
 .personal-work-actions input[hidden] { display: none; }
+#accountDialog { width: min(540px, calc(100vw - 32px)); max-height: 90vh; overflow: auto; }
+#accountDialog [hidden] { display: none; }
+#accountDialog form, #accountDialog label { display: grid; gap: 8px; }
+#accountDialog p { margin: 12px 0; }
+.account-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+#accountDialog button { white-space: normal; }
+#accountButton { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
 @media(max-width: 520px) { .pull-fields { grid-template-columns: 1fr; } #pullDialog .dialog-actions { flex-wrap: wrap; } }

@@ -99,7 +99,7 @@ async def proxy(request):
         raise web.HTTPBadGateway(text='QuantStack is starting. Please retry.') from exc
 
 
-def create_app(dashboard_url, snapshot_dir=None, liquidation_symbols=()):
+def create_app(dashboard_url, snapshot_dir=None, liquidation_symbols=(), accounts_path=None):
     app = web.Application(client_max_size=200 * 1024**2)
     app[DASHBOARD] = dashboard_url
     app[SNAPSHOT_PATH] = snapshot_dir
@@ -125,6 +125,8 @@ def create_app(dashboard_url, snapshot_dir=None, liquidation_symbols=()):
                     pass
 
         app.cleanup_ctx.append(liquidation_context)
+    from accounts import install_accounts
+    install_accounts(app, accounts_path)
     app.router.add_route('*', '/{path:.*}', proxy)
     return app
 

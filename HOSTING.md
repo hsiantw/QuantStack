@@ -13,6 +13,38 @@ The former standalone chart website is retired; no second public UI is published
 The launcher reads Render's `PORT` variable and serves the native chart workspace.
 The old Streamlit start command is retired; use `python serve_quantstack.py --host 0.0.0.0`.
 
+## Account storage
+
+The chart gateway now serves registration, login, logout and versioned personal
+workspaces at `/workspace/api/account/`. Market snapshots and accounts can be
+served by the same gateway. The default local account database is
+`data/accounts.sqlite`; it is excluded from Git and data release archives.
+
+Before enabling public accounts, configure:
+
+- `QUANTSTACK_PUBLIC_ORIGIN=https://quantstack.onrender.com` (or the exact HTTPS
+  origin for this instance, with no trailing slash). This sets Secure cookies
+  and the allowed origin for account writes. Terminate HTTPS at a trusted reverse
+  proxy and prevent direct public access to the backend HTTP port.
+- `QUANTSTACK_ACCOUNTS_DB=/var/data/quantstack/accounts.sqlite`, with `/var/data`
+  mounted on durable storage. Back up this database with SQLite's backup API.
+  All processes serving an instance must use the same account database; this
+  SQLite implementation is intended for a single server, not separate replicas.
+
+The checked-in free Render configuration does not provision durable account
+storage. Do not enable public accounts on an ephemeral filesystem: users and
+saved work would disappear on restart or deployment. No hosting plan or paid
+disk is provisioned by this code change. Without HTTPS/origin configuration,
+HTTP account access is restricted to the local computer.
+
+Users explicitly save/load personal workspace snapshots, up to 2 MB per account.
+Password hashes and session records stay server-side; session tokens are carried
+only in HttpOnly cookies. Authentication throttles apply per connection peer and
+username; users behind the same reverse proxy may share the peer limit.
+There is no email verification, password recovery, or automatic migration from
+the retired Streamlit account database. Accounts on separate app instances are
+separate. Static HTML previews cannot create or store accounts.
+
 ## Data publication
 
 `publish_site.py` retains its filename for the existing daily collector, but now
