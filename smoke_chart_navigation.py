@@ -180,7 +180,11 @@ def exercise_extended_zoom(page: Page) -> None:
         const g = geometry();
         return {x: g.box.x + g.left + g.pw * .6, y: g.box.y + g.top + g.ph + 15};
     }''')
-    drag(page, point, -120, 0)
+    page.keyboard.down('Shift')
+    try:
+        drag(page, point, -120, 0)
+    finally:
+        page.keyboard.up('Shift')
     axis_zoom = chart_state(page)
     assert axis_zoom['count'] > zoomed['count'], 'Time-axis drag must use the extended zoom range'
     drag(page, chart_point(page), 60, 25)
@@ -353,6 +357,41 @@ def exercise_log_drawings_and_inversion(page: Page) -> None:
     page.locator("#chartResetView").click()
 
 
+def exercise_time_axis_positioning(page: Page) -> None:
+    page.locator('#chartResetView').click()
+    page.evaluate('''() => {
+        moveChartTime(rows.length * .3, Math.floor(rows.length * .4));
+        const g = geometry(); chartScale.auto = false; chartScale.bounds = [g.low, g.high];
+        draw();
+    }''')
+    before = chart_state(page)
+    point = page.evaluate('''() => {
+        const g = geometry();
+        return {x:g.box.x + g.left + g.pw*.5, y:g.box.y + g.top + g.ph + 15, width:g.pw};
+    }''')
+    drag(page, point, 65, -12)
+    after = chart_state(page)
+    assert after['count'] == before['count'], 'Time-axis positioning must preserve zoom'
+    assert math.isclose(after['origin'], before['origin'] - 65 / point['width'] * before['count'], abs_tol=.01)
+    for key in ['lower', 'upper']:
+        assert math.isclose(after[key], before[key], abs_tol=1e-8), 'Time-axis dragging must not move the price scale'
+    drag(page, point, -65, 0)
+    assert math.isclose(chart_state(page)['origin'], before['origin'], abs_tol=.01)
+    assert page.evaluate('chartNavigationGesture === null')
+    # Touch uses the same axis hit area, including while a drawing tool is active.
+    page.evaluate("tool = 'trend'")
+    session = page.context.new_cdp_session(page)
+    session.send('Input.dispatchTouchEvent', {'type':'touchStart', 'touchPoints':[{'x':point['x'],'y':point['y']}]})
+    session.send('Input.dispatchTouchEvent', {'type':'touchMove', 'touchPoints':[{'x':point['x']+40,'y':point['y']}]})
+    session.send('Input.dispatchTouchEvent', {'type':'touchEnd', 'touchPoints':[]})
+    session.detach()
+    page.wait_for_function('origin => viewStart - chartScale.offset < origin', arg=before['origin'])
+    assert chart_state(page)['count'] == before['count']
+    assert page.evaluate('chartNavigationGesture === null && pending === null')
+    page.evaluate("tool = 'cursor'")
+    page.locator('#chartResetView').click()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://127.0.0.1:8765")
@@ -370,6 +409,7 @@ def main() -> None:
         exercise_modes(page)
         exercise_auto_panning(page)
         exercise_extended_zoom(page)
+        exercise_time_axis_positioning(page)
         exercise_navigation(page)
         exercise_log_drawings_and_inversion(page)
         exercise_resize(page)

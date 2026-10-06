@@ -161,7 +161,11 @@ The chart-style selector offers candles, OHLC bars, line and area.
 With **Auto** enabled, dragging the chart pans through time and keeps the price
 scale fitted to the visible candles, including during diagonal drags. Turn Auto
 off to pan vertically, or drag the price axis to adjust its scale manually.
-Wheel zoom and dragging the time axis can zoom out to five times the loaded
+Drag the bottom time axis left or right to position dates precisely without
+changing zoom or moving a manual price scale. This also works with touch or
+while a drawing tool is selected. Hold **Shift** while dragging the time axis
+to zoom instead. Double-click the axis to reset the view.
+Wheel zoom and Shift-dragging the time axis can zoom out to five times the loaded
 history width. Choose **All** to load older history; zooming out adds space around
 the bars already loaded. **Reset chart view** restores the default zoom.
 

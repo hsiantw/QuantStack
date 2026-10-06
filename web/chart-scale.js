@@ -175,7 +175,7 @@ scaleMenu.innerHTML = `<button id="chartMenuAuto" role="menuitemcheckbox"><span 
   <button id="chartInvertScale" role="menuitemcheckbox"><span data-check></span>Invert scale<kbd>Alt I</kbd></button>
   <hr>${[['linear', 'Regular', ''], ['percent', 'Percent', 'Alt P'], ['indexed', 'Indexed to 100', ''], ['log', 'Logarithmic', 'Alt L']].map(([mode, label, shortcut]) => `<button role="menuitemradio" data-scale-mode="${mode}"><span data-check></span>${label}<kbd>${shortcut}</kbd></button>`).join('')}
   <hr><button id="chartMenuReset" role="menuitem"><span>↺</span>Reset chart view<kbd>Alt R</kbd></button>
-  <p>Drag the chart to pan. Drag the price or time axis to scale. Double-click an axis to fit. Percent and indexed modes use the first loaded close.</p>`;
+  <p>Drag the chart or bottom time axis to move through dates. Shift + drag the time axis to zoom; drag the price axis to scale prices. Double-click an axis to fit. Percent and indexed modes use the first loaded close.</p>`;
 document.body.append(scaleMenu);
 
 function syncChartScaleControls() {
@@ -263,7 +263,7 @@ function zoomChartPrice(g, factor, anchor = (g.low + g.high) / 2) {
 $('chart').addEventListener('pointerdown', event => {
   if (!rows.length || event.button !== 0) return;
   const g = geometry(), px = event.clientX - g.box.left, py = event.clientY - g.box.top;
-  const kind = px > g.left + g.pw ? 'price' : py > g.top + g.ph ? 'time' : 'pan';
+  const kind = px > g.left + g.pw ? 'price' : py > g.top + g.ph ? (event.shiftKey ? 'time' : 'time-pan') : 'pan';
   if (kind === 'pan' && (tool !== 'cursor' || !pointer(event, false, g).inside || hitDrawing(g, px, py))) return;
   event.preventDefault(); event.stopImmediatePropagation(); closeScaleMenu(); finishStyleEdit();
   selectedDrawing = null; syncDrawingEditor(); $('chart').focus({preventScroll: true}); $('chart').setPointerCapture(event.pointerId);
@@ -283,7 +283,7 @@ window.addEventListener('pointermove', event => {
       moveChartTime(gesture.start - dx / g.pw * gesture.count, gesture.count);
       // Auto keeps fitting the visible bars while panning through time, even
       // when the pointer drifts vertically. Only a manual scale pans in price.
-      if (!gesture.wasAuto) {
+      if (gesture.kind === 'pan' && !gesture.wasAuto) {
         const shift = dy / g.ph * g.spanT * (chartScale.inverted ? -1 : 1);
         const bounds = [g.low + shift, g.high + shift];
         if (bounds.every(value => Number.isFinite(g.inverse(value)))) { chartScale.auto = false; chartScale.bounds = bounds; }
@@ -293,7 +293,7 @@ window.addEventListener('pointermove', event => {
   }
   if (event.target !== $('chart')) return;
   const g = geometry(), px = event.clientX - g.box.left, py = event.clientY - g.box.top;
-  if (px > g.left + g.pw || py > g.top + g.ph) { $('chart').style.cursor = px > g.left + g.pw ? 'ns-resize' : 'ew-resize'; hover = -1; hoverY = null; draw(); }
+  if (px > g.left + g.pw || py > g.top + g.ph) { $('chart').style.cursor = px > g.left + g.pw ? 'ns-resize' : event.shiftKey ? 'ew-resize' : 'grab'; hover = -1; hoverY = null; draw(); }
 }, true);
 function finishChartNavigation(event) {
   if (!chartNavigationGesture || event?.pointerId != null && event.pointerId !== chartNavigationGesture.id) return;
