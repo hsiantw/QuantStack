@@ -1,4 +1,4 @@
-param([ValidateSet('high','low')][string]$Mode = 'low')
+param([ValidateSet('high','low')][string]$Mode = 'low', [switch]$Push)
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\Resolve-CollectorPython.ps1"
 $principal = New-ScheduledTaskPrincipal -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) -LogonType Interactive -RunLevel Limited
@@ -10,9 +10,13 @@ Register-ScheduledTask -TaskName 'MarketData-IntradaySync' -Action $action -Trig
 $taipei = [TimeZoneInfo]::FindSystemTimeZoneById('Taipei Standard Time')
 $taipeiNow = [TimeZoneInfo]::ConvertTimeFromUtc([DateTime]::UtcNow, $taipei)
 $at = [TimeZoneInfo]::ConvertTime([DateTime]::SpecifyKind($taipeiNow.Date.AddHours(9).AddMinutes(30), 'Unspecified'), $taipei, [TimeZoneInfo]::Local)
-$commitAction = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + "$PSScriptRoot\Auto-Commit.ps1" + '"') -WorkingDirectory $PSScriptRoot
+$commitArguments = '-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + "$PSScriptRoot\Auto-Commit.ps1" + '"'
+if ($Push) { $commitArguments += ' -Push' }
+$commitAction = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $commitArguments -WorkingDirectory $PSScriptRoot
 $commitSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
-Register-ScheduledTask -TaskName 'QuantStack-AutoCommit' -Action $commitAction -Trigger (New-ScheduledTaskTrigger -Daily -At $at) -Principal $principal -Settings $commitSettings -Description 'Daily local Git checkpoint of tracked source and chart snapshots at 09:30 Asia/Taipei.' -Force
+$commitDescription = 'Daily Git checkpoint of tracked source and chart snapshots at 09:30 Asia/Taipei.'
+if ($Push) { $commitDescription += ' Push to origin after committing.' }
+Register-ScheduledTask -TaskName 'QuantStack-AutoCommit' -Action $commitAction -Trigger (New-ScheduledTaskTrigger -Daily -At $at) -Principal $principal -Settings $commitSettings -Description $commitDescription -Force
 $desktop = [Environment]::GetFolderPath('Desktop')
 $launcher = '@echo off' + "`r`n" + 'call "' + "$PSScriptRoot\Update-Charts.bat" + '" %*' + "`r`n"
 Set-Content -LiteralPath (Join-Path $desktop 'Update QuantStack Charts.bat') -Value $launcher -Encoding Default

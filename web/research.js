@@ -274,3 +274,95 @@
   el('refresh').addEventListener('click',()=>{screener=null;});
   renderTool(active);
 })();
+
+// Personal work stays in this browser; portable backups are explicit downloads.
+(() => {
+  const panel = document.getElementById('workspaceNotesStatus');
+  panel.insertAdjacentHTML('afterend', `<div class="personal-work-actions">
+    <button type="button" data-research-open="ideas">Open idea notebook</button>
+    <p class="workspace-panel-help">Symbol notes save as you type. Save notebook entries with Save note. Drawings save automatically for each symbol and chart interval on this device.</p>
+    <button type="button" id="personalWorkExport">Download notes &amp; drawings</button>
+    <button type="button" id="personalWorkImport">Restore backup</button>
+    <input type="file" id="personalWorkFile" accept="application/json,.json" hidden>
+    <p class="workspace-panel-help">Back up saved notes, source links and drawings to keep a copy or move them to another browser. Market prices and unsaved notebook edits are not included.</p>
+    <p id="personalWorkStatus" class="workspace-panel-help" role="status" aria-live="polite"></p>
+  </div>`);
+  const status = document.getElementById('personalWorkStatus');
+  const fileInput = document.getElementById('personalWorkFile');
+  const supported = key => key === 'atlas.ideaNotes.v1' || /^atlas\.(notes|source|drawings)\..{1,150}$/.test(key);
+  const validText = (value, limit) => typeof value === 'string' && value.length <= limit;
+  function validate(key, value) {
+    if (!supported(key) || !validText(value, 4_000_000)) throw Error('Unsupported backup entry. Nothing was restored.');
+    if (key.startsWith('atlas.notes.')) {
+      if (!validText(value, 200_000)) throw Error('A symbol note is too large.');
+    } else if (key.startsWith('atlas.source.')) {
+      if (value && (!validText(value, 8000) || !['http:', 'https:'].includes(new URL(value).protocol))) throw Error('Invalid source link.');
+    } else {
+      const items = JSON.parse(value);
+      if (!Array.isArray(items) || items.length > 10000) throw Error('Invalid notes or drawings list.');
+      for (const item of items) {
+        if (key === 'atlas.ideaNotes.v1') {
+          if (!item || !validText(item.id, 200) || !validText(item.title, 120) || !validText(item.body, 20000) ||
+              !['Idea', 'Research', 'To do', 'Watchlist'].includes(item.category) ||
+              (item.symbol !== undefined && !validText(item.symbol, 30)) ||
+              typeof item.updatedAt !== 'string' || !Number.isFinite(Date.parse(item.updatedAt))) throw Error('Invalid notebook entry.');
+        } else {
+          if (!item || !Object.hasOwn(drawingNames, item.type) || !normalizeDrawing(item) ||
+              (item.id !== undefined && !validText(item.id, 200))) throw Error('Invalid chart drawing.');
+          if (item.style !== undefined) {
+            if (!item.style || typeof item.style !== 'object' || Array.isArray(item.style)) throw Error('Invalid drawing style.');
+            for (const [name, setting] of Object.entries(item.style)) {
+              const valid = ['color', 'fillColor'].includes(name) ? /^#[0-9a-f]{6}$/i.test(setting) :
+                name === 'dash' ? ['solid', 'dashed', 'dotted'].includes(setting) :
+                name === 'width' ? Number.isFinite(setting) && setting >= 1 && setting <= 20 :
+                ['transparency', 'fillTransparency'].includes(name) && Number.isFinite(setting) && setting >= 0 && setting <= 100;
+              if (!valid) throw Error('Invalid drawing style.');
+            }
+          }
+        }
+      }
+    }
+  }
+  document.getElementById('personalWorkExport').onclick = () => {
+    try {
+      const entries = Object.fromEntries(Object.keys(localStorage).filter(supported).map(key => [key, localStorage.getItem(key)]));
+      const blob = new Blob([JSON.stringify({format: 'quantstack-personal-work', version: 1, exportedAt: new Date().toISOString(), entries}, null, 2)], {type: 'application/json'});
+      if (blob.size > 5_000_000) throw Error('Backup exceeds the 5 MB limit.');
+      const url = URL.createObjectURL(blob), link = document.createElement('a');
+      link.href = url; link.download = `quantstack-notes-drawings-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      status.textContent = `Downloaded ${Object.keys(entries).length} saved entries. Keep this personal backup in a safe place.`;
+    } catch (error) { status.textContent = `${error.message || 'Could not read browser storage.'} Your saved work has not been changed.`; }
+  };
+  document.getElementById('personalWorkImport').onclick = () => fileInput.click();
+  fileInput.onchange = async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    try {
+      if (file.size > 5_000_000) throw Error('Choose a backup smaller than 5 MB.');
+      const backup = JSON.parse(await file.text());
+      if (backup?.format !== 'quantstack-personal-work' || backup.version !== 1 || !backup.entries ||
+          typeof backup.entries !== 'object' || Array.isArray(backup.entries)) throw Error('Choose a QuantStack notes and drawings backup.');
+      const entries = Object.entries(backup.entries);
+      if (!entries.length || entries.length > 10000) throw Error('The backup is empty or has too many entries.');
+      entries.forEach(([key, value]) => validate(key, value));
+      const before = entries.map(([key]) => [key, localStorage.getItem(key)]);
+      const conflicts = before.filter(([, value]) => value !== null).length;
+      if (!confirm(`Restore ${entries.length} saved entries? This replaces ${conflicts} matching entries, keeps other saved work, and reloads the app. Unsaved notebook edits will be lost.`)) {
+        status.textContent = 'Restore canceled. Your saved work has not been changed.'; return;
+      }
+      const written = [];
+      try {
+        entries.forEach(([key, value], index) => { localStorage.setItem(key, value); written.push(before[index]); });
+      } catch {
+        let restored = true;
+        for (const [key, value] of written.reverse()) {
+          try { value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value); } catch { restored = false; }
+        }
+        throw Error(restored ? 'Not enough browser storage. Your previous work was preserved.' : 'Storage failed during restore. Keep your backup and check saved work before editing.');
+      }
+      location.reload();
+    } catch (error) { status.textContent = error.message || 'Could not restore the backup.'; }
+    finally { fileInput.value = ''; }
+  };
+})();

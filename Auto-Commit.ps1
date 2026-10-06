@@ -1,3 +1,4 @@
+param([switch]$Push)
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 New-Item -ItemType Directory -Path "$PSScriptRoot\data" -Force | Out-Null
@@ -37,6 +38,14 @@ try {
         Invoke-Git @('commit', '-m', ('Scheduled checkpoint ' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz')))
     } else {
         'No tracked changes to commit.'
+    }
+    if ($Push) {
+        # Retry previously unpushed commits even when this run has no new changes.
+        # A rejected push leaves local commits intact; never force or auto-merge.
+        $branch = Invoke-Git @('symbolic-ref', '--quiet', '--short', 'HEAD')
+        $env:GIT_TERMINAL_PROMPT = '0'
+        $env:GCM_INTERACTIVE = 'Never'
+        Invoke-Git @('push', 'origin', "HEAD:refs/heads/$branch")
     }
 } catch {
     Add-Content -LiteralPath "$PSScriptRoot\data\auto-commit.log" -Value ("$(Get-Date -Format o) ERROR: $_")

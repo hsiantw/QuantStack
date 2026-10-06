@@ -503,6 +503,17 @@ workspace layout. Return using the same browser profile and site address
 (including port). Clearing site data removes these preferences; private browsing
 does not retain them after the session ends. No IP-based account is required.
 
+Open **Symbol notes** on the chart's right rail to take notes that save as you
+type, or choose **Open idea notebook** for titled, searchable notes with categories
+and optional tickers. Notebook entries use **Save note**. Chart drawings save
+automatically per symbol and interval and return when that chart is reopened.
+Use **Download notes & drawings** in the Notes panel for a portable JSON backup
+of saved notebook entries, symbol notes, source links and drawings. **Restore
+backup** validates the file and asks before replacing matching entries; other
+saved work stays intact. Restoration reloads the app, so save notebook edits
+first. Backups exclude market prices and unsaved edits. Personal work stays in
+the browser and is not included in repository commits or pushes.
+
 Run `Update QuantStack Charts.bat` on the Desktop and choose **H** or **L**.
 High uses six workers, 0.5-second pauses and a 45-minute collection budget.
 Low uses one worker, two-second pauses and a 10-minute budget at reduced process
@@ -520,7 +531,11 @@ The Git task exports `chart-snapshots/`: each instrument's latest **30 daily**
 and **48 hourly** stored candles, split into deterministic CSV files. These are
 bounded chart snapshots, not backups of the full SQLite database. It commits
 these snapshots and changes/deletions to already tracked source files. New
-source files must first be added to Git manually. It never pushes to a remote.
+source files must first be added to Git manually. By default it commits locally.
+Install with `-Push` to also push the current branch to `origin` after each
+checkpoint. A failed push keeps the local commit and is retried on the next run,
+even when there are no new changes. Pushes never force-overwrite remote history;
+authentication or remote conflicts are logged in `data/auto-commit.log`.
 Staged changes or an in-progress Git operation cause the task to skip with an
 error in `data/auto-commit.log`, preserving manual staging. Chart collection
 progress and provider errors remain in `data/hourly-refresh.log` and JSON.
