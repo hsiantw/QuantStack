@@ -107,7 +107,7 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
         async with self.client.get(self.gateway.make_url('/workspace/markov-worker.js')) as response:
             self.assertEqual(response.status, 200)
             self.assertIn('importScripts', await response.text())
-        for name in ('research.js', 'research.css', 'research-worker.js', 'research-engine.js', 'risk.js'):
+        for name in ('research.js', 'notes.js', 'research.css', 'research-worker.js', 'research-engine.js', 'risk.js'):
             async with self.client.get(self.gateway.make_url('/workspace/' + name)) as response:
                 self.assertEqual(response.status, 200, name)
 

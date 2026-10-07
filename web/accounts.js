@@ -12,7 +12,7 @@
     <p class="muted">Use 8–128 characters. Password recovery is not available yet; keep your password in a password manager.</p>
     <div class="account-actions"><button id="accountLogin" type="submit">Sign in</button><button id="accountRegister" type="button">Create account</button></div></form>
     <section id="accountWorkspace" hidden><p id="accountIdentity"></p>
-    <p>Saving uploads the current browser workspace. Loading replaces this browser's notes, drawings and settings with the account copy. Save notebook entries before uploading. Market prices are shared and are not copied into accounts.</p>
+    <p>Saving uploads the current browser workspace. Loading replaces this browser's notes, drawings and settings with the account copy. Notebook edits are saved before uploading. Market prices are shared and are not copied into accounts.</p>
     <div class="account-actions"><button type="button" id="accountSave">Save to account</button><button type="button" id="accountLoad">Load saved workspace</button><button type="button" id="accountLogout">Sign out &amp; clear browser workspace</button></div></section>
     <p id="accountStatus" role="status" aria-live="polite"></p>`;
   document.body.append(dialog);
@@ -81,6 +81,7 @@
   el('accountSave').onclick = () => {
     if (!user || revision === null || !confirm(`Save this browser's notes, drawings and settings to ${user.username}'s account? This replaces the previous account snapshot.`)) return;
     perform(async () => {
+      if (!window.QuantNotes?.flush()) throw Error('Save the open notebook edit before uploading.');
       const data = await api('workspace', {account_id: user.id, revision, entries: workspace()});
       user = data.user; revision = user.revision;
       try { sessionStorage.setItem(key(), String(revision)); } catch {}
@@ -104,9 +105,10 @@
   el('accountLoad').onclick = () => {
     if (!user || !confirm('Replace this browser workspace with your account copy and reload? Local-only changes and unsaved notebook edits will be lost. Download a notes/drawings backup first if needed.')) return;
     perform(async () => {
+      if (!window.QuantNotes?.flush()) throw Error('Save the open notebook edit before loading another workspace.');
       const data = await api('workspace');
       if (data.user.id !== user.id) throw Error('The signed-in account changed. Reload before loading a workspace.');
-      replaceWorkspace(data.entries); user = data.user; revision = user.revision;
+      replaceWorkspace(data.entries); window.QuantNotes?.discard(); user = data.user; revision = user.revision;
       try { sessionStorage.setItem(key(), String(revision)); } catch {}
       signalAccountChange();
       location.reload();
@@ -120,13 +122,14 @@
       setUser(null);
       // Clear all same-origin tabs' shared browser workspace before reloading.
       replaceWorkspace({});
+      window.QuantNotes?.discard();
       signalAccountChange();
       location.reload();
     });
   };
   // Other tabs must not upload a workspace under a newly switched account.
   window.addEventListener('storage', event => {
-    if (event.key === 'quantstack.accountChanged') { location.reload(); return; }
+    if (event.key === 'quantstack.accountChanged') { window.QuantNotes?.discard(); location.reload(); return; }
     if (event.key?.startsWith('atlas.') && dialog.open) el('accountStatus').textContent = 'The browser workspace changed in another tab. Reload before saving to your account.';
   });
   render();

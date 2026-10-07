@@ -54,9 +54,6 @@
   const drafts=new Map();
   let holdings={};try{const saved=JSON.parse(localStorage.getItem('atlas.portfolios.v1')||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))holdings=saved;}catch{}
   let screener=null;
-  const ideaNotesKey='atlas.ideaNotes.v1';
-  let ideaNotes=[];
-  let selectedIdeaId=null;
   const input=(id,label,value,min,max,step='any')=>`<label>${label}<input id="rt-${id}" type="number" value="${value}" min="${min}" max="${max}" step="${step}" required></label>`;
   const basis=()=>'<label>Price basis<select id="rt-adjusted"><option value="true">Adjusted close</option><option value="false">Raw close</option></select></label>';
   const get=id=>el('rt-'+id),num=id=>Number(get(id).value);
@@ -66,9 +63,11 @@
   function metrics(items){return '<div class="research-metrics">'+items.map(([k,v])=>`<div><span>${E(k)}</span><strong>${E(v)}</strong></div>`).join('')+'</div>';}
   function table(headers,records){return '<div class="research-table"><table><thead><tr>'+headers.map(h=>`<th>${E(h)}</th>`).join('')+'</tr></thead><tbody>'+records.map(r=>'<tr>'+r.map(v=>`<td>${E(v)}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>';}
   function plot(curve,label) {
-    const values=curve.map(r=>r.value),lo=Math.min(...values),hi=Math.max(...values),span=hi-lo||1;
-    const sampled=curve.filter((r,i)=>i%Math.max(1,Math.ceil(curve.length/800))===0||i===curve.length-1);
-    const points=sampled.map(r=>`${60+curve.indexOf(r)/(curve.length-1||1)*710},${175-(r.value-lo)/span*145}`).join(' ');
+    let lo=Infinity,hi=-Infinity;
+    for (const row of curve) { lo=Math.min(lo,row.value); hi=Math.max(hi,row.value); }
+    const span=hi-lo||1,stride=Math.max(1,Math.ceil(curve.length/800)),pointsList=[];
+    for(let i=0;i<curve.length;i++)if(i%stride===0||i===curve.length-1)pointsList.push(`${60+i/(curve.length-1||1)*710},${175-(curve[i].value-lo)/span*145}`);
+    const points=pointsList.join(' ');
     return `<svg class="research-plot" viewBox="0 0 800 210" role="img" aria-label="${E(label)}"><title>${E(label)}</title><line class="axis" x1="60" x2="770" y1="175" y2="175"/><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2"/><text x="8" y="30">${number(hi)}</text><text x="8" y="175">${number(lo)}</text><text x="60" y="200">${E(curve[0].date)}</text><text x="770" y="200" text-anchor="end">${E(curve.at(-1).date)}</text></svg>`;
   }
   const help={
@@ -97,6 +96,7 @@
     return '';
   }
   function renderTool(key){
+    if (!QuantNotes.unmount()) return;
     if(el('researchForm')&&active!=='journal') drafts.set(active,Object.fromEntries([...el('researchForm').querySelectorAll('input,textarea,select')].map(field=>[field.id,field.value])));
     invalidate();active=key;
     if(key==='ideas') { renderIdeaNotebook(); return; }
@@ -114,96 +114,9 @@
       try{get('notes').value=localStorage.getItem('atlas.notes.'+selected?.symbol)||'';get('source').value=localStorage.getItem('atlas.source.'+selected?.symbol)||'';}catch{}
     }
   }
-  function renderIdeaNotebook() {
-    pane.innerHTML=`<section class="research-tool idea-notebook"><div class="research-heading"><div><span class="eyebrow">NOTES & RESEARCH</span><h2>${E(tools.ideas.title)}</h2><p>Keep ideas organized and available for later in this browser.</p></div><button id="ideaNew" type="button">New note</button></div><div class="idea-notebook-layout"><section class="idea-notes-list"><label for="ideaSearch">Find a note</label><input id="ideaSearch" type="search" placeholder="Search title, ticker or text"><label for="ideaCategoryFilter">Category</label><select id="ideaCategoryFilter"><option value="">All categories</option><option>Idea</option><option>Research</option><option>To do</option><option>Watchlist</option></select><div id="ideaNotesList" aria-label="Saved notes"></div></section><form id="ideaEditor" class="idea-note-editor"><label for="ideaTitle">Title</label><input id="ideaTitle" maxlength="120" required placeholder="Give this note a useful title"><label for="ideaCategory">Category</label><select id="ideaCategory"><option>Idea</option><option>Research</option><option>To do</option><option>Watchlist</option></select><label for="ideaSymbol">Related symbol (optional)</label><input id="ideaSymbol" maxlength="30" placeholder="e.g. NVDA"><label for="ideaBody">Notes</label><textarea id="ideaBody" maxlength="20000" rows="12" placeholder="Capture the thesis, questions, links or next steps…" required></textarea><p id="ideaNoteDate" class="idea-note-date"></p><div class="idea-note-actions"><button id="ideaSave" type="submit">Save note</button><button id="ideaDelete" type="button" class="secondary" disabled>Delete</button></div></form></div><p id="ideaStatus" role="status" aria-live="polite">Notes are saved in this browser.</p></section>`;
-    const list=el('ideaNotesList'), editor=el('ideaEditor'), status=el('ideaStatus');
-    const field=id=>el(id);
-    const formatDate=value=>value?new Date(value).toLocaleString():'';
-    function showStatus(message,isError=false) {
-      status.textContent=message;
-      status.dataset.error=String(isError);
-    }
-    function loadIdeas() {
-      try {
-        const stored=localStorage.getItem(ideaNotesKey);
-        const parsed=stored?JSON.parse(stored):[];
-        if(!Array.isArray(parsed)||parsed.some(note=>!note||typeof note.id!=='string'||typeof note.title!=='string'||typeof note.category!=='string'||typeof note.body!=='string'||typeof note.updatedAt!=='string'))
-          throw Error('Saved notes have an invalid format. They have not been changed.');
-        ideaNotes=parsed;
-        showStatus(`${ideaNotes.length} saved ${ideaNotes.length===1?'note':'notes'} · stored in this browser.`);
-      } catch(error) {
-        ideaNotes=[];
-        showStatus(error instanceof SyntaxError?'Saved notes could not be read because the browser data is invalid.':error.message||'Browser storage is unavailable. Notes have not been changed.',true);
-        return false;
-      }
-      return true;
-    }
-    function clearEditor() {
-      selectedIdeaId=null;
-      editor.reset();
-      field('ideaCategory').value='Idea';
-      field('ideaSymbol').value=selected?.symbol||'';
-      field('ideaNoteDate').textContent='New note';
-      field('ideaDelete').disabled=true;
-      list.querySelectorAll('[data-idea-open]').forEach(button=>button.classList.remove('active'));
-    }
-    function openIdea(id) {
-      const note=ideaNotes.find(item=>item.id===id);
-      if(!note)return;
-      selectedIdeaId=id;
-      field('ideaTitle').value=note.title;
-      field('ideaCategory').value=note.category;
-      field('ideaSymbol').value=note.symbol||'';
-      field('ideaBody').value=note.body;
-      field('ideaNoteDate').textContent=`Updated ${formatDate(note.updatedAt)}`;
-      field('ideaDelete').disabled=false;
-      list.querySelectorAll('[data-idea-open]').forEach(button=>button.classList.toggle('active',button.dataset.ideaOpen===id));
-      showStatus(`Editing “${note.title}”.`);
-    }
-    function renderList() {
-      const search=field('ideaSearch').value.trim().toLowerCase(),category=field('ideaCategoryFilter').value;
-      const visible=ideaNotes.filter(note=>(!category||note.category===category)&&`${note.title} ${note.symbol||''} ${note.category} ${note.body}`.toLowerCase().includes(search))
-        .sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
-      list.innerHTML=visible.map(note=>`<button type="button" data-idea-open="${E(note.id)}" class="idea-note-item ${selectedIdeaId===note.id?'active':''}"><strong>${E(note.title)}</strong><small>${E(note.category)}${note.symbol?' · '+E(note.symbol):''} · ${E(formatDate(note.updatedAt))}</small><span>${E(note.body.slice(0,110))}</span></button>`).join('')||'<p class="research-help">No saved notes match. Create a note to keep an idea for later.</p>';
-    }
-    const notesAvailable=loadIdeas();
-    if(notesAvailable) {
-      renderList();
-      if(ideaNotes.length)openIdea(ideaNotes.find(note=>note.id===selectedIdeaId)?.id||ideaNotes.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))[0].id);
-      else clearEditor();
-    } else {
-      renderList();
-      clearEditor();
-      editor.inert=true;
-      field('ideaNew').disabled=true;
-    }
-    field('ideaSearch').oninput=renderList;
-    field('ideaCategoryFilter').onchange=renderList;
-    field('ideaNew').onclick=()=>{clearEditor();showStatus('New note. Save it to keep it in this browser.');field('ideaTitle').focus();};
-    list.onclick=event=>{const button=event.target.closest('[data-idea-open]');if(button)openIdea(button.dataset.ideaOpen);};
-    editor.onsubmit=event=>{
-      event.preventDefault();
-      if(!editor.reportValidity())return;
-      const now=new Date().toISOString(),existing=ideaNotes.find(note=>note.id===selectedIdeaId);
-      const note={id:existing?.id||crypto.randomUUID(),title:field('ideaTitle').value.trim(),category:field('ideaCategory').value,symbol:field('ideaSymbol').value.trim().toUpperCase(),body:field('ideaBody').value.trim(),createdAt:existing?.createdAt||now,updatedAt:now};
-      if(!note.title||!note.body){showStatus('Add a title and note before saving.',true);return;}
-      const updated=[note,...ideaNotes.filter(item=>item.id!==note.id)];
-      try { localStorage.setItem(ideaNotesKey,JSON.stringify(updated)); }
-      catch { showStatus('Could not save this note. Browser storage is unavailable or full.',true);return; }
-      ideaNotes=updated;selectedIdeaId=note.id;field('ideaNoteDate').textContent=`Updated ${formatDate(now)}`;field('ideaDelete').disabled=false;
-      renderList();showStatus(`Saved “${note.title}” in this browser.`);
-    };
-    field('ideaDelete').onclick=()=>{
-      const note=ideaNotes.find(item=>item.id===selectedIdeaId);
-      if(!note||!window.confirm(`Delete “${note.title}”?`))return;
-      const updated=ideaNotes.filter(item=>item.id!==note.id);
-      try { localStorage.setItem(ideaNotesKey,JSON.stringify(updated)); }
-      catch { showStatus('Could not delete this note from browser storage.',true);return; }
-      ideaNotes=updated;selectedIdeaId=null;renderList();clearEditor();showStatus(`Deleted “${note.title}”.`);
-    };
-  }
+  function renderIdeaNotebook() { QuantNotes.mount(pane, selected?.symbol || ''); }
   function statusError(error){el('researchStatus').textContent=error.message;el('researchStatus').dataset.error='true';}
-  function open(key){if(tools[key]){if(key!==active||!el('researchForm'))renderTool(key);ChartWorkspace.openDock('tools');}else ChartWorkspace.openDock(key);syncRail(tools[key]?'tools':key);}
+  function open(key){if(tools[key]){if(key!==active||!(el('researchForm')||el('ideaEditor')))renderTool(key);ChartWorkspace.openDock('tools');}else ChartWorkspace.openDock(key);syncRail(tools[key]?'tools':key);}
   window.openChartResearch=open;
   function syncRail(dock){rail.querySelectorAll('[data-research-open]').forEach(b=>{const on=dock==='tools'&&b.dataset.researchOpen===active;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});}
   window.addEventListener('workspace:dock',e=>{syncRail(e.detail);if(e.detail!=='tools'&&worker)invalidate('Analysis canceled when the panel closed.');});
@@ -280,11 +193,11 @@
   const panel = document.getElementById('workspaceNotesStatus');
   panel.insertAdjacentHTML('afterend', `<div class="personal-work-actions">
     <button type="button" data-research-open="ideas">Open idea notebook</button>
-    <p class="workspace-panel-help">Symbol notes save as you type. Save notebook entries with Save note. Drawings save automatically for each symbol and chart interval on this device.</p>
+    <p class="workspace-panel-help">Symbol notes save as you type. Notebook entries autosave too. Open the notebook for checklists, labels, colours and pinned cards. Drawings save automatically for each symbol and chart interval on this device.</p>
     <button type="button" id="personalWorkExport">Download notes &amp; drawings</button>
     <button type="button" id="personalWorkImport">Restore backup</button>
     <input type="file" id="personalWorkFile" accept="application/json,.json" hidden>
-    <p class="workspace-panel-help">Back up saved notes, source links and drawings to keep a copy or move them to another browser. Market prices and unsaved notebook edits are not included.</p>
+    <p class="workspace-panel-help">Back up saved notes, source links and drawings to keep a copy or move them to another browser. Market prices are not included. Use Account to save a server copy.</p>
     <p id="personalWorkStatus" class="workspace-panel-help" role="status" aria-live="polite"></p>
   </div>`);
   const status = document.getElementById('personalWorkStatus');
@@ -300,12 +213,10 @@
     } else {
       const items = JSON.parse(value);
       if (!Array.isArray(items) || items.length > 10000) throw Error('Invalid notes or drawings list.');
+      if (key === 'atlas.ideaNotes.v1' && new Set(items.map(item => item?.id)).size !== items.length) throw Error('Duplicate notebook IDs. Nothing was restored.');
       for (const item of items) {
         if (key === 'atlas.ideaNotes.v1') {
-          if (!item || !validText(item.id, 200) || !validText(item.title, 120) || !validText(item.body, 20000) ||
-              !['Idea', 'Research', 'To do', 'Watchlist'].includes(item.category) ||
-              (item.symbol !== undefined && !validText(item.symbol, 30)) ||
-              typeof item.updatedAt !== 'string' || !Number.isFinite(Date.parse(item.updatedAt))) throw Error('Invalid notebook entry.');
+          if (!QuantNotes.valid(item)) throw Error('Invalid notebook entry.');
         } else {
           if (!item || !Object.hasOwn(drawingNames, item.type) || !normalizeDrawing(item) ||
               (item.id !== undefined && !validText(item.id, 200))) throw Error('Invalid chart drawing.');
@@ -325,6 +236,7 @@
   }
   document.getElementById('personalWorkExport').onclick = () => {
     try {
+      if (!QuantNotes.flush()) throw Error('Save the open notebook edit before downloading a backup.');
       const entries = Object.fromEntries(Object.keys(localStorage).filter(supported).map(key => [key, localStorage.getItem(key)]));
       const blob = new Blob([JSON.stringify({format: 'quantstack-personal-work', version: 1, exportedAt: new Date().toISOString(), entries}, null, 2)], {type: 'application/json'});
       if (blob.size > 5_000_000) throw Error('Backup exceeds the 5 MB limit.');
@@ -336,6 +248,7 @@
   };
   document.getElementById('personalWorkImport').onclick = () => fileInput.click();
   fileInput.onchange = async () => {
+    if (!QuantNotes.flush()) { status.textContent = 'Save the open notebook edit before restoring a backup.'; fileInput.value = ''; return; }
     const file = fileInput.files[0];
     if (!file) return;
     try {
@@ -361,6 +274,7 @@
         }
         throw Error(restored ? 'Not enough browser storage. Your previous work was preserved.' : 'Storage failed during restore. Keep your backup and check saved work before editing.');
       }
+      QuantNotes.discard();
       location.reload();
     } catch (error) { status.textContent = error.message || 'Could not restore the backup.'; }
     finally { fileInput.value = ''; }

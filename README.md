@@ -145,10 +145,15 @@ not historical sector-index data or trading signals. Finviz's reported delays
 and availability apply; use the linked Finviz page as the source of record.
 The live data panel is available on the local dashboard; hosted snapshots link
 to Finviz directly.
-The **Idea notebook** keeps titled notes in browser storage, with categories,
-optional related tickers, search and edit/delete controls. It is separate from
-the per-symbol notes panel and the Research journal, and does not sync across
-browsers or devices.
+The **Idea notebook** provides Google Keep-style cards with autosave, checklists,
+labels, colours, pinning, archive, trash/restore and duplication. Search includes
+checklist text, labels and related tickers. Expand the notebook for more room.
+Cards render in batches of 60 and input saves are debounced by 350 ms. Pending
+edits flush on navigation, backup, account save and page exit. Storage errors
+keep the draft in the editor; detected conflicting changes create a separate
+copy. Existing notebook data keeps its original storage key and backup format.
+Use **Save to account** for an explicit server snapshot or **Download backup**
+for a portable copy. Neither action implies automatic cross-device sync.
 
 Use **Compare** (Alt+C) to add up to three symbols to a linked performance pane.
 All plotted series start at 0% on the first visible timestamp shared by the
@@ -504,8 +509,8 @@ The prices table includes OHLC, adjusted close, volume, dividends, splits, curre
 Start the app with `Run-Local-Website.bat` and click **Account** in the chart
 toolbar. Create a username/password account or sign in, then choose **Save to
 account** to upload the current browser workspace. This includes symbol notes,
-saved notebook entries, drawings, watchlists, portfolios and preferences. Save
-notebook edits before saving the workspace. Account saving is explicit; browser
+notebook entries, drawings, watchlists, portfolios and preferences. Pending
+notebook edits are saved before uploading the workspace. Account saving is explicit; browser
 changes do not automatically overwrite the account copy. Each account has a
 2 MB workspace limit.
 
@@ -535,13 +540,14 @@ does not retain them after the session ends. No IP-based account is required.
 
 Open **Symbol notes** on the chart's right rail to take notes that save as you
 type, or choose **Open idea notebook** for titled, searchable notes with categories
-and optional tickers. Notebook entries use **Save note**. Chart drawings save
+and optional tickers. Notebook entries autosave; **Save note** also saves immediately. Chart drawings save
 automatically per symbol and interval and return when that chart is reopened.
 Use **Download notes & drawings** in the Notes panel for a portable JSON backup
 of saved notebook entries, symbol notes, source links and drawings. **Restore
 backup** validates the file and asks before replacing matching entries; other
-saved work stays intact. Restoration reloads the app, so save notebook edits
-first. Backups exclude market prices and unsaved edits. Personal work stays in
+saved work stays intact. Backups include checklist, label, colour, pin, archive
+and trash fields. Pending notebook edits are saved before backup/restore;
+restoration reloads the app. Backups exclude market prices. Personal work stays in
 the browser unless you explicitly save it to your account; neither browser work
 nor the account database is included in repository commits or pushes.
 
@@ -657,3 +663,5 @@ To reuse a color group, choose a color in **Label**, click **Save color as watch
 Use **Sort** and its ascending/descending arrow, or click a column heading, to order the entire filtered watchlist before pagination. **Columns ±** adds/removes last price, daily/weekly/monthly percentage changes, market cap, daily volume, and instrument names. Preferences persist in this browser. Extra columns scroll horizontally inside the watchlist, keeping the symbol visible. Missing values show “—” and sort last in both directions.
 
 Watchlist percentage changes use completed daily bars, with adjusted closes when available (raw closes only when the recent history has no adjusted prices). Weekly/monthly returns span 5/21 stored trading sessions for stocks and 7/30 daily bars for crypto. Insufficient or missing prices produce unavailable returns. These fields are separate from the chart's latest intraday quote change. Market cap comes from stored metadata; price and market-cap tooltips show the currency and available timestamps. Values are not converted between currencies for sorting. Hosted snapshots show the metrics included in their most recent build.
+
+Notebook validation: `python -m unittest test_notes_browser test_personal_work test_accounts test_account_browser test_quantstack_gateway`. Research rendering: `python smoke_research_workspace.py`.

@@ -39,6 +39,8 @@ class PersonalWorkTests(unittest.TestCase):
                 page.get_by_role('button', name='Open idea notebook', exact=True).click()
                 page.locator('#ideaTitle').fill('A market idea')
                 page.locator('#ideaBody').fill('Check volume before entry.')
+                page.locator('#ideaLabels').fill('volume, breakout')
+                page.locator('#ideaColor').select_option('blue')
                 page.locator('#ideaSave').click()
                 expect(page.locator('#ideaStatus')).to_contain_text('Saved')
                 # Use the drawing editor persistence path with deterministic geometry.
@@ -92,6 +94,8 @@ class PersonalWorkTests(unittest.TestCase):
                 self.assertEqual(page.evaluate("localStorage.getItem('atlas.notes.OTHER')"), 'Keep me')
                 page.get_by_role('button', name='Open idea notebook', exact=True).click()
                 expect(page.locator('#ideaTitle')).to_have_value('A market idea')
+                expect(page.locator('#ideaLabels')).to_have_value('volume, breakout')
+                expect(page.locator('#ideaColor')).to_have_value('blue')
                 page.set_viewport_size({'width': 390, 'height': 844})
                 notes()
                 expect(page.locator('#personalWorkExport')).to_be_visible()

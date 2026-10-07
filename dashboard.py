@@ -575,6 +575,7 @@ class Handler(BaseHTTPRequestHandler):
                          '/brownian.js': ('brownian.js', 'text/javascript'),
                          '/risk-engine.js': ('risk-engine.js', 'text/javascript'),
                          '/risk.js': ('risk.js', 'text/javascript'),
+                         '/notes.js': ('notes.js', 'text/javascript'),
                          '/research.js': ('research.js', 'text/javascript'),
                          '/accounts.js': ('accounts.js', 'text/javascript'),
                          '/research-engine.js': ('research-engine.js', 'text/javascript'),
