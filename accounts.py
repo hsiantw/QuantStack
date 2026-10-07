@@ -71,7 +71,7 @@ class Accounts:
         if not isinstance(username, str) or not re.fullmatch(r'[A-Za-z0-9_.-]{3,32}', username):
             raise AccountError(400, 'Use a username of 3–32 letters, numbers, dots, underscores or hyphens.')
         if not isinstance(password, str) or not 8 <= len(password) <= 128:
-            raise AccountError(400, 'Use a password of 12–128 characters.')
+            raise AccountError(400, 'Use a password of 8–128 characters.')
         username = username.lower()
         self.throttle(peer, username)
         with closing(self.connect()) as db, db:
