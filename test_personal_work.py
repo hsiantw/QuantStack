@@ -37,6 +37,10 @@ class PersonalWorkTests(unittest.TestCase):
                 page.locator('#workspaceNotes').fill('Watch the breakout <keep literal>.')
                 expect(page.locator('#workspaceNotesStatus')).to_contain_text('Saved')
                 page.get_by_role('button', name='Open idea notebook', exact=True).click()
+                page.locator('.idea-category-manager summary').click()
+                page.locator('#ideaCategoryName').fill('Trade plans')
+                page.locator('#ideaCategoryCreate').click()
+                page.locator('#ideaNew').click()
                 page.locator('#ideaTitle').fill('A market idea')
                 page.locator('#ideaBody').fill('Check volume before entry.')
                 page.locator('#ideaLabels').fill('volume, breakout')
@@ -55,8 +59,9 @@ class PersonalWorkTests(unittest.TestCase):
                 with page.expect_download() as download:
                     page.locator('#personalWorkExport').click()
                 backup = json.loads(download.value.path().read_text(encoding='utf-8'))
-                self.assertEqual(len(backup['entries']), 3)
+                self.assertEqual(len(backup['entries']), 4)
                 self.assertIn('atlas.ideaNotes.v1', backup['entries'])
+                self.assertEqual(json.loads(backup['entries']['atlas.noteCategories.v1']), ['Trade plans'])
                 def upload(data):
                     page.locator('#personalWorkFile').set_input_files(dict(
                         name='backup.json', mimeType='application/json', buffer=json.dumps(data).encode()))
@@ -96,6 +101,8 @@ class PersonalWorkTests(unittest.TestCase):
                 expect(page.locator('#ideaTitle')).to_have_value('A market idea')
                 expect(page.locator('#ideaLabels')).to_have_value('volume, breakout')
                 expect(page.locator('#ideaColor')).to_have_value('blue')
+                expect(page.locator('#ideaCategory')).to_have_value('Trade plans')
+                expect(page.locator('[data-category="Trade plans"]')).to_be_visible()
                 page.set_viewport_size({'width': 390, 'height': 844})
                 notes()
                 expect(page.locator('#personalWorkExport')).to_be_visible()

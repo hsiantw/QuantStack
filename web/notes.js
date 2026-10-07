@@ -2,12 +2,14 @@
 (() => {
   'use strict';
   const KEY = 'atlas.ideaNotes.v1';
+  const CATEGORY_KEY = 'atlas.noteCategories.v1';
+  const validCategory = value => text(value, 40) && !!value.trim() && value === value.trim();
   const categories = ['Idea', 'Research', 'To do', 'Watchlist'];
   const colors = ['default', 'yellow', 'green', 'blue', 'pink'];
   const text = (value, limit) => typeof value === 'string' && value.length <= limit;
   function valid(note) {
     return note && text(note.id, 200) && !!note.id && text(note.title, 120) && text(note.body, 20000) &&
-      categories.includes(note.category) && (note.symbol === undefined || text(note.symbol, 30)) &&
+      validCategory(note.category) && (note.symbol === undefined || text(note.symbol, 30)) &&
       text(note.updatedAt, 80) && Number.isFinite(Date.parse(note.updatedAt)) &&
       ['pinned', 'archived', 'trashed'].every(k => note[k] === undefined || typeof note[k] === 'boolean') &&
       (note.color === undefined || colors.includes(note.color)) &&
@@ -22,7 +24,7 @@
   }
   let flush = () => true, cleanup = () => {}, selectedId = null;
   const discard = () => { cleanup(); flush = () => true; selectedId = null; };
-  window.QuantNotes = {valid, flush: () => flush(), mount, discard, unmount() { if (!flush()) return false; cleanup(); flush = () => true; return true; }};
+  window.QuantNotes = {valid, validCategory, flush: () => flush(), mount, discard, unmount() { if (!flush()) return false; cleanup(); flush = () => true; return true; }};
   window.addEventListener('pagehide', () => flush());
   window.addEventListener('beforeunload', event => { if (!flush()) { event.preventDefault(); event.returnValue = ''; } });
   document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
@@ -31,27 +33,95 @@
   function mount(pane, symbol) {
     cleanup();
     pane.innerHTML = `<section class="research-tool idea-notebook">
-      <div class="research-heading"><div><span class="eyebrow">NOTES & RESEARCH</span><h2>Idea notebook</h2><p>Capture an idea. Make a checklist. Pick up where you left off.</p></div><div class="idea-note-actions"><button id="ideaExpand" type="button">Expand notebook</button><button id="ideaNew" type="button">New note</button></div></div>
+      <div class="research-heading"><div><span class="eyebrow">NOTES & RESEARCH</span><h2>My notebook</h2><p>Your ideas, research and next steps in one place.</p></div><div class="idea-note-actions"><button id="ideaExpand" type="button">Expand notebook</button><button id="ideaNew" type="button">+ New note</button><button id="ideaNewChecklist" type="button">+ Checklist</button></div></div>
       <div class="idea-toolbar"><label>Search<input id="ideaSearch" type="search" placeholder="Title, text, symbol or label"></label>
-      <label>View<select id="ideaView"><option value="notes">Notes</option><option value="archive">Archive</option><option value="trash">Trash</option><option value="all">All notes</option></select></label>
-      <label>Category<select id="ideaCategoryFilter"><option value="">All categories</option>${categories.map(c => `<option>${c}</option>`).join('')}</select></label>
+      <label>View<select id="ideaView"><option value="notes">All active notes</option><option value="pinned">Pinned notes</option><option value="archive">Archive</option><option value="trash">Trash</option><option value="all">All notes</option></select></label>
+      <select id="ideaCategoryFilter" aria-label="Filter by category" hidden><option value="">All categories</option></select>
       <button id="ideaAccount" type="button">Save to account</button><button id="ideaBackup" type="button">Download backup</button></div>
       <p id="ideaStatus" role="status" aria-live="polite">Notes autosave in this browser. Use Save to account for a server copy.</p>
-      <div class="idea-notebook-layout"><section class="idea-notes-list"><p id="ideaCount" class="research-help"></p><div id="ideaNotesList" aria-label="Saved notes"></div><button id="ideaMore" type="button" hidden>Show more notes</button></section>
+      <div class="idea-shell"><div class="idea-category-sidebar"><nav id="ideaCategories" aria-label="Note categories"></nav>
+      <details class="idea-category-manager"><summary>Manage categories</summary><label for="ideaCategoryName">Category name</label><input id="ideaCategoryName" maxlength="40" placeholder="e.g. Earnings"><button id="ideaCategoryCreate" type="button">Add category</button><button id="ideaCategoryRename" type="button">Rename selected</button><button id="ideaCategoryRemove" type="button">Remove selected</button><p>Removing a category moves its notes to Idea.</p></details></div><div class="idea-notebook-layout"><section class="idea-notes-list"><button id="ideaQuickNote" type="button">Take a note...</button><p id="ideaCount" class="research-help"></p><div id="ideaNotesList" aria-label="Saved notes"></div><button id="ideaMore" type="button" hidden>Show more notes</button></section>
       <form id="ideaEditor" class="idea-note-editor"><label for="ideaTitle">Title</label><input id="ideaTitle" maxlength="120" placeholder="Untitled note">
       <div class="idea-fields"><label>Category<select id="ideaCategory">${categories.map(c => `<option>${c}</option>`).join('')}</select></label><label>Symbol<input id="ideaSymbol" maxlength="30" placeholder="e.g. NVDA"></label><label>Colour<select id="ideaColor">${colors.map(c => `<option value="${c}">${c[0].toUpperCase()+c.slice(1)}</option>`).join('')}</select></label></div>
       <label for="ideaLabels">Labels (comma separated)</label><input id="ideaLabels" maxlength="819" placeholder="Earnings, long term">
       <label for="ideaBody">Notes</label><textarea id="ideaBody" maxlength="20000" rows="7" placeholder="Write your thesis, links or next steps..."></textarea>
       <fieldset class="idea-checklist"><legend>Checklist</legend><div id="ideaItems"></div><button id="ideaAddItem" type="button">Add checklist item</button></fieldset>
-      <p id="ideaNoteDate" class="idea-note-date"></p><div class="idea-note-actions"><button id="ideaSave" type="submit">Save note</button><button id="ideaPin" type="button" aria-pressed="false">Pin</button><button id="ideaArchive" type="button">Archive</button><button id="ideaDuplicate" type="button">Duplicate</button><button id="ideaDelete" type="button">Move to trash</button><button id="ideaRestore" type="button" hidden>Restore note</button><button id="ideaPurge" type="button" hidden>Delete forever</button></div></form></div></section>`;
+      <p id="ideaNoteDate" class="idea-note-date"></p><div class="idea-note-actions"><button id="ideaSave" type="submit">Save note</button><button id="ideaPin" type="button" aria-pressed="false">Pin</button><button id="ideaArchive" type="button">Archive</button><button id="ideaDuplicate" type="button">Duplicate</button><button id="ideaDelete" type="button">Move to trash</button><button id="ideaRestore" type="button" hidden>Restore note</button><button id="ideaPurge" type="button" hidden>Delete forever</button></div></form></div></div></section>`;
     const el = id => pane.querySelector('#' + id), editor = el('ideaEditor');
-    let notes = [], draft = null, base = null, dirty = false, timer, searchTimer, limit = 60, blocked = false;
+    let customCategories = [], notes = [], draft = null, base = null, dirty = false, timer, searchTimer, limit = 60, blocked = false;
     const status = (message, error = false) => { el('ideaStatus').textContent = message; el('ideaStatus').dataset.error = String(error); };
     const clone = value => JSON.parse(JSON.stringify(value));
     const normal = n => ({color:'default', labels:[], items:[], pinned:false, archived:false, trashed:false, ...n});
+    function readCategories() {
+      const saved = JSON.parse(localStorage.getItem(CATEGORY_KEY) || '[]');
+      if (!Array.isArray(saved) || saved.length > 100 || !saved.every(validCategory)) throw Error('Saved categories could not be read. Download a backup before editing.');
+      return saved;
+    }
+    function allCategories() { return [...new Set([...categories, ...customCategories, ...notes.map(n => n.category)])]; }
+    function categoryNavigation() {
+      const current = el('ideaCategoryFilter').value, names = allCategories();
+      const counts = new Map(); let total = 0;
+      for (const note of notes) if (!note.trashed && !note.archived) { total++; counts.set(note.category,(counts.get(note.category) || 0)+1); }
+      for (const [id, value, blank] of [['ideaCategoryFilter',current,true], ['ideaCategory',draft?.category || 'Idea',false]]) {
+        const select = el(id); select.replaceChildren();
+        if (blank) select.add(new Option('All categories',''));
+        names.forEach(name => select.add(new Option(name,name)));
+        select.value = value;
+      }
+      const fragment = document.createDocumentFragment();
+      for (const name of ['', ...names]) {
+        const button = document.createElement('button'); button.type = 'button'; button.dataset.category = name;
+        button.className = 'idea-category-link'; button.setAttribute('aria-pressed', String(current === name));
+        const title = document.createElement('span'); title.textContent = name || 'All categories';
+        const count = document.createElement('small'); count.textContent = name ? counts.get(name) || 0 : total;
+        button.append(title,count); fragment.append(button);
+      }
+      el('ideaCategories').replaceChildren(fragment);
+      el('ideaCategoryRename').disabled = !current || categories.includes(current) || blocked;
+      el('ideaCategoryRemove').disabled = !current || categories.includes(current) || blocked;
+    }
+    function chooseCategory(name) {
+      if (!save()) return;
+      el('ideaCategoryFilter').value = name; el('ideaCategoryName').value = name;
+      limit = 60; list(); categoryNavigation();
+      [...el('ideaCategories').children].find(button => button.dataset.category === name)?.focus();
+      status(name ? `Category: ${name}. New notes will be added here.` : 'Showing all categories.');
+    }
+    function manageCategory(action) {
+      if (!save() || blocked) return;
+      try {
+        const old = el('ideaCategoryFilter').value, name = el('ideaCategoryName').value.trim();
+        notes = read(); customCategories = readCategories();
+        if (action !== 'remove' && !validCategory(name)) throw Error('Enter a category name of 1 to 40 characters.');
+        if (action !== 'remove' && allCategories().some(c => c.toLowerCase() === name.toLowerCase())) throw Error('That category already exists. Choose it from the sidebar.');
+        if (action !== 'create' && (!old || categories.includes(old))) throw Error('Select a custom category to rename or remove.');
+        if (action === 'remove' && !confirm(`Remove the category "${old}" and move its notes to Idea? Notes will be kept.`)) return;
+        const nextCategories = action === 'create' ? [...customCategories,name] : customCategories.filter(c => c !== old).concat(action === 'rename' ? [name] : []);
+        if (nextCategories.length > 100) throw Error('You can create up to 100 custom categories.');
+        const nextNotes = action === 'create' ? notes : notes.map(n => n.category === old ? {...n,category:action === 'rename' ? name : 'Idea'} : n);
+        const beforeNotes = localStorage.getItem(KEY);
+        let wroteNotes = false;
+        try {
+          if (action !== 'create') { localStorage.setItem(KEY,JSON.stringify(nextNotes)); wroteNotes = true; }
+          localStorage.setItem(CATEGORY_KEY,JSON.stringify(nextCategories));
+        } catch (error) {
+          if (wroteNotes) {
+            try { beforeNotes === null ? localStorage.removeItem(KEY) : localStorage.setItem(KEY,beforeNotes); }
+            catch { throw Error('Storage failed during the category change. Your note text is safe; reopen the notebook to check its categories.'); }
+          }
+          throw error;
+        }
+        notes = nextNotes; customCategories = nextCategories;
+        categoryNavigation(); el('ideaCategoryFilter').value = action === 'remove' ? 'Idea' : name;
+        if (base) show(notes.find(n => n.id === base.id));
+        else show(null);
+        categoryNavigation(); list();
+        status(action === 'remove' ? 'Category removed. Its notes are now in Idea.' : 'Category saved in this browser.');
+      } catch (error) { status(error.message,true); }
+    }
     function list() {
       const query = el('ideaSearch').value.trim().toLowerCase(), category = el('ideaCategoryFilter').value, view = el('ideaView').value;
-      const matching = notes.filter(n => (view === 'trash' ? n.trashed : !n.trashed && (view === 'all' || Boolean(n.archived) === (view === 'archive'))) &&
+      const matching = notes.filter(n => (view === 'trash' ? n.trashed : !n.trashed && (view === 'all' || (view === 'pinned' ? n.pinned && !n.archived : Boolean(n.archived) === (view === 'archive')))) &&
         (!category || category === n.category) && `${n.title} ${n.body} ${n.symbol || ''} ${(n.labels || []).join(' ')} ${(n.items || []).map(i => i.text).join(' ')}`.toLowerCase().includes(query))
         .sort((a,b) => Number(!!b.pinned)-Number(!!a.pinned) || b.updatedAt.localeCompare(a.updatedAt));
       const fragment = document.createDocumentFragment();
@@ -66,6 +136,7 @@
       if (!matching.length) { const empty = document.createElement('p'); empty.className = 'research-help'; empty.textContent = 'No notes here yet. Create a note or change your filters.'; fragment.append(empty); }
       el('ideaNotesList').replaceChildren(fragment); el('ideaCount').textContent = `${matching.length} notes${matching.length > limit ? ` · showing ${limit}` : ''}`;
       el('ideaMore').hidden = matching.length <= limit;
+      categoryNavigation();
     }
     function controls() {
       el('ideaPin').textContent = draft.pinned ? 'Unpin' : 'Pin'; el('ideaPin').setAttribute('aria-pressed', String(draft.pinned));
@@ -90,8 +161,9 @@
     }
     function show(note) {
       base = note ? clone(note) : null;
-      draft = normal(note ? clone(note) : {id:crypto.randomUUID(), title:'', body:'', symbol:symbol || '', category:'Idea'});
+      draft = normal(note ? clone(note) : {id:crypto.randomUUID(), title:'', body:'', symbol:symbol || '', category:el('ideaCategoryFilter').value || 'Idea'});
       selectedId = draft.id; dirty = false;
+      categoryNavigation();
       for (const [id,k] of [['ideaTitle','title'],['ideaBody','body'],['ideaSymbol','symbol'],['ideaCategory','category'],['ideaColor','color']]) el(id).value = draft[k] || '';
       el('ideaLabels').value = draft.labels.join(', ');
       el('ideaNoteDate').textContent = draft.updatedAt ? 'Updated ' + new Date(draft.updatedAt).toLocaleString() : 'New note · autosaves as you type';
@@ -130,9 +202,13 @@
     editor.onchange = () => { changed(); controls(); };
     editor.onsubmit = event => { event.preventDefault(); save(); };
     editor.onkeydown = event => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); save(); } };
-    el('ideaNew').onclick = () => { if (save()) { show(null); el('ideaTitle').focus(); } };
+    el('ideaNew').onclick = () => { if (save()) { el('ideaView').value = 'notes'; show(null); el('ideaTitle').focus(); editor.scrollIntoView({block:'nearest'}); } };
+    el('ideaQuickNote').onclick = () => el('ideaNew').click();
+    el('ideaNewChecklist').onclick = () => { if (save()) { el('ideaView').value = 'notes'; show(null); el('ideaAddItem').click(); } };
+    el('ideaCategories').onclick = event => { const button = event.target.closest('[data-category]'); if (button) chooseCategory(button.dataset.category); };
+    for (const [id,action] of [['ideaCategoryCreate','create'],['ideaCategoryRename','rename'],['ideaCategoryRemove','remove']]) el(id).onclick = () => manageCategory(action);
     el('ideaExpand').onclick = () => { document.getElementById('workspaceMaximizeDock').click(); el('ideaExpand').textContent = document.body.classList.contains('workspace-dock-maximized') ? 'Restore notebook size' : 'Expand notebook'; };
-    el('ideaNotesList').onclick = event => { const card = event.target.closest('[data-idea-open]'); if (card && save()) { notes = read(); show(notes.find(n => n.id === card.dataset.ideaOpen)); } };
+    el('ideaNotesList').onclick = event => { const card = event.target.closest('[data-idea-open]'); if (card && save()) { notes = read(); show(notes.find(n => n.id === card.dataset.ideaOpen)); editor.scrollIntoView({block:'nearest'}); el('ideaTitle').focus({preventScroll:true}); } };
     el('ideaSearch').oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { limit = 60; list(); }, 120); };
     for (const id of ['ideaCategoryFilter', 'ideaView']) el(id).onchange = () => { limit = 60; list(); };
     el('ideaMore').onclick = () => { limit += 60; list(); };
@@ -153,13 +229,13 @@
     el('ideaAccount').onclick = () => { if (save()) document.getElementById('accountButton')?.click(); };
     el('ideaBackup').onclick = () => { if (save()) document.getElementById('personalWorkExport')?.click(); };
     function onStorage(event) {
-      if (event.key !== KEY && event.key !== null) return;
-      try { notes = read(); if (!dirty) show(notes.find(n => n.id === selectedId) || null); else { list(); status('Notes changed in another tab. Your pending edits will be preserved.'); } }
+      if (![KEY,CATEGORY_KEY,null].includes(event.key)) return;
+      try { notes = read(); customCategories = readCategories(); if (!dirty) show(notes.find(n => n.id === selectedId) || null); else { list(); status('Notes changed in another tab. Your pending edits will be preserved.'); } }
       catch (error) { status(error.message, true); }
     }
     window.addEventListener('storage', onStorage);
     cleanup = () => { clearTimeout(timer); clearTimeout(searchTimer); window.removeEventListener('storage', onStorage); };
-    try { notes = read(); show(notes.find(n => n.id === selectedId) || notes.filter(n => !n.trashed && !n.archived).sort((a,b) => b.updatedAt.localeCompare(a.updatedAt))[0] || null); }
+    try { notes = read(); customCategories = readCategories(); show(notes.find(n => n.id === selectedId) || notes.filter(n => !n.trashed && !n.archived).sort((a,b) => b.updatedAt.localeCompare(a.updatedAt))[0] || null); }
     catch (error) { blocked = true; show(null); editor.inert = true; el('ideaNew').disabled = true; status(error.message, true); }
   }
 })();

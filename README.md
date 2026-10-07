@@ -146,7 +146,13 @@ and availability apply; use the linked Finviz page as the source of record.
 The live data panel is available on the local dashboard; hosted snapshots link
 to Finviz directly.
 The **Idea notebook** provides Google Keep-style cards with autosave, checklists,
-labels, colours, pinning, archive, trash/restore and duplication. Search includes
+labels, colours, pinning, archive, trash/restore and duplication. A OneNote-style
+category sidebar shows active note counts. Create up to 100 custom categories,
+rename them, or remove them while moving their notes to Idea. New notes and
+checklists inherit the selected category. The pinned view and quick-note button
+make frequent actions easy to reach; category navigation becomes a horizontal
+row on narrow panels. Custom categories travel with backups and account saves.
+Search includes
 checklist text, labels and related tickers. Expand the notebook for more room.
 Cards render in batches of 60 and input saves are debounced by 350 ms. Pending
 edits flush on navigation, backup, account save and page exit. Storage errors

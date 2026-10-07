@@ -202,11 +202,14 @@
   </div>`);
   const status = document.getElementById('personalWorkStatus');
   const fileInput = document.getElementById('personalWorkFile');
-  const supported = key => key === 'atlas.ideaNotes.v1' || /^atlas\.(notes|source|drawings)\..{1,150}$/.test(key);
+  const supported = key => ['atlas.ideaNotes.v1', 'atlas.noteCategories.v1'].includes(key) || /^atlas\.(notes|source|drawings)\..{1,150}$/.test(key);
   const validText = (value, limit) => typeof value === 'string' && value.length <= limit;
   function validate(key, value) {
     if (!supported(key) || !validText(value, 4_000_000)) throw Error('Unsupported backup entry. Nothing was restored.');
-    if (key.startsWith('atlas.notes.')) {
+    if (key === 'atlas.noteCategories.v1') {
+      const categories = JSON.parse(value);
+      if (!Array.isArray(categories) || categories.length > 100 || !categories.every(QuantNotes.validCategory)) throw Error('Invalid notebook categories.');
+    } else if (key.startsWith('atlas.notes.')) {
       if (!validText(value, 200_000)) throw Error('A symbol note is too large.');
     } else if (key.startsWith('atlas.source.')) {
       if (value && (!validText(value, 8000) || !['http:', 'https:'].includes(new URL(value).protocol))) throw Error('Invalid source link.');
