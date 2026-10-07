@@ -106,6 +106,18 @@ class AccountTests(unittest.IsolatedAsyncioTestCase):
         response, _ = await self.request(self.b, 'login', {'username': 'Alice', 'password': 'long-test-password'})
         self.assertEqual(response.status, 429)
 
+    async def test_password_length_boundaries(self):
+        for password in ('short12', 'x' * 129):
+            response, _ = await self.request(self.a, 'register',
+                {'username': 'Boundary', 'password': password})
+            self.assertEqual(response.status, 400)
+        for username, password in (('Eight', 'testpass'), ('Maximum', 'x' * 128)):
+            payload = {'username': username, 'password': password}
+            response, data = await self.request(self.a, 'register', payload)
+            self.assertEqual(response.status, 200, data)
+            response, data = await self.request(self.b, 'login', payload)
+            self.assertEqual(response.status, 200, data)
+
     async def test_public_origin_secure_cookie(self):
         app = web.Application()
         install_accounts(app, self.path, 'https://quant.example')

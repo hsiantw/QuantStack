@@ -8,7 +8,7 @@
   dialog.innerHTML = `<div class="dialog-head"><h2 id="accountTitle">Your QuantStack account</h2><button type="button" id="accountClose">Close</button></div>
     <p>Save notes, drawings, watchlists and settings to your account. Sign in on another device using this same QuantStack server to load them.</p>
     <form id="accountForm"><label>Username<input id="accountUsername" autocomplete="username" minlength="3" maxlength="32" pattern="[A-Za-z0-9_.-]{3,32}" required></label>
-    <label>Password<input id="accountPassword" type="password" autocomplete="current-password" minlength="12" maxlength="128" required></label>
+    <label>Password<input id="accountPassword" type="password" autocomplete="current-password" minlength="8" maxlength="128" required></label>
     <p class="muted">Use 12–128 characters. Password recovery is not available yet; keep your password in a password manager.</p>
     <div class="account-actions"><button id="accountLogin" type="submit">Sign in</button><button id="accountRegister" type="button">Create account</button></div></form>
     <section id="accountWorkspace" hidden><p id="accountIdentity"></p>
