@@ -8,7 +8,7 @@
   const colors = ['default', 'yellow', 'green', 'blue', 'pink'];
   const text = (value, limit) => typeof value === 'string' && value.length <= limit;
   function valid(note) {
-    return note && text(note.id, 200) && !!note.id && text(note.title, 120) && text(note.body, 20000) &&
+    return note && text(note.id, 200) && !!note.id && text(note.title, 120) && text(note.body, 20000) && (note.bodyHtml === undefined || text(note.bodyHtml, 200000)) &&
       validCategory(note.category) && (note.symbol === undefined || text(note.symbol, 30)) &&
       text(note.updatedAt, 80) && Number.isFinite(Date.parse(note.updatedAt)) &&
       ['pinned', 'archived', 'trashed'].every(k => note[k] === undefined || typeof note[k] === 'boolean') &&
@@ -44,12 +44,13 @@
       <form id="ideaEditor" class="idea-note-editor"><label for="ideaTitle">Title</label><input id="ideaTitle" maxlength="120" placeholder="Untitled note">
       <div class="idea-fields"><label>Category<select id="ideaCategory">${categories.map(c => `<option>${c}</option>`).join('')}</select></label><label>Symbol<input id="ideaSymbol" maxlength="30" placeholder="e.g. NVDA"></label><label>Colour<select id="ideaColor">${colors.map(c => `<option value="${c}">${c[0].toUpperCase()+c.slice(1)}</option>`).join('')}</select></label></div>
       <label for="ideaLabels">Labels (comma separated)</label><input id="ideaLabels" maxlength="819" placeholder="Earnings, long term">
-      <label for="ideaBody">Notes</label><textarea id="ideaBody" maxlength="20000" rows="7" placeholder="Write your thesis, links or next steps..."></textarea>
+      <span class="idea-body-label">Notes</span><div id="ideaRichEditor"></div>
       <fieldset class="idea-checklist"><legend>Checklist</legend><div id="ideaItems"></div><button id="ideaAddItem" type="button">Add checklist item</button></fieldset>
       <p id="ideaNoteDate" class="idea-note-date"></p><div class="idea-note-actions"><button id="ideaSave" type="submit">Save note</button><button id="ideaPin" type="button" aria-pressed="false">Pin</button><button id="ideaArchive" type="button">Archive</button><button id="ideaDuplicate" type="button">Duplicate</button><button id="ideaDelete" type="button">Move to trash</button><button id="ideaRestore" type="button" hidden>Restore note</button><button id="ideaPurge" type="button" hidden>Delete forever</button></div></form></div></div></section>`;
     const el = id => pane.querySelector('#' + id), editor = el('ideaEditor');
     let customCategories = [], notes = [], draft = null, base = null, dirty = false, timer, searchTimer, limit = 60, blocked = false;
     const status = (message, error = false) => { el('ideaStatus').textContent = message; el('ideaStatus').dataset.error = String(error); };
+    const rich = QuantNoteEditor.create(el('ideaRichEditor'), {onChange:changed, onBeforeExport:save, getTitle:()=>el('ideaTitle').value, onMessage:status});
     const clone = value => JSON.parse(JSON.stringify(value));
     const normal = n => ({color:'default', labels:[], items:[], pinned:false, archived:false, trashed:false, ...n});
     function readCategories() {
@@ -147,6 +148,7 @@
       for (const input of editor.querySelectorAll('input,textarea,select')) input.disabled = draft.trashed || blocked;
       el('ideaDelete').disabled ||= !base;
       editor.dataset.color = draft.color;
+      rich.setEditable(!draft.trashed && !blocked);
     }
     function items() {
       const fragment = document.createDocumentFragment();
@@ -164,13 +166,15 @@
       draft = normal(note ? clone(note) : {id:crypto.randomUUID(), title:'', body:'', symbol:symbol || '', category:el('ideaCategoryFilter').value || 'Idea'});
       selectedId = draft.id; dirty = false;
       categoryNavigation();
-      for (const [id,k] of [['ideaTitle','title'],['ideaBody','body'],['ideaSymbol','symbol'],['ideaCategory','category'],['ideaColor','color']]) el(id).value = draft[k] || '';
+      for (const [id,k] of [['ideaTitle','title'],['ideaSymbol','symbol'],['ideaCategory','category'],['ideaColor','color']]) el(id).value = draft[k] || '';
+      rich.setContent(draft);
       el('ideaLabels').value = draft.labels.join(', ');
       el('ideaNoteDate').textContent = draft.updatedAt ? 'Updated ' + new Date(draft.updatedAt).toLocaleString() : 'New note · autosaves as you type';
       items(); list();
     }
     function capture() {
-      for (const [id,k] of [['ideaTitle','title'],['ideaBody','body'],['ideaSymbol','symbol'],['ideaCategory','category'],['ideaColor','color']]) draft[k] = el(id).value;
+      for (const [id,k] of [['ideaTitle','title'],['ideaSymbol','symbol'],['ideaCategory','category'],['ideaColor','color']]) draft[k] = el(id).value;
+      Object.assign(draft,rich.getContent());
       draft.symbol = draft.symbol.trim().toUpperCase(); draft.labels = [...new Set(el('ideaLabels').value.split(',').map(v => v.trim()).filter(Boolean))];
       draft.items = [...el('ideaItems').children].map(row => ({text:row.querySelector('[type=text]').value, done:row.querySelector('[type=checkbox]').checked}));
     }
@@ -178,14 +182,14 @@
       clearTimeout(timer);
       if (!dirty) return true;
       capture();
-      if (!base && !draft.title.trim() && !draft.body.trim() && !draft.items.some(i => i.text.trim())) { dirty = false; return true; }
+      if (!base && !draft.title.trim() && !draft.body.trim() && !rich.hasContent() && !draft.items.some(i => i.text.trim())) { dirty = false; return true; }
       try {
         const latest = read(), current = latest.find(n => n.id === draft.id);
         const now = new Date().toISOString();
         let next = {...draft, createdAt:draft.createdAt || now, updatedAt:now};
         const conflict = base && JSON.stringify(current) !== JSON.stringify(base);
         if (conflict) next = {...next, id:crypto.randomUUID(), title:(next.title || 'Untitled note').slice(0, 104) + ' (conflict copy)'};
-        if (!valid(next)) throw Error('Use at most 20 labels of 40 characters each and 100 checklist items. Your edits are still in the editor.');
+        if (!valid(next)) throw Error('Note limit: 20,000 text characters, 200 KB of formatting, 20 labels (40 characters each) and 100 separate checklist items. Your edits are still in the editor.');
         const updated = [next, ...latest.filter(n => n.id !== next.id)];
         if (updated.length > 10000) throw Error('Notebook is full. Export a backup before removing stored notes.');
         localStorage.setItem(KEY, JSON.stringify(updated));
@@ -197,7 +201,7 @@
       } catch (error) { status(error.message || 'Could not save. Browser storage is full or unavailable; keep this tab open and copy your edits.', true); return false; }
     }
     flush = save;
-    function changed() { if (blocked || draft.trashed) return; dirty = true; status('Saving...'); clearTimeout(timer); timer = setTimeout(save, 350); }
+    function changed() { if (blocked || !draft || draft.trashed) return; dirty = true; status('Saving...'); clearTimeout(timer); timer = setTimeout(save, 350); }
     editor.oninput = changed;
     editor.onchange = () => { changed(); controls(); };
     editor.onsubmit = event => { event.preventDefault(); save(); };
@@ -234,7 +238,7 @@
       catch (error) { status(error.message, true); }
     }
     window.addEventListener('storage', onStorage);
-    cleanup = () => { clearTimeout(timer); clearTimeout(searchTimer); window.removeEventListener('storage', onStorage); };
+    cleanup = () => { rich.destroy(); clearTimeout(timer); clearTimeout(searchTimer); window.removeEventListener('storage', onStorage); };
     try { notes = read(); customCategories = readCategories(); show(notes.find(n => n.id === selectedId) || notes.filter(n => !n.trashed && !n.archived).sort((a,b) => b.updatedAt.localeCompare(a.updatedAt))[0] || null); }
     catch (error) { blocked = true; show(null); editor.inert = true; el('ideaNew').disabled = true; status(error.message, true); }
   }

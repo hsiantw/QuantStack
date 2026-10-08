@@ -84,7 +84,7 @@ class AccountBrowserTests(unittest.IsolatedAsyncioTestCase):
                     await expect(second.locator('#workspaceNotes')).to_have_value('Account research')
                     await second.evaluate("openChartResearch('ideas')")
                     await expect(second.locator('#ideaTitle')).to_have_value('Account notebook')
-                    await expect(second.locator('#ideaBody')).to_have_value('Pending edit for account snapshot')
+                    await expect(second.locator('#ideaBody')).to_have_text('Pending edit for account snapshot')
                     await expect(second.locator('#ideaColor')).to_have_value('green')
                     await expect(second.locator('#ideaCategory')).to_have_value('My research')
                     await expect(second.locator('[data-category="My research"]')).to_be_visible()

@@ -116,3 +116,48 @@
   .idea-toolbar label:first-child { flex-basis:100%; }
   .idea-fields { grid-template-columns:1fr 1fr; }
 }
+
+#ideaRichEditor { min-width:0; border:1px solid var(--border); border-radius:9px; background:var(--surface); overflow:hidden; }
+.idea-body-label { color:var(--text-muted); font-size:11px; }
+.note-format-toolbar { display:flex; flex-wrap:wrap; gap:4px; align-items:center; padding:8px; border-bottom:1px solid var(--border); background:var(--surface-raised); }
+.note-format-toolbar button,.note-format-toolbar summary { padding:6px 8px; min-height:30px; border:1px solid transparent; border-radius:5px; background:transparent; color:var(--text); font:inherit; font-size:12px; cursor:pointer; }
+.note-format-toolbar button:hover,.note-format-toolbar summary:hover { background:var(--surface-hover); }
+.note-format-toolbar button[aria-pressed=true] { color:var(--accent); background:color-mix(in srgb,var(--surface) 85%,var(--accent)); border-color:var(--accent); }
+.idea-note-editor .note-format-toolbar select { width:auto; max-width:150px; font-size:12px; padding:6px; }
+.note-format-menu[open] { flex-basis:100%; padding:6px; border:1px solid var(--border); border-radius:6px; }
+.note-format-options { display:flex; align-items:end; flex-wrap:wrap; gap:6px; padding:6px 0; }
+.note-format-options label { display:grid; gap:4px; max-width:100%; }
+.idea-note-editor .note-format-options input { width:180px; max-width:100%; font-size:12px; padding:6px; }
+.idea-note-editor .note-format-options input[type=number] { width:70px; }
+.note-format-options button { border-color:var(--border); }
+.note-document-host { max-height:650px; overflow:auto; }
+.idea-notebook #ideaBody { min-height:260px; padding:16px; outline:none; line-height:1.7; overflow-wrap:anywhere; color:var(--text); }
+.idea-notebook #ideaBody:focus { box-shadow:inset 0 0 0 1px var(--accent); }
+#ideaBody p { margin:0 0 10px; }
+#ideaBody p:last-child { margin-bottom:0; }
+#ideaBody h1 { font-size:1.8em; } #ideaBody h2 { font-size:1.45em; } #ideaBody h3 { font-size:1.2em; }
+#ideaBody h1,#ideaBody h2,#ideaBody h3 { color:inherit; line-height:1.3; margin:16px 0 10px; }
+#ideaBody ul,#ideaBody ol { padding-left:24px; margin:8px 0; }
+#ideaBody li { margin:4px 0; }
+#ideaBody li p { margin:0; }
+#ideaBody blockquote { margin:12px 0; padding:6px 14px; border-left:3px solid var(--accent); color:var(--text-muted); }
+#ideaBody pre { background:var(--surface-raised); border:1px solid var(--border); padding:12px; white-space:pre-wrap; border-radius:6px; }
+#ideaBody code { font:12px/1.6 monospace; background:var(--surface-raised); border-radius:3px; padding:1px 3px; }
+#ideaBody mark { background:#ffe68a; color:#302600; }
+#ideaBody a { color:var(--accent); text-decoration:underline; }
+#ideaBody hr { border:0; border-top:1px solid var(--border); margin:18px 0; }
+#ideaBody .tableWrapper { overflow:auto; margin:12px 0; }
+#ideaBody table { border-collapse:collapse; table-layout:fixed; width:100%; min-width:180px; }
+#ideaBody td,#ideaBody th { min-width:60px; border:1px solid var(--border); padding:8px; position:relative; vertical-align:top; text-align:left; }
+#ideaBody th { background:var(--surface-raised); font-weight:600; }
+#ideaBody .selectedCell:after { content:''; position:absolute; inset:0; pointer-events:none; background:color-mix(in srgb,transparent 80%,var(--accent)); }
+#ideaBody .column-resize-handle { position:absolute; right:-2px; top:0; bottom:0; width:4px; background:var(--accent); pointer-events:none; }
+#ideaBody.resize-cursor { cursor:col-resize; }
+#ideaBody ul[data-type=taskList] { list-style:none; padding-left:0; }
+#ideaBody li[data-type=taskItem] { display:flex; align-items:start; gap:8px; }
+#ideaBody li[data-type=taskItem]>label { flex:none; margin-top:4px; }
+#ideaBody li[data-type=taskItem]>div { flex:1; min-width:0; }
+.idea-note-editor #ideaBody input[type=checkbox] { width:16px; accent-color:var(--accent); }
+#ideaBody li[data-checked=true]>div>p { text-decoration:line-through; opacity:.65; }
+.note-word-count,.note-shortcuts { margin:0; padding:6px 12px; color:var(--text-muted); font-size:10px; line-height:1.5; }
+.note-print-frame { position:fixed; width:1px; height:1px; border:0; bottom:0; right:0; }

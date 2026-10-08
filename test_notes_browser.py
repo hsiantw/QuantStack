@@ -102,7 +102,7 @@ class NotesBrowserTests(unittest.TestCase):
                 # Navigating immediately must flush pending edits.
                 page.locator('#ideaBody').fill('Navigation flush')
                 page.evaluate("openChartResearch('options'); openChartResearch('ideas')")
-                expect(page.locator('#ideaBody')).to_have_value('Navigation flush')
+                expect(page.locator('#ideaBody')).to_have_text('Navigation flush')
                 # Pending edits are included in the portable backup.
                 page.locator('#ideaBody').fill('Backup flush')
                 with page.expect_download() as download:
@@ -110,11 +110,10 @@ class NotesBrowserTests(unittest.TestCase):
                 backup = json.loads(download.value.path().read_text(encoding='utf-8'))
                 self.assertIn('Backup flush', backup['entries']['atlas.ideaNotes.v1'])
                 # A stale editor preserves the other tab's version and creates a copy.
+                page.locator('#ideaBody').fill('Local conflict edit')
                 page.evaluate("""() => {
-                    const input = document.getElementById('ideaBody');
-                    input.value = 'Local conflict edit'; input.dispatchEvent(new Event('input', {bubbles:true}));
                     const notes = JSON.parse(localStorage.getItem('atlas.ideaNotes.v1'));
-                    notes[0].body = 'Other tab version';
+                    notes[0].body = 'Other tab version'; notes[0].bodyHtml = '<p>Other tab version</p>';
                     localStorage.setItem('atlas.ideaNotes.v1', JSON.stringify(notes));
                     QuantNotes.flush();
                 }""")
@@ -133,7 +132,7 @@ class NotesBrowserTests(unittest.TestCase):
                 page.locator('#ideaBody').fill('Recoverable draft')
                 expect(page.locator('#ideaStatus')).to_contain_text('Storage full')
                 page.evaluate("openChartResearch('options')")
-                expect(page.locator('#ideaBody')).to_have_value('Recoverable draft')
+                expect(page.locator('#ideaBody')).to_have_text('Recoverable draft')
                 page.evaluate('() => { Storage.prototype.setItem = originalSetItem; }')
                 page.locator('#ideaSave').click()
                 expect(page.locator('#ideaStatus')).to_contain_text('Saved')
@@ -142,10 +141,10 @@ class NotesBrowserTests(unittest.TestCase):
                 other.goto(f'http://127.0.0.1:{server.server_port}')
                 other.evaluate("""() => {
                     const notes = JSON.parse(localStorage.getItem('atlas.ideaNotes.v1'));
-                    notes[0].body = 'From second tab';
+                    notes[0].body = 'From second tab'; notes[0].bodyHtml = '<p>From second tab</p>';
                     localStorage.setItem('atlas.ideaNotes.v1', JSON.stringify(notes));
                 }""")
-                expect(page.locator('#ideaBody')).to_have_value('From second tab')
+                expect(page.locator('#ideaBody')).to_have_text('From second tab')
                 other.close()
                 # The notes grid stays bounded for a large existing notebook.
                 page.evaluate("""() => {

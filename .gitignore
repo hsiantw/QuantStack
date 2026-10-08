@@ -9,3 +9,4 @@ QuantStack-main/static/market-data/
 
 .test-tmp/
 chart-snapshots/*.tmp
+editor/node_modules/
