@@ -10,8 +10,9 @@ $collectionResult = $LASTEXITCODE
 if ($collectionResult -notin @(0, 1)) { exit $collectionResult }
 $currentReport = if (Test-Path -LiteralPath $reportPath) { Get-Content -LiteralPath $reportPath -Raw } else { '' }
 if (-not $currentReport -or $currentReport -eq $previousReport) { exit 1 }
+$collection = $currentReport | ConvertFrom-Json
+if ($collection.daily_rows -le 0) { exit 1 }
 & $collectorPython "$PSScriptRoot\publish_site.py" --deployment-worktree $DeploymentWorktree
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-$collection = $currentReport | ConvertFrom-Json
 if (@($collection.failed.PSObject.Properties).Count -gt 0) { exit 1 }
 exit 0

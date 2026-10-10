@@ -1,5 +1,6 @@
 """Refresh daily and hourly charts in liquidity/market-cap/watchlist order."""
 import argparse
+from contextlib import closing
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import date, datetime, timedelta, timezone
 import json
@@ -10,7 +11,22 @@ from zoneinfo import ZoneInfo
 
 from market_data import (DATA, ROOT, connect, normalize, persist, persist_intraday,
                          process_lock, universe)
-from refresh_hourly import fetch_hourly, rate_limited
+from refresh_hourly import fetch_hourly, rate_limited, tracked_symbols
+
+
+def write_report(path, report):
+    temporary = path.with_suffix('.tmp')
+    temporary.write_text(json.dumps(report, indent=2), encoding='utf-8')
+    # Windows readers briefly prevent replacement. Reporting must not abort a
+    # long collection because a status viewer has the previous file open.
+    for attempt in range(40):
+        try:
+            temporary.replace(path)
+            return
+        except PermissionError:
+            if attempt == 39:
+                raise
+            time.sleep(0.05)
 
 
 def ranked_symbols(db, config, symbols, live=True):
@@ -99,10 +115,12 @@ def refresh(workers=6, hourly=True, resume=False):
     completed = set(previous.get('successful_symbols', [])) if same_run else set()
     report = dict(started_at=datetime.now(timezone.utc).isoformat(), status='running',
                   run_date=today, hourly=hourly,
-                  successful_symbols=list(completed), failed={}, completed=0, total=0, daily_rows=0, hourly_rows=0)
+                  successful_symbols=list(completed), failed={}, completed=0, total=0,
+                  daily_rows=previous.get('daily_rows', 0) if same_run else 0,
+                  hourly_rows=previous.get('hourly_rows', 0) if same_run else 0)
     stop = threading.Event()
-    with process_lock(DATA / 'ingestion.lock'), connect(DATA / 'market.sqlite') as db:
-        symbols = ranked_symbols(db, config, universe(db, config))
+    with process_lock(DATA / 'ingestion.lock'), closing(connect(DATA / 'market.sqlite')) as db:
+        symbols = ranked_symbols(db, config, list(dict.fromkeys(universe(db, config) + tracked_symbols(db, config))))
         jobs = []
         now = datetime.now(timezone.utc)
         for symbol in symbols:
@@ -119,9 +137,7 @@ def refresh(workers=6, hourly=True, resume=False):
         def save():
             report['updated_at'] = datetime.now(timezone.utc).isoformat()
             report['pending'] = report['total'] - report['completed']
-            temp = report_path.with_suffix('.tmp')
-            temp.write_text(json.dumps(report, indent=2), encoding='utf-8')
-            temp.replace(report_path)
+            write_report(report_path, report)
         def fetch(job):
             symbol, latest, last_full, start = job
             daily_result = hourly_result = None
@@ -137,6 +153,7 @@ def refresh(workers=6, hourly=True, resume=False):
                         time.sleep(2)
                     else:
                         errors['daily'] = str(exc)
+                        break
             if hourly and not stop.is_set():
                 hourly_result = fetch_hourly(symbol, start, now, 2, 0.5, stop)
                 if hourly_result[3]:
