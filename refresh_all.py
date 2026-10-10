@@ -16,6 +16,8 @@ from refresh_hourly import fetch_hourly, rate_limited
 def ranked_symbols(db, config, symbols, live=True):
     """Interleave leaders so neither stocks nor crypto wait for the other group."""
     import yfinance as yf
+    from expand_stocks import metadata_schema
+    metadata_schema(db)
     available = set(symbols)
     cap, volume, crypto = [], [], []
     if live:
@@ -88,6 +90,8 @@ def refresh(workers=6, hourly=True, resume=False):
     DATA.mkdir(exist_ok=True)
     yf.set_tz_cache_location(str(DATA / 'provider-cache'))
     config = json.loads((ROOT / 'config.json').read_text(encoding='utf-8'))
+    from local_scheduler import lower_priority
+    lower_priority(config)
     report_path = DATA / 'all-refresh.json'
     previous = json.loads(report_path.read_text()) if resume and report_path.exists() else {}
     today = datetime.now(timezone.utc).date().isoformat()

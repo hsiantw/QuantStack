@@ -90,8 +90,10 @@ are published; hourly bars remain available in the local dashboard.
 
 The bounded scheduled collectors use `data/refresh-priority.json` to put due
 priority assets ahead of the normal oldest-attempt rotation. `Install-Schedule.ps1`
-now runs `Refresh-And-Publish.ps1`: the configured low-resource daily collection
-budget is retained, then successful updates are packaged and published to Render.
+now runs `Refresh-And-Publish.ps1`: the complete daily universe is refreshed with
+two workers and the configured low process priority, then successful updates are
+packaged and published to Render. The task has a four-hour execution limit;
+the previous ten-minute daily limit could not cover the full universe.
 This requires the computer to be on and the user signed in.
 
 Publication uses a dedicated clean checkout at `../market-data-render-deploy`:
