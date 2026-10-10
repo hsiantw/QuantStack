@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import quote
 from dashboard import ROOT, DATABASE, catalog, database
 from screener import snapshot as screener_snapshot
+from snapshot_catalog import snapshot_catalog
 
 OUTPUT = ROOT / 'site'
 FIELDS = ['date', 'open', 'high', 'low', 'close', 'adjusted_close', 'volume', 'dividends', 'splits']
@@ -28,7 +29,7 @@ def build():
     (OUTPUT / 'index.html').write_text(index, encoding='utf-8')
     (OUTPUT / '.nojekyll').touch()
     # Hosted snapshots currently carry daily histories only.
-    symbols = [asset for asset in catalog() if asset.get('has_daily', True)]
+    symbols = snapshot_catalog(catalog(), ROOT / 'config.json')
     # A manifest restricts deployment to files from this build, excluding old symbols.
     files = ['index.html', 'interview-prep.html', 'style.css', 'app.js', 'indicators.js', 'drawings.js', 'indicators.css', 'chart-scale.js', 'chart-scale.css', 'screener.js', 'screener.css', 'workspace.js', 'workspace.css', 'terminal.js', 'data-pulls.js', 'watchlists.js', 'watchlists.css', 'terminal.css', 'theme.js', 'theme.css', 'strategy-engine.js', 'strategy.js', 'markov-engine.js', 'markov-worker.js', 'markov.js', 'markov.css', 'brownian-engine.js', 'brownian-worker.js', 'brownian.js', 'risk-engine.js', 'risk.js', 'research-engine.js', 'research-worker.js', 'research.js', 'accounts.js', 'research.css', 'static-data.js', '.nojekyll', 'symbols.json', 'snapshot.json', 'screener.json']
     (OUTPUT / 'symbols.json').write_text(json.dumps(symbols, separators=(',', ':'), allow_nan=False), encoding='utf-8')
