@@ -415,7 +415,8 @@ def ingest(db, config, symbols, force=False, end=None, budget_minutes=None, prog
     # Include failed attempts in rotation so bad tickers cannot starve the queue.
     if budget_minutes is not None:
         attempts = dict(db.execute("SELECT symbol,MAX(started) FROM attempts WHERE mode IN ('full','incremental') GROUP BY symbol"))
-        symbols = sorted(set(symbols), key=lambda symbol: (attempts.get(symbol, ''), symbol))
+        from refresh_priority import order_symbols
+        symbols = order_symbols(symbols, attempts, DATA, freshness_minutes=20 * 60)
     progress = progress if progress is not None else {}
     progress.update(total=len(symbols), completed=0, succeeded=0, skipped=0, failed=failed, updated=[])
     for number, symbol in enumerate(symbols, 1):

@@ -77,3 +77,30 @@ the shared local database. Deployment does not itself refresh prices.
 
 `build_site.py` still creates a portable local preview used by regression tests;
 that preview is not published as another website.
+
+## Refreshing stale charts
+
+`python refresh_all.py --workers 6` catches up the entire configured daily and
+hourly universe. It interleaves popular stocks, US market-cap and share-volume
+leaders, and configured cryptocurrencies before the rest of the universe.
+It preserves existing history, excludes open candles, stops on rate limiting,
+and records successes and failures in `data/all-refresh.json`. Use `--resume`
+to retry unfinished symbols from the same day's run. Daily/weekly/monthly charts
+are published; hourly bars remain available in the local dashboard.
+
+The bounded scheduled collectors use `data/refresh-priority.json` to put due
+priority assets ahead of the normal oldest-attempt rotation. `Install-Schedule.ps1`
+now runs `Refresh-And-Publish.ps1`: the configured low-resource daily collection
+budget is retained, then successful updates are packaged and published to Render.
+This requires the computer to be on and the user signed in.
+
+Publication uses a dedicated clean checkout at `../market-data-render-deploy`:
+
+```powershell
+git worktree add -b deploy/market-data-refresh ../market-data-render-deploy origin/main
+python publish_site.py --deployment-worktree ../market-data-render-deploy
+```
+
+The publisher fast-forwards that checkout to the remote deployment branch and
+pushes only the snapshot manifest. It rejects dirty checkouts or unrelated
+unpublished commits, so local source checkpoints cannot accidentally be deployed.
