@@ -1,7 +1,7 @@
 {
   "rows": {
     "daily": 132076,
-    "hourly": 237836
+    "hourly": 237838
   },
   "daily_bars_per_symbol": 30,
   "hourly_bars_per_symbol": 48,
