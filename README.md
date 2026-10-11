@@ -93,7 +93,9 @@ The main pipeline is `market_data.py`. Daily history is stored in **data/market.
 top 100 by market capitalization, based on the listing checked on 2026-10-05.
 The remaining asset uses a non-ASCII ticker that is not compatible with this
 Yahoo Finance ticker pipeline. New symbols are collected by the existing
-scheduled refresh; they appear in charts after successful collection.
+scheduled refresh. Configured symbols appear in local and hosted watchlists even
+before collection; charts become available after successful collection and, for
+the public website, publication of an updated market-data snapshot.
 
 ## Web interface
 

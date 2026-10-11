@@ -1,6 +1,7 @@
 // Static-host adapter. Loaded only by the generated hosted site.
 window.ATLAS_STATIC = true;
 const historyCache = new Map();
+let unavailableHistory = new Set();
 const snapshotResource = path => window.ATLAS_DATA_BASE ? new URL(path, new URL(window.ATLAS_DATA_BASE, document.baseURI)).href : path;
 function aggregateBars(rows, interval) {
     const grouped = new Map();
@@ -35,7 +36,9 @@ window.atlasApi = async function(url) {
         const response = await fetch(snapshotResource('./symbols.json'), {cache:'no-cache'});
         if (!response.ok) throw Error('The asset catalog is unavailable. Please try refreshing.');
         historyCache.clear();
-        return response.json();
+        const assets = await response.json();
+        unavailableHistory = new Set(assets.filter(asset => asset.has_data === false).map(asset => asset.symbol));
+        return assets;
     }
     if (route.pathname === '/api/screener') {
         const response = await fetch(snapshotResource('./screener.json'), {cache:'no-cache'});
@@ -47,6 +50,7 @@ window.atlasApi = async function(url) {
     const start = route.searchParams.get('start') || '0001-01-01';
     const end = route.searchParams.get('end') || '9999-12-31';
     if (start > end) throw Error('Start date must be before the end date.');
+    if (unavailableHistory.has(symbol)) return [];
     if (!historyCache.has(symbol)) {
         const response = await fetch(snapshotResource('./prices/' + encodeURIComponent(symbol) + '.json.gz'));
         if (!response.ok) throw Error('Price history is unavailable for this asset.');

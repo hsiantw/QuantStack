@@ -95,7 +95,11 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
             self.assertLess(html.index('src="./static-data.js"'), html.index('src="./app.js"'))
         async with self.client.get(self.gateway.make_url('/workspace/symbols.json'),
                                     headers={'Cookie': 'private=test', 'Authorization': 'Bearer private'}) as response:
-            self.assertEqual(await response.json(), [{'symbol': 'AAPL'}])
+            assets = {asset['symbol']: asset for asset in await response.json()}
+            self.assertEqual(assets['AAPL'], {'symbol': 'AAPL'})
+            self.assertIn('SOL-USD', assets)
+            self.assertFalse(assets['SOL-USD']['has_data'])
+            self.assertEqual(assets['SOL-USD']['kind'], 'Crypto')
         async with self.client.get(self.gateway.make_url('/workspace/prices/AAPL.json.gz')) as response:
             self.assertEqual(json.loads(gzip.decompress(await response.read())), {'rows': []})
 

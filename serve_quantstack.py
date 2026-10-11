@@ -1,6 +1,7 @@
 """Serve the unified chart workspace without a Streamlit process."""
 import argparse
 import asyncio
+import json
 from contextlib import closing
 import os
 from pathlib import Path
@@ -13,6 +14,7 @@ from aiohttp import ClientError, ClientSession, ClientTimeout, web
 
 from dashboard import Handler
 from prepare_snapshot import data_file, prepare
+from snapshot_catalog import snapshot_catalog
 
 ROOT = Path(__file__).resolve().parent
 DASHBOARD = web.AppKey('dashboard', str)
@@ -57,6 +59,10 @@ async def snapshot(request):
     path = request.app[SNAPSHOT_PATH] / name
     if not path.is_file():
         raise web.HTTPNotFound()
+    if name == 'symbols.json':
+        assets = json.loads(path.read_text(encoding='utf-8'))
+        return web.json_response(snapshot_catalog(assets, ROOT / 'config.json'),
+                                 headers={'Cache-Control': 'no-cache'})
     return web.FileResponse(path, headers={'X-Content-Type-Options': 'nosniff'})
 
 
