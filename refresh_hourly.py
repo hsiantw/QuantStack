@@ -140,7 +140,11 @@ def refresh(symbols=None, days=None, workers=None, resume=False, full=False, pro
             # Rotate failed tickers too, so a small budget cannot retry the same
             # unavailable symbols forever and starve the rest of the universe.
             jobs.append((last_attempts.get(symbol) or (state[0] if state and state[0] else ''), symbol, start, not latest))
-        jobs.sort()
+        from refresh_priority import order_symbols
+        ordered = order_symbols([job[1] for job in jobs],
+                                {job[1]: job[0] for job in jobs}, DATA, cycle)
+        ranks = {symbol: index for index, symbol in enumerate(ordered)}
+        jobs.sort(key=lambda job: ranks[job[1]])
         queue = iter(jobs)
         report()
         def submit(pool, futures):
