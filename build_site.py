@@ -9,6 +9,7 @@ from urllib.parse import quote
 from dashboard import ROOT, DATABASE, catalog, database
 from screener import snapshot as screener_snapshot
 from snapshot_catalog import snapshot_catalog
+from architecture_assets import ARCHITECTURE_ASSETS
 
 OUTPUT = ROOT / 'site'
 FIELDS = ['date', 'open', 'high', 'low', 'close', 'adjusted_close', 'volume', 'dividends', 'splits']
@@ -17,6 +18,8 @@ FIELDS = ['date', 'open', 'high', 'low', 'close', 'adjusted_close', 'volume', 'd
 def build():
     OUTPUT.mkdir(exist_ok=True)
     (OUTPUT / 'prices').mkdir(exist_ok=True)
+    for name, (source, _) in ARCHITECTURE_ASSETS.items():
+        shutil.copyfile(source, OUTPUT / name)
     for name in ('index.html', 'interview-prep.html', 'style.css', 'app.js', 'indicators.js', 'drawings.js', 'indicators.css', 'chart-scale.js', 'chart-scale.css', 'screener.js', 'screener.css', 'workspace.js', 'workspace.css', 'terminal.js', 'data-pulls.js', 'watchlists.js', 'watchlists.css', 'terminal.css', 'theme.js', 'theme.css', 'strategy-engine.js', 'strategy.js', 'markov-engine.js', 'markov-worker.js', 'markov.js', 'markov.css', 'brownian-engine.js', 'brownian-worker.js', 'brownian.js', 'risk-engine.js', 'risk.js', 'research-engine.js', 'research-worker.js', 'research.js', 'accounts.js', 'research.css', 'static-data.js'):
         shutil.copyfile(ROOT / 'web' / name, OUTPUT / name)
     index = (OUTPUT / 'index.html').read_text(encoding='utf-8-sig')
@@ -32,6 +35,7 @@ def build():
     symbols = snapshot_catalog(catalog(), ROOT / 'config.json')
     # A manifest restricts deployment to files from this build, excluding old symbols.
     files = ['index.html', 'interview-prep.html', 'style.css', 'app.js', 'indicators.js', 'drawings.js', 'indicators.css', 'chart-scale.js', 'chart-scale.css', 'screener.js', 'screener.css', 'workspace.js', 'workspace.css', 'terminal.js', 'data-pulls.js', 'watchlists.js', 'watchlists.css', 'terminal.css', 'theme.js', 'theme.css', 'strategy-engine.js', 'strategy.js', 'markov-engine.js', 'markov-worker.js', 'markov.js', 'markov.css', 'brownian-engine.js', 'brownian-worker.js', 'brownian.js', 'risk-engine.js', 'risk.js', 'research-engine.js', 'research-worker.js', 'research.js', 'accounts.js', 'research.css', 'static-data.js', '.nojekyll', 'symbols.json', 'snapshot.json', 'screener.json']
+    files.extend(ARCHITECTURE_ASSETS)
     (OUTPUT / 'symbols.json').write_text(json.dumps(symbols, separators=(',', ':'), allow_nan=False), encoding='utf-8')
     (OUTPUT / 'screener.json').write_text(json.dumps(screener_snapshot(DATABASE), separators=(',', ':'), allow_nan=False), encoding='utf-8')
     count = 0

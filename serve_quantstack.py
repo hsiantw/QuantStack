@@ -15,6 +15,7 @@ from aiohttp import ClientError, ClientSession, ClientTimeout, web
 from dashboard import Handler
 from prepare_snapshot import data_file, prepare
 from snapshot_catalog import snapshot_catalog
+from architecture_assets import ARCHITECTURE_ASSETS
 
 ROOT = Path(__file__).resolve().parent
 DASHBOARD = web.AppKey('dashboard', str)
@@ -45,6 +46,10 @@ async def snapshot(request):
     if request.method not in ('GET', 'HEAD'):
         raise web.HTTPMethodNotAllowed(request.method, ['GET', 'HEAD'])
     name = request.path.removeprefix('/workspace/')
+    if name in ARCHITECTURE_ASSETS:
+        path, mime = ARCHITECTURE_ASSETS[name]
+        return web.FileResponse(path, headers={'Content-Type': mime + '; charset=utf-8',
+                                               'X-Content-Type-Options': 'nosniff'})
     if not name or name == 'index.html':
         index = (ROOT / 'web' / 'index.html').read_text(encoding='utf-8-sig')
         index = index.replace('<script src="./app.js">',

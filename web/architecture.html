@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="Explore QuantStack's architecture, data collection, storage, browser engines, deployment and verified Git tree.">
+  <title>Project atlas · QuantStack</title>
+  <link rel="stylesheet" href="./architecture.css">
+  <script src="./architecture-data.js" defer></script>
+  <script src="./architecture.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to project map</a>
+  <header class="topbar"><a class="brand" href="./"><span class="brand-mark">Q</span> QUANTSTACK <span class="brand-divider">/</span><span class="brand-section">PROJECT ATLAS</span></a><div class="header-tools"><label class="theme-label">Theme <select id="mapTheme" aria-label="Map theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label><a class="back-link" href="./">Back to chart <span aria-hidden="true">↗</span></a></div></header>
+  <div class="page-layout">
+    <aside class="sidebar"><p class="eyebrow">EXPLORE THE SYSTEM</p><nav id="mapNav" aria-label="Architecture diagrams"></nav><a class="tree-nav" href="#repository">Repository explorer <span aria-hidden="true">↘</span></a><div class="sidebar-foot"><span class="live-dot"></span> Source-backed reference<p>Code relationships and repository hashes, captured at one revision.</p></div></aside>
+    <main id="main">
+      <section class="intro"><div class="eyebrow">QUANTSTACK / ENGINEERING REFERENCE</div><h1>One project.<br><span>Every connection.</span></h1><p class="intro-copy">Follow a price from collection to chart. Explore the browser tools, storage boundaries, deployment pipeline and the Git tree behind this workspace.</p><div class="revision"><span class="revision-dot"></span><span>Inspected <time datetime="2026-10-11">11 Oct 2026</time></span><span>·</span><a id="revisionLink" href="#merkle">Source <code>765eba4</code> ↗</a></div><p class="scope-note">This is a reference snapshot of the inspected source, not a live deployment or task-status monitor.</p></section>
+      <div class="stats" aria-label="Project inventory"><div><strong id="diagramCount">9</strong><span>Architecture views</span></div><div><strong>39</strong><span>Browser files</span></div><div><strong>29 + 19</strong><span>Test + smoke files</span></div><div><strong>14,978</strong><span>Tracked files, incl. dependencies</span></div></div>
+      <section class="diagram-card" aria-labelledby="diagramTitle">
+        <div class="diagram-heading"><div><p class="eyebrow" id="diagramNumber"></p><h2 id="diagramTitle"></h2><p id="diagramDescription"></p></div><button id="downloadDiagram" class="button" type="button">Download SVG <span aria-hidden="true">↓</span></button></div>
+        <div class="diagram-toolbar"><div class="legend"><span><i class="key source"></i>External / source</span><span><i class="key process"></i>Process / UI</span><span><i class="key store"></i>Stored data</span><span><i class="key legacy"></i>Preserved / conditional</span></div><div class="zoom-controls" role="group" aria-label="Diagram zoom"><button type="button" id="zoomOut" aria-label="Zoom out">−</button><output id="zoomLabel" aria-live="polite">100%</output><button type="button" id="zoomIn" aria-label="Zoom in">+</button><button type="button" id="zoomFit">Fit</button></div></div>
+        <div class="diagram-viewport" id="diagramViewport" tabindex="0" role="region" aria-label="Architecture diagram; scroll to explore"><div id="diagramCanvas"></div></div>
+        <div class="diagram-bottom"><span id="diagramHint">Select a node to inspect its role and source files.</span><span>Arrows follow the labeled relationship.</span></div>
+      </section>
+      <div class="explanation-grid"><section class="inspector" aria-labelledby="nodeTitle"><p class="eyebrow">COMPONENT INSPECTOR</p><h3 id="nodeTitle">Choose a component</h3><p id="nodeDescription">Click a diagram node or focus it and press Enter to see its responsibilities.</p><div id="nodeSources" class="source-links"></div></section><section class="reading-notes"><p class="eyebrow">READ THIS VIEW</p><ul id="diagramNotes"></ul><details><summary>Text version of connections</summary><ol id="connectionList"></ol></details></section></div>
+      <section id="repository" class="repository"><div class="section-heading"><div><p class="eyebrow">COMPLETE PROJECT INVENTORY</p><h2>Explore the repository</h2></div><a class="button" href="./project-tree.txt" download>Download tree ↓</a></div><p>Search the 261 files outside the tracked Python environment. All 14,717 <code>.venv/</code> files remain listed in the complete Git inventory download.</p><label class="search-box"><span aria-hidden="true">⌕</span><input id="fileSearch" type="search" placeholder="Find a file, directory or module…" aria-label="Search repository files"><span id="fileCount" role="status"></span></label><div class="repository-layout"><div id="fileTree" class="file-tree" aria-label="Tracked repository files"></div><section class="file-detail" aria-labelledby="fileTitle"><p class="eyebrow">GIT OBJECT</p><h3 id="fileTitle">Select a file</h3><p id="fileDescription">Inspect its exact committed path, size and blob hash.</p><dl id="fileMetadata"></dl><a id="fileSource" class="text-link" hidden>View at captured revision ↗</a></section></div></section>
+      <section class="downloads"><div><p class="eyebrow">TAKE THE MAP WITH YOU</p><h2>Reference files</h2><p>Full architecture notes, the readable directory tree, and every Git object in the captured revision.</p></div><div class="download-links"><a href="./project-map.md" download><strong>Architecture reference</strong><span>Markdown · APIs, schemas, schedules and diagrams ↗</span></a><a href="./project-tree.txt" download><strong>Directory tree</strong><span>Plain text · complete tree, dependency folder collapsed ↗</span></a><a href="./project-git-objects.tsv" download><strong>Complete Merkle inventory</strong><span>TSV · 16,989 file and directory entries · about 2.2 MB ↗</span></a></div></section>
+      <footer><span>QUANTSTACK / PROJECT ATLAS</span><p>Root tree <code>4a66ce787ea62318c6bef0aa1dca373e7cef7d9b</code><br>Git SHA-1 object IDs describe this commit. Release ZIPs use a separate SHA-256 checksum.</p><a href="#main">Back to top ↑</a></footer>
+    </main>
+  </div>
+  <noscript><p class="noscript">The interactive diagrams need JavaScript. Read the <a href="./project-tree.txt">complete directory tree</a> or download the <a href="./project-map.md">architecture reference</a>.</p></noscript>
+</body>
+</html>

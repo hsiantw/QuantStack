@@ -13,6 +13,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from sector_rotation import SectorRotationError
+from architecture_assets import ARCHITECTURE_ASSETS
 
 ROOT = Path(__file__).resolve().parent
 DATABASE = ROOT / 'data' / 'market.sqlite'
@@ -551,6 +552,11 @@ class Handler(BaseHTTPRequestHandler):
                     self.send(200, output.getvalue().encode(), 'text/csv; charset=utf-8', True)
                     return
             else:
+                architecture = ARCHITECTURE_ASSETS.get(url.path.removeprefix('/'))
+                if architecture:
+                    path, mime = architecture
+                    self.send(200, path.read_bytes(), mime + '; charset=utf-8')
+                    return
                 files = {'/interview-prep.html': ('interview-prep.html', 'text/html'),
                          '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'),
                          '/indicators.js': ('indicators.js', 'text/javascript'),
