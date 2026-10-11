@@ -61,7 +61,7 @@ class ChartContextMenuTests(unittest.TestCase):
                 page.keyboard.press('Shift+F10')
                 expect(menu).to_be_visible()
                 page.keyboard.press('End')
-                expect(menu.get_by_role('menuitem', name='Full screen', exact=True)).to_be_focused()
+                expect(menu.get_by_role('menuitem', name='Project architecture')).to_be_focused()
                 page.keyboard.press('Home')
                 expect(menu.get_by_role('menuitem', name='Chart settings')).to_be_focused()
                 page.keyboard.press('Escape')
@@ -70,6 +70,11 @@ class ChartContextMenuTests(unittest.TestCase):
                 open_menu()
                 page.locator('#symbol').click()
                 expect(menu).to_be_hidden()
+                open_menu()
+                with page.expect_popup() as popup:
+                    menu.get_by_role('menuitem', name='Project architecture').click()
+                expect(popup.value.locator('#mapNav a')).to_have_count(9)
+                popup.value.close()
                 for width, height in [(1440, 900), (390, 640)]:
                     page.set_viewport_size({'width': width, 'height': height})
                     chart.scroll_into_view_if_needed()

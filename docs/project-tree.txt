@@ -1,0 +1,279 @@
+QuantStack/  @ 765eba42baccc390ebdde44fb515c6b227c1b859
+Git root tree: 4a66ce787ea62318c6bef0aa1dca373e7cef7d9b
+14,978 tracked files; .venv descendants collapsed here only.
+All paths, modes, object IDs and blob sizes: project-git-objects.tsv
+Scope: committed snapshot only. Runtime and uncommitted files are separate in project-map.md.
+
+|-- .streamlit/
+|   `-- config.toml
+|-- .venv/  [14,717 tracked files; 423,302,562 logical bytes]
+|-- chart-snapshots/
+|   |-- daily-0.csv
+|   |-- daily-1.csv
+|   |-- daily-2.csv
+|   |-- daily-3.csv
+|   |-- daily-4.csv
+|   |-- daily-5.csv
+|   |-- daily-6.csv
+|   |-- daily-7.csv
+|   |-- daily-8.csv
+|   |-- daily-9.csv
+|   |-- daily-a.csv
+|   |-- daily-b.csv
+|   |-- daily-c.csv
+|   |-- daily-d.csv
+|   |-- daily-e.csv
+|   |-- daily-f.csv
+|   |-- hourly-0.csv
+|   |-- hourly-1.csv
+|   |-- hourly-2.csv
+|   |-- hourly-3.csv
+|   |-- hourly-4.csv
+|   |-- hourly-5.csv
+|   |-- hourly-6.csv
+|   |-- hourly-7.csv
+|   |-- hourly-8.csv
+|   |-- hourly-9.csv
+|   |-- hourly-a.csv
+|   |-- hourly-b.csv
+|   |-- hourly-c.csv
+|   |-- hourly-d.csv
+|   |-- hourly-e.csv
+|   |-- hourly-f.csv
+|   `-- manifest.json
+|-- docs/
+|   |-- brownian-and-assets.md
+|   |-- hourly-capacity-2026-10-01.md
+|   |-- markov-analysis.md
+|   |-- native-workspace-migration.md
+|   `-- quantstack-integration.md
+|-- editor/
+|   |-- build.mjs
+|   |-- note-editor.js
+|   |-- package-lock.json
+|   |-- package.json
+|   |-- README.md
+|   `-- THIRD_PARTY_LICENSES.md
+|-- QuantStack-main/
+|   |-- .streamlit/
+|   |   `-- config.toml
+|   |-- attached_assets/
+|   |   |-- image_1755155408315.png
+|   |   |-- image_1755155599775.png
+|   |   |-- Pasted-Can-Day-Trading-Really-Be-Profitable-Evidence-of-Sustainable-Long-term-Profits-from-Opening-Range-1755328600009_1755328600010.txt
+|   |   |-- Pasted-Can-Day-Trading-Really-Be-Profitable-Evidence-of-Sustainable-Long-term-Profits-from-Opening-Range-1755328637117_1755328637118.txt
+|   |   |-- Pasted-File-change-Advanced-Strategy-Comparison-Optimization-Compare-multiple-trading-strategies-wi-1755329556606_1755329556607.txt
+|   |   |-- Pasted-streamlit-errors-StreamlitAPIException-st-session-state-base-ticker-cannot-be-modified-after-the-wi-1755133122369_1755133122369.txt
+|   |   |-- Pasted-streamlit-errors-StreamlitAPIException-st-session-state-pairs-base-ticker-cannot-be-modified-after--1755133352309_1755133352310.txt
+|   |   |-- Pasted-streamlit-errors-StreamlitDuplicateElementId-There-are-multiple-text-input-elements-with-the-same-a-1755269840962_1755269840963.txt
+|   |   |-- Pasted-streamlit-errors-StreamlitDuplicateElementKey-There-are-multiple-elements-with-the-same-key-card-A-1755272198629_1755272198630.txt
+|   |   `-- Pasted-streamlit-errors-StreamlitDuplicateElementKey-There-are-multiple-elements-with-the-same-key-main-d-1755271613498_1755271613499.txt
+|   |-- pages/
+|   |   |-- advanced_market_analysis.py
+|   |   |-- advanced_risk_management.py
+|   |   |-- ai_analysis.py
+|   |   |-- ai_pairs_trading.py
+|   |   |-- commodities_forex_futures.py
+|   |   |-- crypto_analysis.py
+|   |   |-- dynamic_portfolio_rebalancing.py
+|   |   |-- fundamental_analysis.py
+|   |   |-- interactive_backtest_visualization.py
+|   |   |-- liquidity_analysis.py
+|   |   |-- market_data_stream.py
+|   |   |-- market_information_sources.py
+|   |   |-- market_performance_tracker.py
+|   |   |-- market_workspace.py
+|   |   |-- news_and_economic_data.py
+|   |   |-- options_analysis.py
+|   |   |-- orb_strategy.py
+|   |   |-- portfolio_manager.py
+|   |   |-- portfolio_optimization.py
+|   |   |-- risk_management.py
+|   |   |-- statistical_arbitrage.py
+|   |   |-- strategy_backtesting.py
+|   |   |-- strategy_comparison.py
+|   |   |-- time_series_analysis.py
+|   |   |-- trading_monitor.py
+|   |   |-- trading_strategies.py
+|   |   `-- user_settings.py
+|   |-- static/
+|   |   `-- .gitkeep
+|   |-- utils/
+|   |   |-- ai_models.py
+|   |   |-- ai_strategy_optimizer.py
+|   |   |-- auth.py
+|   |   |-- backtesting.py
+|   |   |-- claude_client.py
+|   |   |-- data_fetcher.py
+|   |   |-- market_data_sources.py
+|   |   |-- mean_reversion_strategy.py
+|   |   |-- monte_carlo.py
+|   |   |-- news_scraper.py
+|   |   |-- pairs_trading_optimizer.py
+|   |   |-- pinescript_generator.py
+|   |   |-- portfolio_optimizer.py
+|   |   |-- qr_auth_handler.py
+|   |   |-- risk_metrics.py
+|   |   |-- statistical_arbitrage.py
+|   |   |-- stockdata_client.py
+|   |   |-- strategy_optimizer.py
+|   |   |-- time_series_analysis.py
+|   |   |-- tooltips.py
+|   |   |-- trading_strategies.py
+|   |   |-- ui_components.py
+|   |   |-- web_scraper.py
+|   |   |-- webull_connector.py
+|   |   `-- workspace_embed.py
+|   |-- .env.example
+|   |-- .gitignore
+|   |-- app.py
+|   |-- GITHUB_SETUP_GUIDE.md
+|   |-- LEGACY.md
+|   |-- push_to_github.sh
+|   |-- pyproject.toml
+|   |-- README.md
+|   |-- README_WEBULL_SETUP.md
+|   |-- replit.md
+|   |-- set_stockdata_key.py
+|   `-- uv.lock
+|-- web/
+|   |-- accounts.js
+|   |-- app.js
+|   |-- brownian-engine.js
+|   |-- brownian-worker.js
+|   |-- brownian.js
+|   |-- chart-scale.css
+|   |-- chart-scale.js
+|   |-- data-pulls.js
+|   |-- drawings.js
+|   |-- index.html
+|   |-- indicators.css
+|   |-- indicators.js
+|   |-- interview-prep.html
+|   |-- markov-engine.js
+|   |-- markov-worker.js
+|   |-- markov.css
+|   |-- markov.js
+|   |-- note-editor.js
+|   |-- notes.js
+|   |-- research-engine.js
+|   |-- research-worker.js
+|   |-- research.css
+|   |-- research.js
+|   |-- risk-engine.js
+|   |-- risk.js
+|   |-- screener.css
+|   |-- screener.js
+|   |-- static-data.js
+|   |-- strategy-engine.js
+|   |-- strategy.js
+|   |-- style.css
+|   |-- terminal.css
+|   |-- terminal.js
+|   |-- theme.css
+|   |-- theme.js
+|   |-- watchlists.css
+|   |-- watchlists.js
+|   |-- workspace.css
+|   `-- workspace.js
+|-- .gitignore
+|-- .replit
+|-- accounts.py
+|-- Auto-Commit.ps1
+|-- build_site.py
+|-- build_snapshot.py
+|-- config.json
+|-- dashboard.py
+|-- Download-All.ps1
+|-- Download-Stock.ps1
+|-- expand_assets.py
+|-- expand_stocks.py
+|-- github_cli.py
+|-- HOSTING.md
+|-- Install-Intraday-Schedule.ps1
+|-- Install-Schedule.ps1
+|-- Install-Update-Automation.ps1
+|-- liquidations.py
+|-- local_scheduler.py
+|-- market-snapshot.json
+|-- market_data.py
+|-- prepare_snapshot.py
+|-- Preview-Local.bat
+|-- Procfile
+|-- publish_site.py
+|-- pull_queue.py
+|-- README.md
+|-- Refresh-And-Publish.ps1
+|-- refresh_all.py
+|-- refresh_hourly.py
+|-- refresh_priority.py
+|-- render.yaml
+|-- replit.md
+|-- requirements-dev.txt
+|-- requirements-lock.txt
+|-- requirements.txt
+|-- Resolve-CollectorPython.ps1
+|-- Run-Data.ps1
+|-- Run-Local-Website.bat
+|-- run.txt
+|-- run_quantstack.bat
+|-- runtime.txt
+|-- screener.py
+|-- sector_rotation.py
+|-- serve_quantstack.py
+|-- smoke_appearance_profiles.py
+|-- smoke_brownian.py
+|-- smoke_chart_editing.py
+|-- smoke_chart_home.py
+|-- smoke_chart_navigation.py
+|-- smoke_dashboard.py
+|-- smoke_hourly.py
+|-- smoke_markov.py
+|-- smoke_pull_queue.py
+|-- smoke_quantstack.py
+|-- smoke_research.py
+|-- smoke_research_workspace.py
+|-- smoke_scheduler.py
+|-- smoke_screener.py
+|-- smoke_strategy.py
+|-- smoke_terminal.py
+|-- smoke_themes.py
+|-- smoke_watchlists.py
+|-- smoke_workspace.py
+|-- snapshot_catalog.py
+|-- snapshot_charts.py
+|-- Start-Dashboard.ps1
+|-- Start-LocalSite.ps1
+|-- start.sh
+|-- test_account_browser.py
+|-- test_accounts.py
+|-- test_auto_commit.py
+|-- test_brownian.py
+|-- test_chart_context_menu.py
+|-- test_daily_budget.py
+|-- test_dashboard.py
+|-- test_expand_stocks.py
+|-- test_interview_prep.py
+|-- test_liquidations.py
+|-- test_local_scheduler.py
+|-- test_market_data.py
+|-- test_markov.py
+|-- test_notes_browser.py
+|-- test_personal_work.py
+|-- test_publish_worktree.py
+|-- test_pull_queue.py
+|-- test_quantstack_gateway.py
+|-- test_refresh_all.py
+|-- test_refresh_hourly.py
+|-- test_refresh_priority.py
+|-- test_research.py
+|-- test_returns_risk.py
+|-- test_screener.py
+|-- test_sector_rotation.py
+|-- test_snapshot.py
+|-- test_snapshot_catalog.py
+|-- test_snapshot_charts.py
+|-- test_watchlist_metrics.py
+|-- Update-Charts.bat
+|-- Update-Charts.ps1
+`-- users.db

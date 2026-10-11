@@ -103,7 +103,7 @@
 #terminalSettingsDialog .terminal-dialog-foot{flex-wrap:wrap}#terminalSettingsDialog .terminal-dialog-foot>div{flex-wrap:wrap}
 @media(max-width:600px){.overview-guide{left:48px;top:auto;bottom:40px;width:calc(100vw - 96px);max-height:48dvh;padding:12px}.overview-region:not(.selected)>span{display:none}.overview-region>span{max-width:190px;font-size:10px}}
 
-.terminal-settings-extras{display:flex;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:11px}
+.terminal-settings-extras{display:flex;flex-wrap:wrap;gap:16px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:11px}
 .terminal-settings-extras a{color:var(--text-muted);text-decoration:none;padding:4px 0}
 .terminal-settings-extras a:hover{color:var(--text);text-decoration:underline}
 .terminal-settings-extras a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}

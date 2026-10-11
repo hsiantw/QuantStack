@@ -24,6 +24,7 @@
     null,
     ['snapshot', 'Download chart image', 'terminalSnapshot'],
     ['fullscreen', 'Full screen', 'terminalFullscreen'],
+    ['architecture', 'Project architecture ↗', 'terminalProjectMap'],
   ];
   for (const item of items) {
     if (!item) { const divider = document.createElement('hr'); divider.setAttribute('role', 'separator'); menu.append(divider); continue; }
@@ -273,7 +274,7 @@
     </div><div class="appearance-preview"><canvas id="terminalAppearancePreview" width="360" height="220" aria-label="Sample chart appearance preview"></canvas><strong>Appearance preview</strong><p>Sample prices in your selected chart style. Apply to update your chart. Your settings are saved in this browser.</p></div></div>
     <div class="terminal-dialog-foot"><div><button id="terminalDefaults" type="button">Reset defaults</button><button id="workspaceEditOverview" type="button">Edit overview</button></div><div><button id="terminalCancelSettings" type="button">Cancel</button><button class="terminal-primary" type="submit">Apply</button></div></div>
     <p class="muted">Your preferences are saved on this device in this browser's local storage, including chart appearance, watchlists, indicators, drawings and layout. Use the same browser and site address to restore them. Clearing site data or ending a private browsing session removes saved preferences.</p>
-    <div class="terminal-settings-extras"><a id="terminalInterviewPrep" href="./interview-prep.html" target="_blank" rel="noopener" aria-label="Interview prep (opens in a new tab)">Interview prep</a></div>`;
+    <div class="terminal-settings-extras"><a id="terminalInterviewPrep" href="./interview-prep.html" target="_blank" rel="noopener" aria-label="Interview prep (opens in a new tab)">Interview prep</a><a id="terminalProjectMap" href="./architecture.html" target="_blank" rel="noopener" aria-label="Project architecture (opens in a new tab)">Project architecture ↗</a></div>`;
   let draftTheme = window.atlasTheme.preference;
   function draftPalette() { return window.atlasTheme.palettes[draftTheme] || window.atlasTheme.palettes[matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light']; }
   function readSettings() {

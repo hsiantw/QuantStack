@@ -47,6 +47,10 @@ override saved selections. Drawings and notes remain private to the browser.
 Right-click the chart (or focus it and press Shift+F10) for chart settings,
 reset view, scale controls, indicators, comparisons, drawing tools, undo,
 image export and full screen. Escape closes the menu.
+Choose **Project architecture** in that menu or in chart settings to open
+`/workspace/architecture.html`. The guide contains nine interactive diagrams,
+component/source details, SVG downloads and a searchable repository inventory.
+Its counts and Git hashes are explicitly tied to the inspected source revision.
 The chart interval selector supports daily (1D), weekly (1W) and monthly (1M)
 bars built from daily history, as well as hourly bars on the local dashboard.
 For crypto USD pairs, the **LIQ** study records Binance USD-M public force-order
