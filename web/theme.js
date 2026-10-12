@@ -103,3 +103,67 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installScrollLights, {once:true});
   else installScrollLights();
 })();
+
+// Shared destination search: local navigation only, no extra market-data requests.
+document.addEventListener('DOMContentLoaded', () => {
+  const destinations = [
+    ['Home','/','Start and explore'],['Charts','/workspace/','Symbols, drawings and indicators'],
+    ['Stock screener','/screener','Filters and saved screens'],['Market overview','/markets','Market movers and watchlists'],
+    ['Sector rotation','/rotation','Sector momentum'],['Company fundamentals','/fundamentals','Company research'],
+    ['Strategy tester','/strategy','Backtesting'],['Strategy comparison','/compare','Compare results'],
+    ['Portfolio','/portfolio','Holdings and allocation'],['Returns & risk','/risk','Drawdowns and returns'],
+    ['Options lab','/options','Pricing and payoffs'],['Pairs analysis','/pairs','Spreads and correlations'],
+    ['Forecast lab','/forecast','Forecast evaluation'],['Markov analysis','/markov','Market regimes'],
+    ['Monte Carlo simulations','/brownian','Possible price paths'],['Volume & liquidity','/liquidity','Participation and turnover'],
+    ['Price history','/data','Stored prices'],['Crypto address scanner','/crypto-scanner','Ethereum and Tornado Cash checks'],
+    ['Idea notebook','/ideas','Ideas and notes'],['Research journal','/journal','Symbol research'],
+    ['Interview prep','/workspace/interview-prep.html','Buyer Fraud practice'],['Explore the system','/workspace/architecture.html','Project architecture'],
+    ['Account','/account','Preferences and saved work']
+  ];
+  const dialog = document.createElement('dialog'); dialog.id = 'siteNavigator';
+  dialog.setAttribute('aria-labelledby','siteNavigatorTitle');
+  dialog.innerHTML = '<div class="navigator-heading"><h2 id="siteNavigatorTitle">Go to</h2><button type="button" id="navigatorClose" aria-label="Close navigation">Esc</button></div><label class="navigator-search">Find a page or tool<input id="navigatorQuery" type="search" autocomplete="off" placeholder="Search charts, screener, research…"></label><div id="navigatorResults" class="navigator-results"></div><p id="navigatorCount" role="status"></p><footer>↑ ↓ to browse · Enter to open · Esc to close</footer>';
+  document.body.append(dialog);
+  const query=dialog.querySelector('input'), results=dialog.querySelector('#navigatorResults');
+  let opener;
+  function render() {
+    results.replaceChildren();
+    const matches=destinations.filter(row=>row.join(' ').toLowerCase().includes(query.value.trim().toLowerCase()));
+    for (const [name,path,description] of matches) {
+      const link=document.createElement('a');link.href=path;
+      const label=document.createElement('strong');label.textContent=name;
+      const detail=document.createElement('span');detail.textContent=description;
+      link.append(label,detail);
+      if(location.pathname.replace(/\/$/,'')===path.replace(/\/$/,'')){link.setAttribute('aria-current','page');}
+      results.append(link);
+    }
+    dialog.querySelector('#navigatorCount').textContent=matches.length?`${matches.length} destinations`:'No matching tools. Try “charts” or “research”.';
+  }
+  function open() {
+    if(document.querySelector('dialog[open]')) return;
+    opener=document.activeElement; query.value='';render();dialog.showModal();query.focus();
+  }
+  dialog.querySelector('#navigatorClose').onclick=()=>dialog.close();
+  dialog.addEventListener('close',()=>opener?.isConnected&&opener.focus());
+  dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
+  query.oninput=render;
+  dialog.addEventListener('keydown',event=>{
+    if(event.key==='Escape'){event.stopPropagation();return;}
+    const links=[...results.querySelectorAll('a')], index=links.indexOf(document.activeElement);
+    if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+      event.preventDefault();if(!links.length)return;
+      links[(index+(event.key==='ArrowDown'?1:-1)+links.length)%links.length].focus();
+    }else if(event.key==='Enter'&&document.activeElement===query){event.preventDefault();links[0]?.click();}
+  });
+  document.addEventListener('keydown',event=>{
+    const editing=event.target.closest?.('input,textarea,select,[contenteditable="true"],.ProseMirror');
+    if(((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k')||(!editing&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&event.key==='/')){event.preventDefault();open();}
+  });
+  const button=document.createElement('button');button.type='button';button.className='site-navigator-trigger';button.setAttribute('aria-label','Search pages and tools');button.setAttribute('aria-haspopup','dialog');button.innerHTML='<span>Go to</span><kbd>Ctrl K</kbd>';button.onclick=open;
+  // Tool headers are built by their page script; defer insertion until that exists.
+  const mount=()=>{
+    const header=document.querySelector('.tool-header-actions,.site-header,.topbar .header-tools,body > header nav,body > header,.prep-toolbar');
+    if(header)header.prepend(button);else{button.classList.add('navigator-floating');document.body.append(button);}
+  };
+  requestAnimationFrame(mount);
+});

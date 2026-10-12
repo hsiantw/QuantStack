@@ -72,7 +72,11 @@
     window.openChartResearch(key);
     const pane = [...dock.querySelectorAll('.workspace-dock-pane')].find(node => !node.hidden);
     if (pane) { pane.removeAttribute('role'); pane.removeAttribute('aria-labelledby'); }
-    for (const asset of assets) { const option = document.createElement('option'); option.value = asset.symbol; option.label = asset.name || asset.symbol; el('toolSymbols').append(option); }
+    if (!universal.has(key)) {
+      const options=document.createDocumentFragment();
+      for (const asset of assets) { const option = document.createElement('option'); option.value = asset.symbol; option.label = asset.name || asset.symbol; options.append(option); }
+      el('toolSymbols').append(options);
+    }
     el('toolSymbol').value = selected?.symbol || '';
     updateContext();
     if (key === 'screener') {

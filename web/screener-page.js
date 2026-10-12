@@ -32,6 +32,20 @@ window.initializeScreenerPage = () => {
   const columnButton = document.createElement('button'); columnButton.textContent = '+'; columnButton.setAttribute('aria-label', 'Customize table columns');
   columnButton.onclick = () => { const details = el('screenerColumnsDetails'); details.open = !details.open; if (details.open) el('screenerColumnSearch').focus(); };
   toolbar.append(columnButton);
+  const density = document.createElement('button'); density.id='screenDensity';
+  density.title='Switch between comfortable and compact table rows';
+  let compact=false;try{compact=localStorage.getItem('atlas.screener.compact')==='true';}catch{}
+  function applyDensity(){document.body.classList.toggle('screen-compact',compact);density.textContent=compact?'Compact rows':'Comfortable rows';density.setAttribute('aria-pressed',String(compact));}
+  density.onclick=()=>{compact=!compact;applyDensity();try{localStorage.setItem('atlas.screener.compact',String(compact));}catch{}};applyDensity();
+  const focus = document.createElement('button');focus.id='screenFocus';focus.textContent='Focus table';focus.setAttribute('aria-pressed','false');
+  function setFocus(value){document.body.classList.toggle('screen-focus',value);focus.textContent=value?'Show filters':'Focus table';focus.setAttribute('aria-pressed',String(value));}
+  focus.onclick=()=>setFocus(!document.body.classList.contains('screen-focus'));
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&document.body.classList.contains('screen-focus')&&!document.querySelector('dialog[open]')){
+      event.preventDefault();event.stopImmediatePropagation();setFocus(false);focus.focus();
+    }
+  },true);
+  toolbar.append(density,focus);
   el('screenerColumnSets').before(document.querySelector('.screener-search'));
   el('screenerSearch').placeholder = 'Search symbols';
   const more = document.createElement('details'); more.className = 'screen-extra-options'; more.innerHTML = '<summary>Table options & data coverage</summary>';
