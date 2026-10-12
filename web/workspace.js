@@ -115,8 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const brand = find('.brand');
   brand.classList.add('workspace-brand');
-  brand.setAttribute('aria-label', 'QuantStack home');
-  brand.title = 'QuantStack';
+  brand.href = '/';
+  brand.setAttribute('aria-label', 'QuantStack homepage');
+  brand.title = 'Back to homepage';
   brand.innerHTML = '<span class="logo">Q<span>↗</span></span>';
   header.prepend(brand);
   header.children[1].classList.add('workspace-original-heading');

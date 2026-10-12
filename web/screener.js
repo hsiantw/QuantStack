@@ -58,6 +58,9 @@
     trend: ['symbol', 'close', 'ema20_distance_pct', 'ema50_distance_pct', 'macd_pct', 'macd_signal_pct', 'macd_histogram_pct', 'adx14', 'stochastic_k', 'stochastic_d', 'bollinger_position_pct', 'bollinger_width_pct', 'currency', 'date'],
     liquidity: ['symbol', 'name', 'close', 'volume', 'avg_volume20', 'relative_volume', 'avg_turnover20', 'atr14_pct', 'volatility20_pct', 'beta', 'currency', 'date']
   };
+  columnSets.valuation = ['symbol', 'name', 'close', 'market_cap', 'pe', 'forward_pe', 'pb', 'currency', 'metadata_date'];
+  columnSets.dividends = ['symbol', 'name', 'close', 'change_1d_pct', 'dividend_yield_pct', 'profit_margin_pct', 'currency', 'metadata_date'];
+  if (document.body.dataset.toolPage === 'screener') columnSets.overview = ['symbol', 'name', 'close', 'change_1d_pct', 'volume', 'relative_volume', 'market_cap', 'pe', 'dividend_yield_pct', 'sector', 'currency', 'date'];
   const fieldGroups = {
     'Company': ['symbol', 'name', 'sector', 'industry', 'country', 'exchange', 'currency', 'date', 'metadata_date', 'metadata_profile_at'],
     'Valuation & fundamentals': ['market_cap', 'pe', 'forward_pe', 'pb', 'beta', 'dividend_yield_pct', 'revenue_growth_pct', 'profit_margin_pct'],
@@ -328,6 +331,7 @@
 
   function renderCell(row, key) {
     const field = fields[key], value = row[key];
+    if (key === 'symbol' && document.body.dataset.toolPage === 'screener') return `<td class="screener-symbol-cell"><button class="screener-favorite" data-screen-favorite="${html(row.symbol)}" aria-label="${saved.has(row.symbol) ? 'Unsave' : 'Save'} ${html(row.symbol)}" aria-pressed="${saved.has(row.symbol)}">${saved.has(row.symbol) ? '★' : '☆'}</button><span class="screen-avatar" aria-hidden="true">${html(row.symbol.slice(0, 1))}</span><button data-screen-symbol="${html(row.symbol)}" ${hasHistory(row) ? '' : 'disabled'} title="${hasHistory(row) ? 'Open daily chart' : 'No stored price history'}">${html(row.symbol)}</button><span class="screen-company" title="${html(row.name)}">${html(row.name || '')}</span></td>`;
     if (key === 'symbol') return `<td class="screener-symbol-cell"><button class="screener-favorite" data-screen-favorite="${html(row.symbol)}" aria-label="${saved.has(row.symbol) ? 'Unsave' : 'Save'} ${html(row.symbol)}" aria-pressed="${saved.has(row.symbol)}">${saved.has(row.symbol) ? '★' : '☆'}</button><button data-screen-symbol="${html(row.symbol)}" ${hasHistory(row) ? '' : 'disabled'} title="${hasHistory(row) ? 'Open daily chart' : 'Price history has not been collected for this stock'}">${html(row.symbol)}</button>${hasHistory(row) ? '' : '<small>No chart yet</small>'}</td>`;
     if (field.type === 'text') return `<td class="screener-text-cell" title="${html(value)}">${html(value || '—')}</td>`;
     if (field.type === 'date') return `<td class="screener-date-cell">${html(dateText(value || (key === 'metadata_date' ? row.fetched_at : null)))}</td>`;
@@ -400,7 +404,7 @@
     filtered = errors.length ? [] : matchingRows().sort(compareRows);
     const pageSize = state.pageSize;
     page = Math.max(0, Math.min(page, Math.ceil(filtered.length / pageSize) - 1));
-    const columns = visibleColumns();
+    const columns = document.body.dataset.toolPage === 'screener' ? visibleColumns().filter(key => key !== 'name') : visibleColumns();
     byId('screenerTableHead').innerHTML = `<tr>${columns.map(key => `<th scope="col" aria-sort="${state.sortKey === key ? state.sortDirection === 'asc' ? 'ascending' : 'descending' : 'none'}"><button data-screen-sort="${key}" title="Sort by ${html(fields[key].label)}${help[key] ? '. ' + html(help[key]) : ''}">${html(fields[key].label)} <span aria-hidden="true">${state.sortKey === key ? state.sortDirection === 'asc' ? '↑' : '↓' : '↕'}</span></button></th>`).join('')}</tr>`;
     const displayed = filtered.slice(page * pageSize, (page + 1) * pageSize);
     byId('screenerTableBody').innerHTML = displayed.map(row => `<tr class="${selected?.symbol === row.symbol ? 'screen-current' : ''}">${columns.map(key => renderCell(row, key)).join('')}</tr>`).join('') || `<tr><td colspan="${columns.length}" class="screener-empty">${loading && !loaded ? 'Loading the stock universe…' : errors.length ? 'Complete the numeric filters to see results.' : loaded && !data.length ? 'No stocks are available in the local database yet.' : 'No stocks match this screen. Remove a rule or reset the filters.'}</td></tr>`;
@@ -431,6 +435,7 @@
       button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
     }
     renderActiveFilters(); renderColumnPicker();
+    window.dispatchEvent(new Event('screener:change'));
     if (focusKey) {
       const replacement = [...byId('stockScreener').querySelectorAll('.screener-table button')].find(button => button.dataset[focusKey] === focusValue && !button.disabled);
       (replacement || byId('stockScreener').querySelector('.screener-table-wrap')).focus({preventScroll: true});
@@ -501,6 +506,7 @@
   async function openChart(symbol, button) {
     const row = data.find(item => item.symbol === symbol);
     if (!row || !hasHistory(row)) return;
+    if (document.body.dataset.toolPage) { location.assign('/workspace/?symbol=' + encodeURIComponent(symbol) + '&interval=1d'); return; }
     button.disabled = true;
     try {
       if (!assets.some(item => item.symbol === symbol)) {
@@ -696,6 +702,26 @@
     };
   }
 
+  window.ScreenerControls = {
+    fields, fieldGroups, operators,
+    read: () => structuredClone(state),
+    choices: key => valuesFor(key),
+    preview(draft) {
+      const previous = state;
+      try {
+        state = normalizeState(draft);
+        const errors = ruleErrors();
+        if (draft.rules.length > 20) errors.push('Use at most 20 numeric conditions.');
+        return {errors, count: errors.length ? 0 : matchingRows().length};
+      } finally { state = previous; }
+    },
+    apply(draft) {
+      const preview = this.preview(draft);
+      if (preview.errors.length) throw Error(preview.errors.join(' '));
+      state = normalizeState({...draft, expanded: state.expanded});
+      page = 0; populateControls(); persist(); renderResults();
+    }
+  };
   restore(); install();
   byId('stockScreener').querySelector('.screener-enhancements').insertAdjacentHTML('afterbegin', `<label>Sort by<select id="screenerPrimarySort" aria-label="Primary sort">${Object.entries(fields).map(([key, field]) => `<option value="${key}">${html(field.label)}</option>`).join('')}</select></label><select id="screenerPrimaryDirection" aria-label="Primary sort direction"><option value="desc">Descending</option><option value="asc">Ascending</option></select>`);
   byId('screenerPrimarySort').onchange = event => { state.sortKey = event.target.value; changed(); };

@@ -12,7 +12,7 @@
     liquidity:{title:'Volume & liquidity',icon:'M4 20V13h3v7M11 20V4h3v16M18 20V9h3v11',description:'Relative volume, turnover, OBV and an approximate volume profile.'},
     forecast:{title:'Forecast lab',icon:'M3 18l5-6 4 2 4-8M16 6l5-3M16 6l5 5',description:'Walk-forward AR(1) evaluation against a no-change baseline.'},
     compare:{title:'Strategy comparison',icon:'M4 20V4M4 20h17M7 16l4-7 4 3 6-8',description:'Compare the native strategy presets on the same bars and costs.'},
-    markets:{title:'Market overview',icon:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M3 12h18M12 3v18',description:'Stocks, crypto and other stored instruments; daily change and data freshness.'},
+    markets:{title:'Market overview',icon:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M3 12h18M12 3v18',description:'Major indexes, watchlist updates, daily gainers and losers, and volume rankings.'},
     rotation:{title:'Sector rotation',icon:'M4 19V5m0 14h17M7 15l4-5 4 3 6-8',description:'Rank Finviz sector performance across multiple timeframes and track relative momentum shifts.'},
     ideas:{title:'Idea notebook',icon:'M5 4h14v16H5zM8 8h8M8 12h8M8 16h5',description:'Save, organize, search and revisit market ideas in this browser.'},
     journal:{title:'Research journal',icon:'M5 3h14v18H5zM8 7h8M8 11h8M8 15h5',description:'Symbol notes and source links saved in this browser.'}
@@ -54,9 +54,6 @@
   const drafts=new Map();
   let holdings={};try{const saved=JSON.parse(localStorage.getItem('atlas.portfolios.v1')||'{}');if(saved&&typeof saved==='object'&&!Array.isArray(saved))holdings=saved;}catch{}
   let screener=null;
-  const ideaNotesKey='atlas.ideaNotes.v1';
-  let ideaNotes=[];
-  let selectedIdeaId=null;
   const input=(id,label,value,min,max,step='any')=>`<label>${label}<input id="rt-${id}" type="number" value="${value}" min="${min}" max="${max}" step="${step}" required></label>`;
   const basis=()=>'<label>Price basis<select id="rt-adjusted"><option value="true">Adjusted close</option><option value="false">Raw close</option></select></label>';
   const get=id=>el('rt-'+id),num=id=>Number(get(id).value);
@@ -66,9 +63,11 @@
   function metrics(items){return '<div class="research-metrics">'+items.map(([k,v])=>`<div><span>${E(k)}</span><strong>${E(v)}</strong></div>`).join('')+'</div>';}
   function table(headers,records){return '<div class="research-table"><table><thead><tr>'+headers.map(h=>`<th>${E(h)}</th>`).join('')+'</tr></thead><tbody>'+records.map(r=>'<tr>'+r.map(v=>`<td>${E(v)}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>';}
   function plot(curve,label) {
-    const values=curve.map(r=>r.value),lo=Math.min(...values),hi=Math.max(...values),span=hi-lo||1;
-    const sampled=curve.filter((r,i)=>i%Math.max(1,Math.ceil(curve.length/800))===0||i===curve.length-1);
-    const points=sampled.map(r=>`${60+curve.indexOf(r)/(curve.length-1||1)*710},${175-(r.value-lo)/span*145}`).join(' ');
+    let lo=Infinity,hi=-Infinity;
+    for (const row of curve) { lo=Math.min(lo,row.value); hi=Math.max(hi,row.value); }
+    const span=hi-lo||1,stride=Math.max(1,Math.ceil(curve.length/800)),pointsList=[];
+    for(let i=0;i<curve.length;i++)if(i%stride===0||i===curve.length-1)pointsList.push(`${60+i/(curve.length-1||1)*710},${175-(curve[i].value-lo)/span*145}`);
+    const points=pointsList.join(' ');
     return `<svg class="research-plot" viewBox="0 0 800 210" role="img" aria-label="${E(label)}"><title>${E(label)}</title><line class="axis" x1="60" x2="770" y1="175" y2="175"/><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2"/><text x="8" y="30">${number(hi)}</text><text x="8" y="175">${number(lo)}</text><text x="60" y="200">${E(curve[0].date)}</text><text x="770" y="200" text-anchor="end">${E(curve.at(-1).date)}</text></svg>`;
   }
   const help={
@@ -79,7 +78,6 @@
     liquidity:'Computed from stored bars. Turnover is close × volume. Volume profile assigns each bar’s entire volume to its closing-price bucket; it is not trade-level volume. OHLCV cannot identify dark pools, actual order flow or bid/ask spreads.',
     forecast:'AR(1) models log returns. The final 20% is evaluated one bar at a time using only earlier observations, then the full sample is fitted for the forward path. MAE is measured in log returns. The baseline predicts no price change. This is an experimental model, not a promise of price performance.',
     compare:'Uses the same next-open execution engine as Strategy tester. Each preset retains its own warmup. Results are in-sample and may have different first trade dates; ranking does not establish future performance. Open a preset in Strategy tester to inspect its rules and trades.',
-    markets:'Latest stored daily changes and timestamps. Prices in different currencies are not aggregated. No live quotes, on-chain metrics, futures curves or macro calendar are inferred.',
     rotation:'Finviz Group Screener sector returns are snapshots, not a historical sector-index series. Rotation compares each sector’s Finviz weekly performance rank with its quarterly rank: a rise of at least two places is Improving, a fall of at least two is Cooling, otherwise Steady. Performance is delayed as reported by Finviz and is not a trading signal.',
     journal:'Keep research alongside the selected chart. Notes use the same browser storage as the Notes panel. Source links are your references; no automatic news feed or sentiment score is generated.'
   };
@@ -91,16 +89,17 @@
     if(key==='options')return `<label>Option type<select id="rt-type"><option value="call">Call</option><option value="put">Put</option></select></label>${input('spot','Underlying spot',rows.at(-1)?.close||100,.000001,1e9)}${input('strike','Strike',rows.at(-1)?.close||100,.000001,1e9)}${input('days','Days to expiry',30,1,3650,1)}${input('vol','Volatility % p.a.',25,.01,500)}${input('rate','Risk-free rate % p.a.',0,-100,100)}${input('dividend','Dividend yield % p.a.',0,0,100)}`;
     if(key==='forecast')return `${input('horizon','Forward horizon · bars',20,1,120,1)}${basis()}`;
     if(key==='compare')return `${input('capital','Initial capital',10000,100,1e9)}${input('commission','Commission %',.1,0,10)}${input('slippage','Slippage %',.05,0,10)}${basis()}`;
-    if(key==='markets')return '<label>Asset group<select id="rt-group"><option value="All">All assets</option><option value="Stocks">Stocks</option><option value="Crypto">Crypto</option><option value="Saved">Saved watchlist</option></select></label><label class="research-wide">Search<input id="rt-search" placeholder="Company or ticker"></label>';
     if(key==='rotation')return '<label>Sort by<select id="rt-period"><option value="change_1d_pct">Day</option><option value="week_pct">Week</option><option value="month_pct">Month</option><option value="quarter_pct">Quarter</option><option value="half_year_pct">Half-year</option><option value="ytd_pct">Year to date</option><option value="year_pct">Year</option></select></label>';
     if(key==='journal')return '<label class="research-wide">Symbol notes<textarea id="rt-notes" rows="5" maxlength="20000"></textarea></label><label class="research-wide">Source URL (optional)<input id="rt-source" type="url" placeholder="https://…"></label>';
     return '';
   }
   function renderTool(key){
+    if (!QuantNotes.unmount()) return;
     if(el('researchForm')&&active!=='journal') drafts.set(active,Object.fromEntries([...el('researchForm').querySelectorAll('input,textarea,select')].map(field=>[field.id,field.value])));
     invalidate();active=key;
     if(key==='ideas') { renderIdeaNotebook(); return; }
-    pane.innerHTML=`<section class="research-tool"><div class="research-heading"><div><span class="eyebrow">CHART ANALYSIS</span><h2>${E(tools[key].title)}</h2><p id="researchContext"></p></div><button id="researchExport" disabled>Export result JSON</button></div><form id="researchForm" class="research-controls">${form(key)}<button type="submit" id="researchRun">${key==='journal'?'Save research':key==='markets'?'Refresh overview':key==='rotation'?'Refresh sector data':'Run analysis'}</button><button type="button" id="researchCancel">Cancel</button></form><p class="research-help">${E(help[key])}</p><p id="researchStatus" role="status" aria-live="polite">Ready. Calculations run only when requested.</p><div id="researchOutput"></div></section>`;
+    if(key==='markets') { MarketOverview.mount(pane); return; }
+    pane.innerHTML=`<section class="research-tool"><div class="research-heading"><div><span class="eyebrow">CHART ANALYSIS</span><h2>${E(tools[key].title)}</h2><p id="researchContext"></p></div><button id="researchExport" disabled>Export result JSON</button></div><form id="researchForm" class="research-controls">${form(key)}<button type="submit" id="researchRun">${key==='journal'?'Save research':key==='rotation'?'Refresh sector data':'Run analysis'}</button><button type="button" id="researchCancel">Cancel</button></form><p class="research-help">${E(help[key])}</p><p id="researchStatus" role="status" aria-live="polite">Ready. Calculations run only when requested.</p><div id="researchOutput"></div></section>`;
     if(drafts.has(key))for(const [id,value] of Object.entries(drafts.get(key)))if(el(id))el(id).value=value;
     context();el('researchForm').oninput=()=>invalidate();el('researchForm').onsubmit=run;el('researchCancel').onclick=()=>invalidate('Canceled.');
     el('researchExport').onclick=()=>{if(!result)return;const url=URL.createObjectURL(new Blob([JSON.stringify(result,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=`quantstack-${active}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
@@ -114,96 +113,9 @@
       try{get('notes').value=localStorage.getItem('atlas.notes.'+selected?.symbol)||'';get('source').value=localStorage.getItem('atlas.source.'+selected?.symbol)||'';}catch{}
     }
   }
-  function renderIdeaNotebook() {
-    pane.innerHTML=`<section class="research-tool idea-notebook"><div class="research-heading"><div><span class="eyebrow">NOTES & RESEARCH</span><h2>${E(tools.ideas.title)}</h2><p>Keep ideas organized and available for later in this browser.</p></div><button id="ideaNew" type="button">New note</button></div><div class="idea-notebook-layout"><section class="idea-notes-list"><label for="ideaSearch">Find a note</label><input id="ideaSearch" type="search" placeholder="Search title, ticker or text"><label for="ideaCategoryFilter">Category</label><select id="ideaCategoryFilter"><option value="">All categories</option><option>Idea</option><option>Research</option><option>To do</option><option>Watchlist</option></select><div id="ideaNotesList" aria-label="Saved notes"></div></section><form id="ideaEditor" class="idea-note-editor"><label for="ideaTitle">Title</label><input id="ideaTitle" maxlength="120" required placeholder="Give this note a useful title"><label for="ideaCategory">Category</label><select id="ideaCategory"><option>Idea</option><option>Research</option><option>To do</option><option>Watchlist</option></select><label for="ideaSymbol">Related symbol (optional)</label><input id="ideaSymbol" maxlength="30" placeholder="e.g. NVDA"><label for="ideaBody">Notes</label><textarea id="ideaBody" maxlength="20000" rows="12" placeholder="Capture the thesis, questions, links or next steps…" required></textarea><p id="ideaNoteDate" class="idea-note-date"></p><div class="idea-note-actions"><button id="ideaSave" type="submit">Save note</button><button id="ideaDelete" type="button" class="secondary" disabled>Delete</button></div></form></div><p id="ideaStatus" role="status" aria-live="polite">Notes are saved in this browser.</p></section>`;
-    const list=el('ideaNotesList'), editor=el('ideaEditor'), status=el('ideaStatus');
-    const field=id=>el(id);
-    const formatDate=value=>value?new Date(value).toLocaleString():'';
-    function showStatus(message,isError=false) {
-      status.textContent=message;
-      status.dataset.error=String(isError);
-    }
-    function loadIdeas() {
-      try {
-        const stored=localStorage.getItem(ideaNotesKey);
-        const parsed=stored?JSON.parse(stored):[];
-        if(!Array.isArray(parsed)||parsed.some(note=>!note||typeof note.id!=='string'||typeof note.title!=='string'||typeof note.category!=='string'||typeof note.body!=='string'||typeof note.updatedAt!=='string'))
-          throw Error('Saved notes have an invalid format. They have not been changed.');
-        ideaNotes=parsed;
-        showStatus(`${ideaNotes.length} saved ${ideaNotes.length===1?'note':'notes'} · stored in this browser.`);
-      } catch(error) {
-        ideaNotes=[];
-        showStatus(error instanceof SyntaxError?'Saved notes could not be read because the browser data is invalid.':error.message||'Browser storage is unavailable. Notes have not been changed.',true);
-        return false;
-      }
-      return true;
-    }
-    function clearEditor() {
-      selectedIdeaId=null;
-      editor.reset();
-      field('ideaCategory').value='Idea';
-      field('ideaSymbol').value=selected?.symbol||'';
-      field('ideaNoteDate').textContent='New note';
-      field('ideaDelete').disabled=true;
-      list.querySelectorAll('[data-idea-open]').forEach(button=>button.classList.remove('active'));
-    }
-    function openIdea(id) {
-      const note=ideaNotes.find(item=>item.id===id);
-      if(!note)return;
-      selectedIdeaId=id;
-      field('ideaTitle').value=note.title;
-      field('ideaCategory').value=note.category;
-      field('ideaSymbol').value=note.symbol||'';
-      field('ideaBody').value=note.body;
-      field('ideaNoteDate').textContent=`Updated ${formatDate(note.updatedAt)}`;
-      field('ideaDelete').disabled=false;
-      list.querySelectorAll('[data-idea-open]').forEach(button=>button.classList.toggle('active',button.dataset.ideaOpen===id));
-      showStatus(`Editing “${note.title}”.`);
-    }
-    function renderList() {
-      const search=field('ideaSearch').value.trim().toLowerCase(),category=field('ideaCategoryFilter').value;
-      const visible=ideaNotes.filter(note=>(!category||note.category===category)&&`${note.title} ${note.symbol||''} ${note.category} ${note.body}`.toLowerCase().includes(search))
-        .sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
-      list.innerHTML=visible.map(note=>`<button type="button" data-idea-open="${E(note.id)}" class="idea-note-item ${selectedIdeaId===note.id?'active':''}"><strong>${E(note.title)}</strong><small>${E(note.category)}${note.symbol?' · '+E(note.symbol):''} · ${E(formatDate(note.updatedAt))}</small><span>${E(note.body.slice(0,110))}</span></button>`).join('')||'<p class="research-help">No saved notes match. Create a note to keep an idea for later.</p>';
-    }
-    const notesAvailable=loadIdeas();
-    if(notesAvailable) {
-      renderList();
-      if(ideaNotes.length)openIdea(ideaNotes.find(note=>note.id===selectedIdeaId)?.id||ideaNotes.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))[0].id);
-      else clearEditor();
-    } else {
-      renderList();
-      clearEditor();
-      editor.inert=true;
-      field('ideaNew').disabled=true;
-    }
-    field('ideaSearch').oninput=renderList;
-    field('ideaCategoryFilter').onchange=renderList;
-    field('ideaNew').onclick=()=>{clearEditor();showStatus('New note. Save it to keep it in this browser.');field('ideaTitle').focus();};
-    list.onclick=event=>{const button=event.target.closest('[data-idea-open]');if(button)openIdea(button.dataset.ideaOpen);};
-    editor.onsubmit=event=>{
-      event.preventDefault();
-      if(!editor.reportValidity())return;
-      const now=new Date().toISOString(),existing=ideaNotes.find(note=>note.id===selectedIdeaId);
-      const note={id:existing?.id||crypto.randomUUID(),title:field('ideaTitle').value.trim(),category:field('ideaCategory').value,symbol:field('ideaSymbol').value.trim().toUpperCase(),body:field('ideaBody').value.trim(),createdAt:existing?.createdAt||now,updatedAt:now};
-      if(!note.title||!note.body){showStatus('Add a title and note before saving.',true);return;}
-      const updated=[note,...ideaNotes.filter(item=>item.id!==note.id)];
-      try { localStorage.setItem(ideaNotesKey,JSON.stringify(updated)); }
-      catch { showStatus('Could not save this note. Browser storage is unavailable or full.',true);return; }
-      ideaNotes=updated;selectedIdeaId=note.id;field('ideaNoteDate').textContent=`Updated ${formatDate(now)}`;field('ideaDelete').disabled=false;
-      renderList();showStatus(`Saved “${note.title}” in this browser.`);
-    };
-    field('ideaDelete').onclick=()=>{
-      const note=ideaNotes.find(item=>item.id===selectedIdeaId);
-      if(!note||!window.confirm(`Delete “${note.title}”?`))return;
-      const updated=ideaNotes.filter(item=>item.id!==note.id);
-      try { localStorage.setItem(ideaNotesKey,JSON.stringify(updated)); }
-      catch { showStatus('Could not delete this note from browser storage.',true);return; }
-      ideaNotes=updated;selectedIdeaId=null;renderList();clearEditor();showStatus(`Deleted “${note.title}”.`);
-    };
-  }
+  function renderIdeaNotebook() { QuantNotes.mount(pane, selected?.symbol || ''); }
   function statusError(error){el('researchStatus').textContent=error.message;el('researchStatus').dataset.error='true';}
-  function open(key){if(tools[key]){if(key!==active||!el('researchForm'))renderTool(key);ChartWorkspace.openDock('tools');}else ChartWorkspace.openDock(key);syncRail(tools[key]?'tools':key);}
+  function open(key){if(tools[key]){if(key!==active||!(el('researchForm')||el('ideaEditor')||el('marketOverview')))renderTool(key);ChartWorkspace.openDock('tools');}else ChartWorkspace.openDock(key);syncRail(tools[key]?'tools':key);}
   window.openChartResearch=open;
   function syncRail(dock){rail.querySelectorAll('[data-research-open]').forEach(b=>{const on=dock==='tools'&&b.dataset.researchOpen===active;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});}
   window.addEventListener('workspace:dock',e=>{syncRail(e.detail);if(e.detail!=='tools'&&worker)invalidate('Analysis canceled when the panel closed.');});
@@ -257,9 +169,6 @@
         const sorted=data.sectors.slice().sort((a,b)=>(b[period]??-Infinity)-(a[period]??-Infinity));
         const pctCell=value=>Number.isFinite(value)?`<span class="${value>=0?'positive':'negative'}">${E(number(value))}%</span>`:'Unavailable';
         html=metrics([['Sectors',data.sectors.length],['Top sector',sorted[0]?.name||'Unavailable'],['Top '+labels[period],Number.isFinite(sorted[0]?.[period])?number(sorted[0][period])+'%':'Unavailable'],['Finviz snapshot',new Date(data.generated_at).toLocaleString()]])+`<div class="research-table"><table><thead><tr>${['Rank','Sector','Day','Week','Month','Quarter','Half-year','YTD','Year','Rotation'].map(h=>`<th>${E(h)}</th>`).join('')}</tr></thead><tbody>${sorted.map((sector,index)=>`<tr><td>${index+1}</td><td>${E(sector.name)}</td><td>${pctCell(sector.change_1d_pct)}</td><td>${pctCell(sector.week_pct)}</td><td>${pctCell(sector.month_pct)}</td><td>${pctCell(sector.quarter_pct)}</td><td>${pctCell(sector.half_year_pct)}</td><td>${pctCell(sector.ytd_pct)}</td><td>${pctCell(sector.year_pct)}</td><td>${E(sector.rotation)}</td></tr>`).join('')}</tbody></table></div><p class="research-help">Source: <a href="${E(data.source)}" target="_blank" rel="noopener noreferrer">Finviz Group Screener · Sector Performance</a></p>`;
-      } else if(key==='markets') {
-        const group=get('group').value,q=get('search').value.toLowerCase();data=assets.filter(a=>(group==='All'||a.kind===group||group==='Saved'&&saved.has(a.symbol))&&`${a.symbol} ${a.name}`.toLowerCase().includes(q)).slice().sort((a,b)=>(b.change??-Infinity)-(a.change??-Infinity));
-        html=metrics([['Matching assets',data.length],['Display limit',100],['Positive daily change',data.filter(a=>a.change>0).length],['Negative daily change',data.filter(a=>a.change<0).length]])+table(['Symbol','Name','Close','Currency','Daily change %','As of'],data.slice(0,100).map(a=>[a.symbol,a.name,number(a.close),a.currency||'Unknown',number(a.change),a.quote_timestamp||a.date]))+'<div class="research-links">'+data.slice(0,20).map(a=>`<button data-research-symbol="${E(a.symbol)}">${E(a.symbol)} chart</button>`).join('')+'</div>';
       } else if(key==='journal') {
         const source=get('source').value.trim();if(source&&!['http:','https:'].includes(new URL(source).protocol))throw Error('Use an HTTP or HTTPS source URL.');data={symbol:selected.symbol,notes:get('notes').value,source,updated:new Date().toISOString()};
         localStorage.setItem('atlas.notes.'+selected.symbol,data.notes);localStorage.setItem('atlas.source.'+selected.symbol,source);el('workspaceNotes').value=data.notes;
@@ -280,32 +189,33 @@
   const panel = document.getElementById('workspaceNotesStatus');
   panel.insertAdjacentHTML('afterend', `<div class="personal-work-actions">
     <button type="button" data-research-open="ideas">Open idea notebook</button>
-    <p class="workspace-panel-help">Symbol notes save as you type. Save notebook entries with Save note. Drawings save automatically for each symbol and chart interval on this device.</p>
+    <p class="workspace-panel-help">Symbol notes save as you type. Notebook entries autosave too. Open the notebook for checklists, labels, colours and pinned cards. Drawings save automatically for each symbol and chart interval on this device.</p>
     <button type="button" id="personalWorkExport">Download notes &amp; drawings</button>
     <button type="button" id="personalWorkImport">Restore backup</button>
     <input type="file" id="personalWorkFile" accept="application/json,.json" hidden>
-    <p class="workspace-panel-help">Back up saved notes, source links and drawings to keep a copy or move them to another browser. Market prices and unsaved notebook edits are not included.</p>
+    <p class="workspace-panel-help">Back up saved notes, source links and drawings to keep a copy or move them to another browser. Market prices are not included. Use Account to save a server copy.</p>
     <p id="personalWorkStatus" class="workspace-panel-help" role="status" aria-live="polite"></p>
   </div>`);
   const status = document.getElementById('personalWorkStatus');
   const fileInput = document.getElementById('personalWorkFile');
-  const supported = key => key === 'atlas.ideaNotes.v1' || /^atlas\.(notes|source|drawings)\..{1,150}$/.test(key);
+  const supported = key => ['atlas.ideaNotes.v1', 'atlas.noteCategories.v1'].includes(key) || /^atlas\.(notes|source|drawings)\..{1,150}$/.test(key);
   const validText = (value, limit) => typeof value === 'string' && value.length <= limit;
   function validate(key, value) {
     if (!supported(key) || !validText(value, 4_000_000)) throw Error('Unsupported backup entry. Nothing was restored.');
-    if (key.startsWith('atlas.notes.')) {
+    if (key === 'atlas.noteCategories.v1') {
+      const categories = JSON.parse(value);
+      if (!Array.isArray(categories) || categories.length > 100 || !categories.every(QuantNotes.validCategory)) throw Error('Invalid notebook categories.');
+    } else if (key.startsWith('atlas.notes.')) {
       if (!validText(value, 200_000)) throw Error('A symbol note is too large.');
     } else if (key.startsWith('atlas.source.')) {
       if (value && (!validText(value, 8000) || !['http:', 'https:'].includes(new URL(value).protocol))) throw Error('Invalid source link.');
     } else {
       const items = JSON.parse(value);
       if (!Array.isArray(items) || items.length > 10000) throw Error('Invalid notes or drawings list.');
+      if (key === 'atlas.ideaNotes.v1' && new Set(items.map(item => item?.id)).size !== items.length) throw Error('Duplicate notebook IDs. Nothing was restored.');
       for (const item of items) {
         if (key === 'atlas.ideaNotes.v1') {
-          if (!item || !validText(item.id, 200) || !validText(item.title, 120) || !validText(item.body, 20000) ||
-              !['Idea', 'Research', 'To do', 'Watchlist'].includes(item.category) ||
-              (item.symbol !== undefined && !validText(item.symbol, 30)) ||
-              typeof item.updatedAt !== 'string' || !Number.isFinite(Date.parse(item.updatedAt))) throw Error('Invalid notebook entry.');
+          if (!QuantNotes.valid(item)) throw Error('Invalid notebook entry.');
         } else {
           if (!item || !Object.hasOwn(drawingNames, item.type) || !normalizeDrawing(item) ||
               (item.id !== undefined && !validText(item.id, 200))) throw Error('Invalid chart drawing.');
@@ -325,6 +235,7 @@
   }
   document.getElementById('personalWorkExport').onclick = () => {
     try {
+      if (!QuantNotes.flush()) throw Error('Save the open notebook edit before downloading a backup.');
       const entries = Object.fromEntries(Object.keys(localStorage).filter(supported).map(key => [key, localStorage.getItem(key)]));
       const blob = new Blob([JSON.stringify({format: 'quantstack-personal-work', version: 1, exportedAt: new Date().toISOString(), entries}, null, 2)], {type: 'application/json'});
       if (blob.size > 5_000_000) throw Error('Backup exceeds the 5 MB limit.');
@@ -336,6 +247,7 @@
   };
   document.getElementById('personalWorkImport').onclick = () => fileInput.click();
   fileInput.onchange = async () => {
+    if (!QuantNotes.flush()) { status.textContent = 'Save the open notebook edit before restoring a backup.'; fileInput.value = ''; return; }
     const file = fileInput.files[0];
     if (!file) return;
     try {
@@ -361,6 +273,7 @@
         }
         throw Error(restored ? 'Not enough browser storage. Your previous work was preserved.' : 'Storage failed during restore. Keep your backup and check saved work before editing.');
       }
+      QuantNotes.discard();
       location.reload();
     } catch (error) { status.textContent = error.message || 'Could not restore the backup.'; }
     finally { fileInput.value = ''; }

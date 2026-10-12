@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuantStack — A wider view of the markets</title>
+  <meta name="description" content="Your home for market charts, quantitative research, screeners and portfolio analysis.">
+  <link rel="stylesheet" href="/home.css"><script src="/home.js" defer></script>
+<script src="/theme.js"></script><link rel="stylesheet" href="/site-theme.css"></head>
+<body class="site-home">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="QuantStack home"><span class="brand-mark">Q<span>↗</span></span><span class="brand-name">QuantStack</span></a>
+    <form class="search" action="/workspace/" role="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7.5"/><path d="m16 16 5 5"/></svg><input id="symbolSearch" name="symbol" type="search" aria-label="Search symbol" placeholder="Search symbol, e.g. AAPL or BTC-USD" maxlength="40" required><button type="submit" aria-label="Open symbol chart">↵</button></form>
+    <label class="site-theme-control"><span>Theme</span><select data-site-theme aria-label="Site theme"><option value="system">System</option></select></label>
+    <a class="sign-in" href="/login" aria-label="Sign in"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M3 22v-3a9 7 0 0 1 18 0v3Z"/></svg><span>Sign in</span></a>
+    <div class="destination"><button id="exploreToggle" class="explore-toggle" aria-expanded="false" aria-controls="destinationMenu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Explore</span><span class="chevron">⌄</span></button>
+      <nav id="destinationMenu" class="destination-menu" aria-label="Explore QuantStack" hidden></nav>
+    </div>
+    <a class="start-button" href="/workspace/">Open charts <span>↗</span></a>
+  </header>
+  <nav class="home-quick-nav" aria-label="Quick access"><a href="/workspace/">Charts</a><a href="/screener">Stock screener</a><a href="/markets">Markets</a><a href="/portfolio">Portfolios</a><a href="/strategy">Strategy tester</a><a href="/ideas">Idea notebook</a></nav><main id="main">
+    <section class="hero" aria-labelledby="heroTitle">
+      <div class="hero-copy"><p class="eyebrow"><span></span> YOUR MARKETS. YOUR PERSPECTIVE.</p><h1 id="heroTitle">A wider view.<br>A sharper edge.</h1><p class="hero-description">Explore the markets. Test your ideas.<br class="mobile-break"> Make the whole picture yours.</p><a class="hero-button" href="/workspace/">Launch your workspace <span>↗</span></a><p class="hero-note">Charts, research, and analysis. All in one place.</p></div>
+      <div class="earth" role="img" aria-label="Sunrise over the blue curve of Earth"></div>
+      <a class="discover" href="#tools">DISCOVER YOUR TOOLKIT <span>↓</span></a>
+    </section>
+    <section class="toolkit" id="tools" aria-labelledby="toolsTitle"><div class="section-heading"><div><p class="eyebrow">FROM FIRST LOOK TO DEEP RESEARCH</p><h2 id="toolsTitle">Find your next perspective.</h2></div><a href="/workspace/">Enter workspace <span>↗</span></a></div>
+      <div class="tool-links">
+        <a class="tool-feature" href="/workspace/"><span class="tool-number">01 / CHARTS</span><svg class="chart-art" viewBox="0 0 480 150" aria-hidden="true"><path class="grid" d="M0 30h480M0 75h480M0 120h480M60 0v150M180 0v150M300 0v150M420 0v150"/><path class="chart-line" d="m0 125 24-12 18 7 30-42 20 13 26-29 20 11 26-36 22 20 20-7 28 16 24-42 20 12 30-25 20 9 24-13 24 6 24-22 28 10"/></svg><h3>Your chart. Your way. <span>↗</span></h3><p>Candlesticks, indicators, drawing tools, and comparisons in one focused workspace.</p></a>
+        <div class="tool-list"><a href="/screener"><span class="tool-icon">◎</span><div><h3>Stock screener</h3><p>Filter the noise. Find what matters.</p></div><span>↗</span></a><a href="/markets"><span class="tool-icon">◉</span><div><h3>Market overview</h3><p>See movers and your market watchlist.</p></div><span>↗</span></a><a href="/strategy"><span class="tool-icon">⌁</span><div><h3>Strategy tester</h3><p>Put your ideas up against history.</p></div><span>↗</span></a><a href="/portfolio"><span class="tool-icon">▥</span><div><h3>Portfolio &amp; risk</h3><p>Understand allocation and exposure.</p></div><span>↗</span></a></div>
+      </div>
+    </section>
+    <section class="research-strip"><div><p class="eyebrow">BUILD ON YOUR OWN THINKING</p><h2>An idea is just the beginning.</h2><p>Keep a journal, explore models, and bring your research back to the chart.</p></div><a class="outline-button" href="/ideas">Open idea notebook <span>↗</span></a></section>
+  </main>
+  <footer><a class="footer-brand" href="/">QuantStack<span>↗</span></a><p>Stored market data. Check each symbol for freshness. Not a live trading feed.</p><a href="/account">Account</a><a href="/workspace/architecture.html">About the project ↗</a></footer>
+</body>
+</html>
