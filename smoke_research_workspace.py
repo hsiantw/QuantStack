@@ -29,13 +29,21 @@ def run():
             page.goto(f'http://127.0.0.1:{server.server_port}')
             page.wait_for_function('rows.length===260')
             assert page.locator('iframe').count()==0
-            for key in ['portfolio','pairs','options','fundamentals','liquidity','forecast','compare','markets','journal']:
+            for key in ['portfolio','pairs','options','fundamentals','liquidity','forecast','compare','journal']:
                 page.locator(f'.workspace-right-rail [data-research-open={key}]').click()
                 expect(page.locator('#workspaceToolsPanel')).to_be_visible()
                 page.locator('#researchRun').click()
                 expect(page.locator('#researchStatus')).to_contain_text('Complete',timeout=15000)
                 expect(page.locator('#researchExport')).to_be_enabled()
                 assert page.locator('#researchOutput').inner_text()
+            if not page.locator('#researchSearch').is_visible():
+                page.locator('[data-side-panel=tools]').click()
+            page.locator('#researchLibraryList [data-research-open=markets]').click()
+            expect(page.locator('#workspaceToolsPanel #marketOverview')).to_be_visible()
+            expect(page.locator('#marketStatus')).to_contain_text('Last checked')
+            assert page.locator('#marketOverviewButton').count() == 0
+            page.locator('#marketRefresh').click()
+            expect(page.locator('#marketRefresh')).to_be_enabled()
             page.locator('.workspace-right-rail [data-research-open=portfolio]').click()
             page.locator('#rt-name').fill('Test allocation')
             page.locator('#rt-save').click()
@@ -46,7 +54,8 @@ def run():
             page.evaluate("select('MSFT')")
             expect(page.locator('#researchExport')).to_be_disabled()
             expect(page.locator('#researchOutput')).to_be_empty()
-            page.locator('[data-side-panel=tools]').click()
+            if not page.locator('#researchSearch').is_visible():
+                page.locator('[data-side-panel=tools]').click()
             page.locator('#researchSearch').fill('Monte Carlo')
             page.locator('#researchLibraryList [data-research-open=brownian]').click()
             expect(page.locator('#workspaceBrownianPanel')).to_be_visible()

@@ -72,6 +72,13 @@ without opening a browser. Logs are in `data/local-site-8501*.log`.
 Refresh after frontend edits; restart the Python server after backend edits.
 This local preview does not commit, push, or deploy anything.
 
+Run `Install-LocalSite-Startup.ps1` to start the local website automatically
+15 seconds after you sign in to Windows. It registers `QuantStack-LocalWebsite`
+for the current user and starts it immediately. By default it runs in the
+background at port 8501; use `-OpenBrowser` to also open a browser at sign-in.
+The launcher reuses an existing local server. Disable `QuantStack-LocalWebsite`
+in Windows Task Scheduler to turn off automatic startup.
+
 For a foreground server or a fresh environment:
 
 ```powershell

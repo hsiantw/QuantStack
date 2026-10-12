@@ -142,6 +142,36 @@ class Accounts:
             db.execute('DELETE FROM sessions WHERE token_hash=?', (digest(token),))
         return {'user': None}
 
+    def security(self, token, payload=None, peer=''):
+        if payload is not None:
+            self.throttle(peer, 'security:' + str(payload.get('account_id', '')))
+        with closing(self.connect()) as db, db:
+            db.execute('BEGIN IMMEDIATE')
+            user = self.user(db, token)
+            if payload is not None:
+                if payload.get('account_id') != user['id']:
+                    raise AccountError(409, 'The signed-in account changed. Reload before continuing.')
+                action = payload.get('action')
+                if action not in ('password', 'revoke_others'):
+                    raise AccountError(400, 'Unknown security action.')
+                if action == 'password':
+                    current, new = payload.get('current_password'), payload.get('new_password')
+                    if not isinstance(current, str) or not 8 <= len(current) <= 128:
+                        raise AccountError(400, 'Enter your current password.')
+                    if not isinstance(new, str) or not 8 <= len(new) <= 128:
+                        raise AccountError(400, 'Use a new password of 8–128 characters.')
+                    if not hmac.compare_digest(password_hash(current, user['salt']), user['password_hash']):
+                        raise AccountError(401, 'The current password is incorrect.')
+                    salt = secrets.token_bytes(16)
+                    db.execute('UPDATE accounts SET salt=?,password_hash=? WHERE id=?',
+                               (salt, password_hash(new, salt), user['id']))
+                # Keep this session; revoke all other devices after a password change too.
+                db.execute('DELETE FROM sessions WHERE account_id=? AND token_hash!=?', (user['id'], digest(token)))
+            now = int(time.time())
+            count = db.execute('SELECT count(*) FROM sessions WHERE account_id=? AND expires>?', (user['id'], now)).fetchone()[0]
+            expires = db.execute('SELECT expires FROM sessions WHERE token_hash=?', (digest(token),)).fetchone()[0]
+            return {'user': self.public(user), 'sessions': count, 'expires': expires}
+
 
 def install_accounts(app, path=None, public_origin=None):
     path = path or os.environ.get('QUANTSTACK_ACCOUNTS_DB') or Path(__file__).parent / 'data' / 'accounts.sqlite'
@@ -189,6 +219,8 @@ def install_accounts(app, path=None, public_origin=None):
                     result = await asyncio.to_thread(store.session, token)
                 elif action == 'workspace' and request.method in ('GET', 'POST'):
                     result = await asyncio.to_thread(store.workspace, token, payload if request.method == 'POST' else None)
+                elif action == 'security' and request.method in ('GET', 'POST'):
+                    result = await asyncio.to_thread(store.security, token, payload if request.method == 'POST' else None, request.remote or '')
                 else:
                     raise AccountError(404, 'Account endpoint not found.')
             response = web.json_response(result, headers=headers)

@@ -107,6 +107,11 @@ class AccountBrowserTests(unittest.IsolatedAsyncioTestCase):
                     await second.set_viewport_size({'width':390,'height':844})
                     self.assertTrue(await second.evaluate('document.documentElement.scrollWidth <= innerWidth'))
                     await expect(second.locator('#accountLogout')).to_be_visible()
+                    await second.locator('#accountClose').click()
+                    await second.locator('.workspace-brand').click()
+                    await second.wait_for_url(str(server.make_url('/')))
+                    await expect(second.locator('#accessTitle')).to_have_text('Enter your terminal.')
+                    await expect(second.locator('#identity')).to_contain_text('otheruser')
                     self.assertFalse(errors, errors)
                     await browser.close()
             finally:

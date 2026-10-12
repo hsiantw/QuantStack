@@ -76,7 +76,7 @@ async def proxy(request):
         from local_scheduler import local_request
         if not local_request(request.remote, request.host, request.headers.get('Origin')):
             raise web.HTTPForbidden(text='Collector settings are available locally only.')
-    if request.path == '/' and request.method in ('GET', 'HEAD'):
+    if request.path == '/' and request.method in ('GET', 'HEAD') and request.query:
         target = '/workspace/'
         query = request.query.copy()
         query.popall('research', None)
@@ -138,6 +138,21 @@ def create_app(dashboard_url, snapshot_dir=None, liquidation_symbols=(), account
         app.cleanup_ctx.append(liquidation_context)
     from accounts import install_accounts
     install_accounts(app, accounts_path)
+    async def login_page(request):
+        if request.path == '/' and request.query:
+            return await proxy(request)
+        return web.FileResponse(ROOT / 'web' / 'login.html', headers={'Cache-Control': 'no-store'})
+
+    app.router.add_get('/', login_page)
+    app.router.add_get('/login', login_page)
+    async def account_page(request):
+        return web.FileResponse(ROOT / 'web' / 'account.html', headers={'Cache-Control': 'no-store'})
+
+    app.router.add_get('/account', account_page)
+    for asset in ('login.css', 'login.js', 'account.css', 'account.js'):
+        async def login_asset(request, name=asset):
+            return web.FileResponse(ROOT / 'web' / name)
+        app.router.add_get('/' + asset, login_asset)
     app.router.add_route('*', '/{path:.*}', proxy)
     return app
 

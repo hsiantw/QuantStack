@@ -11,7 +11,7 @@
     <label>Password<input id="accountPassword" type="password" autocomplete="current-password" minlength="8" maxlength="128" required></label>
     <p class="muted">Use 8–128 characters. Password recovery is not available yet; keep your password in a password manager.</p>
     <div class="account-actions"><button id="accountLogin" type="submit">Sign in</button><button id="accountRegister" type="button">Create account</button></div></form>
-    <section id="accountWorkspace" hidden><p id="accountIdentity"></p>
+    <section id="accountWorkspace" hidden><p id="accountIdentity"></p><p><a id="accountManage" href="/account">Manage account, preferences &amp; exports ?</a></p>
     <p>Saving uploads the current browser workspace. Loading replaces this browser's notes, drawings and settings with the account copy. Notebook edits are saved before uploading. Market prices are shared and are not copied into accounts.</p>
     <div class="account-actions"><button type="button" id="accountSave">Save to account</button><button type="button" id="accountLoad">Load saved workspace</button><button type="button" id="accountLogout">Sign out &amp; clear browser workspace</button></div></section>
     <p id="accountStatus" role="status" aria-live="polite"></p>`;
@@ -65,6 +65,7 @@
       el('accountStatus').textContent = user ? (revision === null ? 'Load your saved workspace before saving from this tab.' : 'Browser changes are local until you choose Save to account.') : 'Sign in or create an account. Existing browser work will not be uploaded automatically.';
     });
   };
+  el('accountManage').onclick = event => { if (busy || !window.QuantNotes?.flush()) { event.preventDefault(); el('accountStatus').textContent = 'Save the open notebook edit before opening account settings.'; } };
   el('accountClose').onclick = () => dialog.close();
   dialog.addEventListener('cancel', event => { if (busy) event.preventDefault(); });
   async function authenticate(action) {
@@ -129,6 +130,7 @@
   };
   // Other tabs must not upload a workspace under a newly switched account.
   window.addEventListener('storage', event => {
+    if (event.key === 'quantstack.accountWorkspaceChanged' && user) { revision = null; try { sessionStorage.removeItem(key()); } catch {} render(); el('accountStatus').textContent = 'Account settings changed. Load your saved workspace before saving again.'; }
     if (event.key === 'quantstack.accountChanged') { window.QuantNotes?.discard(); location.reload(); return; }
     if (event.key?.startsWith('atlas.') && dialog.open) el('accountStatus').textContent = 'The browser workspace changed in another tab. Reload before saving to your account.';
   });
