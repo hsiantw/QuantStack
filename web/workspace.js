@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
     close.className = 'workspace-panel-close';
     close.innerHTML = icon('close');
     close.setAttribute('aria-label', 'Close side panel');
-    close.onclick = () => { sidebarToggle.click(); rightRail.querySelector(`[data-side-panel="${activeSidePanel}"]`).focus(); };
+    close.onclick = () => { sidebarToggle.click(); const target=rightRail.querySelector(`[data-side-panel="${activeSidePanel}"]`); (target.hidden?byId('customizeRightToolbar'):target)?.focus(); };
     pane.querySelector('.sidebar-heading').append(close);
   }
   let notesSymbol = '';
@@ -571,3 +571,50 @@ document.addEventListener('DOMContentLoaded', () => {
   }, true);
   updateWatchlist();
 })();
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.body.dataset.toolPage) return;
+  const rail=document.querySelector('.workspace-right-rail'), slot=document.getElementById('workspaceSettingsDock');
+  if(!rail||!slot)return;
+  const key='atlas.workspace.rightToolbar.v1';
+  const defaults=[...rail.querySelectorAll(':scope > button')];
+  // These dock functions can also be pinned, without removing their existing tabs.
+  for(const [id,title,glyph] of [['screener','Stock screener','▦'],['strategy','Strategy tester','⌁'],['risk','Returns & risk','◈'],['brownian','Monte Carlo simulations','∿'],['markov','Markov analysis','⇄'],['data','Price history','▤']]){
+    const button=document.createElement('button');button.type='button';button.dataset.researchOpen=id;button.textContent=glyph;button.title=title;button.setAttribute('aria-label',title);rail.insertBefore(button,slot);
+  }
+  const items=[...rail.querySelectorAll(':scope > button')].map(button=>({button,id:button.dataset.sidePanel?'panel:'+button.dataset.sidePanel:'tool:'+button.dataset.researchOpen,label:button.getAttribute('aria-label')}));
+  const known=new Set(items.map(item=>item.id));
+  const defaultIds=items.filter(item=>defaults.includes(item.button)).map(item=>item.id);
+  function read(){try{const value=JSON.parse(localStorage.getItem(key));if(Array.isArray(value)&&value.every(id=>typeof id==='string'))return new Set(value.filter(id=>known.has(id)));}catch{}return new Set(defaultIds);}
+  let selected=read();
+  const trigger=document.createElement('button');trigger.id='customizeRightToolbar';trigger.type='button';trigger.textContent='+';trigger.title='Customize right toolbar';trigger.setAttribute('aria-label','Customize right toolbar');trigger.setAttribute('aria-haspopup','dialog');rail.prepend(trigger);
+  const dialog=document.createElement('dialog');dialog.id='rightToolbarDialog';dialog.setAttribute('aria-labelledby','rightToolbarTitle');
+  dialog.innerHTML='<div class="rail-custom-head"><div><h2 id="rightToolbarTitle">Your chart toolbar</h2><p>Choose the functions you want on the right edge.</p></div><button type="button" id="rightToolbarDone">Done</button></div><label class="rail-custom-search">Find a function<input id="rightToolbarSearch" type="search" placeholder="Search watchlist, screener, portfolio…"></label><div class="rail-custom-actions"><button type="button" id="rightToolbarAll">Show all</button><button type="button" id="rightToolbarNone">Hide all</button><button type="button" id="rightToolbarReset">Restore defaults</button></div><div id="rightToolbarChoices"></div><p id="rightToolbarEmpty" hidden>No matching functions.</p><p id="rightToolbarStatus" role="status"></p><p class="rail-custom-hint">Changes apply immediately and save in this browser. Hidden functions remain available through the analysis library and chart tabs. Settings and this customization button stay accessible.</p>';
+  document.body.append(dialog);
+  const $=id=>document.getElementById(id);
+  for(const group of ['Panels','Analysis tools']){
+    const fieldset=document.createElement('fieldset');const legend=document.createElement('legend');legend.textContent=group;fieldset.append(legend);
+    for(const item of items.filter(item=>item.id.startsWith(group==='Panels'?'panel:':'tool:'))){
+      const label=document.createElement('label');label.dataset.search=item.label.toLowerCase();const input=document.createElement('input');input.type='checkbox';input.value=item.id;input.checked=selected.has(item.id);
+      input.onchange=()=>{input.checked?selected.add(item.id):selected.delete(item.id);apply(true);};label.append(input,document.createTextNode(item.label));fieldset.append(label);
+    }
+    $('rightToolbarChoices').append(fieldset);
+  }
+  function apply(save=false){
+    items.forEach(item=>item.button.hidden=!selected.has(item.id));
+    dialog.querySelectorAll('input[type=checkbox]').forEach(input=>input.checked=selected.has(input.value));
+    const divider=rail.querySelector('.research-rail-separator');if(divider)divider.hidden=!items.some(item=>item.id.startsWith('tool:')&&selected.has(item.id));
+    $('rightToolbarStatus').textContent=`${selected.size} of ${items.length} functions shown.`;
+    if(save)try{localStorage.setItem(key,JSON.stringify([...selected]));$('rightToolbarStatus').textContent+=' Saved.';}catch{$('rightToolbarStatus').textContent+=' Browser storage unavailable; changes last until reload.';}
+  }
+  function search(){let count=0;for(const section of $('rightToolbarChoices').children){let matches=0;section.querySelectorAll('label').forEach(label=>{label.hidden=!label.dataset.search.includes($('rightToolbarSearch').value.trim().toLowerCase());if(!label.hidden)matches++;});section.hidden=!matches;count+=matches;}$('rightToolbarEmpty').hidden=!!count;}
+  trigger.onclick=()=>{$('rightToolbarSearch').value='';search();apply();dialog.showModal();$('rightToolbarSearch').focus();};
+  $('rightToolbarDone').onclick=()=>dialog.close();dialog.addEventListener('close',()=>trigger.focus());
+  dialog.addEventListener('keydown',event=>{if(event.key==='Escape')event.stopPropagation();});
+  $('rightToolbarSearch').oninput=search;
+  $('rightToolbarAll').onclick=()=>{selected=new Set(known);apply(true);};
+  $('rightToolbarNone').onclick=()=>{selected.clear();apply(true);};
+  $('rightToolbarReset').onclick=()=>{selected=new Set(defaultIds);apply(true);};
+  window.addEventListener('storage',event=>{if(event.key===key||event.key===null){selected=read();apply();}});
+  apply();
+});
