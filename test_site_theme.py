@@ -1,6 +1,7 @@
 """A single palette preference follows navigation and synchronizes across tabs."""
 from pathlib import Path
 import tempfile
+import re
 import unittest
 from aiohttp.test_utils import TestServer
 from playwright.async_api import async_playwright, expect
@@ -28,6 +29,8 @@ class SiteThemeTests(unittest.IsolatedAsyncioTestCase):
                         await page.goto(str(server.make_url(path)))
                         await expect(page.locator('html')).to_have_attribute('data-palette','forest')
                         await expect(page.locator(control)).to_have_value('forest')
+                        await expect(page.locator('.scroll-light')).to_have_count(2)
+                        self.assertEqual(await page.evaluate('getComputedStyle(document.documentElement).scrollbarWidth'),'none')
                         self.assertEqual(await page.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--atlas-surface').trim()"),'#101d1b')
                         await page.set_viewport_size({'width':390,'height':844})
                         if path!='/workspace/':
@@ -50,6 +53,24 @@ class SiteThemeTests(unittest.IsolatedAsyncioTestCase):
                     await page.emulate_media(color_scheme='light')
                     await expect(page.locator('html')).to_have_attribute('data-palette','light')
                     await page.goto(str(server.make_url('/')))
+                    await page.evaluate('window.scrollTo(0, 400)')
+                    await expect(page.locator('[data-scroll-light="vertical"]')).to_have_class(re.compile(r'\bis-visible\b'))
+                    self.assertGreater(await page.evaluate('window.scrollY'),0)
+                    self.assertEqual(await page.locator('.scroll-light').first.evaluate('(el)=>getComputedStyle(el).pointerEvents'),'none')
+                    await page.emulate_media(forced_colors='active')
+                    self.assertEqual(await page.evaluate('getComputedStyle(document.documentElement).scrollbarWidth'),'auto')
+                    await page.emulate_media(forced_colors='none',reduced_motion='reduce')
+                    self.assertEqual(await page.locator('.scroll-light').first.evaluate('(el)=>getComputedStyle(el).transitionDuration'),'0s')
+                    await page.emulate_media(reduced_motion='no-preference')
+                    await page.evaluate('''() => {
+                      const panel=document.createElement('div'); panel.id='scrollTest';
+                      panel.style.cssText='position:fixed;top:100px;left:20px;width:250px;height:100px;overflow:auto';
+                      const content=document.createElement('div');content.style.cssText='width:1000px;height:80px';
+                      panel.append(content);document.body.append(panel);panel.scrollLeft=200;
+                    }''')
+                    await expect(page.locator('[data-scroll-light="horizontal"]')).to_have_class(re.compile(r'\bis-visible\b'))
+                    await page.locator('#scrollTest').evaluate('(el)=>el.remove()')
+                    await page.evaluate('window.scrollTo(0, 0)')
                     await page.screenshot(path=str(Path(__file__).parent/'data/home-theme-light.png'))
                     await page.get_by_label('Site theme').select_option('dark')
                     await page.screenshot(path=str(Path(__file__).parent/'data/home-theme-dark.png'))

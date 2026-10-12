@@ -60,3 +60,12 @@ body.site-home{background:var(--atlas-surface);color:var(--atlas-text)}
 .tool-header .tool-theme-label{white-space:nowrap}
 @media(max-width:700px){.site-theme-control select{min-height:38px}.site-account header .chart-link{font-size:11px}.site-login header .brand span{display:none}.site-home .site-header{padding-inline:16px}.site-home .search{left:16px;right:16px}.tool-header .tool-brand{min-width:28px}.tool-header-actions{min-width:0}}
 @media(prefers-reduced-motion:reduce){.site-home .outline-button,.site-home .start-button,.site-login .primary,.site-account .primary{transition:none}}
+
+/* Scroll position is a soft edge light; native scrolling remains untouched. */
+html.scroll-light-ready,html.scroll-light-ready *{scrollbar-width:none!important}
+html.scroll-light-ready::-webkit-scrollbar,html.scroll-light-ready *::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+.scroll-light{position:fixed;z-index:2147483000;pointer-events:none;user-select:none;opacity:0;transition:opacity .35s ease;contain:layout style;filter:blur(2px);border-radius:50%;background:radial-gradient(ellipse,var(--atlas-accent) 0%,color-mix(in srgb,var(--atlas-accent) 45%,transparent) 35%,transparent 74%)}
+.scroll-light.is-visible{opacity:.42}.scroll-light.is-scrolling{opacity:.8;filter:blur(1.5px)}
+@media(prefers-reduced-motion:reduce){.scroll-light{transition:none}}
+@media(forced-colors:active){html.scroll-light-ready,html.scroll-light-ready *{scrollbar-width:auto!important}html.scroll-light-ready::-webkit-scrollbar,html.scroll-light-ready *::-webkit-scrollbar{display:revert!important;width:revert!important;height:revert!important}.scroll-light{display:none!important}}
+@media print{.scroll-light{display:none!important}}
