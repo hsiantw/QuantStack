@@ -1,0 +1,95 @@
+"""A single palette preference follows navigation and synchronizes across tabs."""
+from pathlib import Path
+import tempfile
+import re
+import unittest
+from aiohttp.test_utils import TestServer
+from playwright.async_api import async_playwright, expect
+from serve_quantstack import create_app
+
+
+class SiteThemeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_global_theme_navigation_sync_and_mobile(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            (root/'symbols.json').write_text('[]')
+            (root/'screener.json').write_text('{"rows":[]}')
+            server=TestServer(create_app('',snapshot_dir=root,accounts_path=root/'accounts.sqlite'))
+            await server.start_server()
+            try:
+                async with async_playwright() as p:
+                    browser=await p.chromium.launch(channel='msedge',headless=True)
+                    context=await browser.new_context(viewport={'width':1440,'height':1000},color_scheme='light')
+                    page=await context.new_page()
+                    errors=[]
+                    page.on('pageerror',lambda error:errors.append(str(error)))
+                    await page.goto(str(server.make_url('/')))
+                    await page.get_by_label('Site theme').select_option('forest')
+                    for path, control in [('/','[data-site-theme]'),('/login','[data-site-theme]'),('/account','[data-site-theme]'),('/screener','#toolTheme'),('/portfolio','#toolTheme'),('/workspace/','#workspaceTheme'),('/workspace/architecture.html','#mapTheme'),('/workspace/interview-prep.html','#prepTheme')]:
+                        await page.goto(str(server.make_url(path)))
+                        await expect(page.locator('html')).to_have_attribute('data-palette','forest')
+                        await expect(page.locator(control)).to_have_value('forest')
+                        await expect(page.locator('.scroll-light')).to_have_count(2)
+                        self.assertEqual(await page.evaluate('getComputedStyle(document.documentElement).scrollbarWidth'),'none')
+                        self.assertEqual(await page.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--atlas-surface').trim()"),'#101d1b')
+                        await page.set_viewport_size({'width':390,'height':844})
+                        if path!='/workspace/':
+                            await expect(page.locator(control)).to_be_visible()
+                            self.assertTrue(await page.evaluate('document.documentElement.scrollWidth <= innerWidth'),path)
+                        await page.set_viewport_size({'width':1440,'height':1000})
+                    await page.goto(str(server.make_url('/login')))
+                    for palette in ['light','dark','midnight','forest','paper']:
+                        await page.get_by_label('Site theme').select_option(palette)
+                        await expect(page.locator('html')).to_have_attribute('data-palette',palette)
+                    other=await context.new_page()
+                    await other.goto(str(server.make_url('/screener')))
+                    await expect(other.locator('#toolTheme')).to_have_value('paper')
+                    await page.get_by_label('Site theme').select_option('dark')
+                    await expect(other.locator('#toolTheme')).to_have_value('dark')
+                    await expect(other.locator('html')).to_have_attribute('data-palette','dark')
+                    await page.get_by_label('Site theme').select_option('system')
+                    await page.emulate_media(color_scheme='dark')
+                    await expect(page.locator('html')).to_have_attribute('data-palette','dark')
+                    await page.emulate_media(color_scheme='light')
+                    await expect(page.locator('html')).to_have_attribute('data-palette','light')
+                    await page.goto(str(server.make_url('/')))
+                    await page.evaluate('window.scrollTo(0, 400)')
+                    await expect(page.locator('[data-scroll-light="vertical"]')).to_have_class(re.compile(r'\bis-visible\b'))
+                    self.assertGreater(await page.evaluate('window.scrollY'),0)
+                    self.assertEqual(await page.locator('.scroll-light').first.evaluate('(el)=>getComputedStyle(el).pointerEvents'),'none')
+                    await page.emulate_media(forced_colors='active')
+                    self.assertEqual(await page.evaluate('getComputedStyle(document.documentElement).scrollbarWidth'),'auto')
+                    await page.emulate_media(forced_colors='none',reduced_motion='reduce')
+                    self.assertEqual(await page.locator('.scroll-light').first.evaluate('(el)=>getComputedStyle(el).transitionDuration'),'0s')
+                    await page.emulate_media(reduced_motion='no-preference')
+                    await page.evaluate('''() => {
+                      const panel=document.createElement('div'); panel.id='scrollTest';
+                      panel.style.cssText='position:fixed;top:100px;left:20px;width:250px;height:100px;overflow:auto';
+                      const content=document.createElement('div');content.style.cssText='width:1000px;height:80px';
+                      panel.append(content);document.body.append(panel);panel.scrollLeft=200;
+                    }''')
+                    await expect(page.locator('[data-scroll-light="horizontal"]')).to_have_class(re.compile(r'\bis-visible\b'))
+                    await page.locator('#scrollTest').evaluate('(el)=>el.remove()')
+                    await page.evaluate('window.scrollTo(0, 0)')
+                    await page.screenshot(path=str(Path(__file__).parent/'data/home-theme-light.png'))
+                    await page.get_by_label('Site theme').select_option('dark')
+                    await page.screenshot(path=str(Path(__file__).parent/'data/home-theme-dark.png'))
+                    await page.goto(str(server.make_url('/login')))
+                    await page.get_by_label('Site theme').select_option('light')
+                    await page.get_by_role('button',name='Search pages and tools').click()
+                    await expect(page.locator('#siteNavigator')).to_be_visible()
+                    await page.locator('#navigatorQuery').fill('crypto')
+                    await expect(page.locator('#navigatorResults a')).to_have_count(1)
+                    await page.locator('#navigatorQuery').press('ArrowDown')
+                    await expect(page.locator('#navigatorResults a')).to_be_focused()
+                    await page.keyboard.press('Escape')
+                    await expect(page.get_by_role('button',name='Search pages and tools')).to_be_focused()
+                    await page.keyboard.press('Control+k')
+                    await page.locator('#navigatorQuery').fill('nothing-matches-this')
+                    await expect(page.locator('#navigatorCount')).to_contain_text('No matching tools')
+                    await page.keyboard.press('Escape')
+                    await page.screenshot(path=str(Path(__file__).parent/'data/login-theme-light.png'))
+                    self.assertFalse(errors,errors)
+                    await browser.close()
+            finally:
+                await server.close()
