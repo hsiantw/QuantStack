@@ -499,24 +499,24 @@
   chartUtilities.className = 'chart-utilities';
   chartUtilities.innerHTML = '<button type="button" id="chartShare">Share chart link</button><button type="button" id="chartShortcuts">Keyboard shortcuts</button>';
   $('terminalSettingsDialog').querySelector('.terminal-dialog-foot').before(chartUtilities);
-  let utilityOpener;
+  let utilityOpener, utilityFromSettings = false;
   const dialog = document.createElement('dialog');
   dialog.id = 'chartHomeDialog';
   dialog.innerHTML = `<div class="dialog-head"><h2 id="chartHomeTitle">Chart workspace</h2><button id="chartHomeClose" aria-label="Close">×</button></div><div id="chartHomeContent"></div>`;
   dialog.setAttribute('aria-labelledby', 'chartHomeTitle');
   document.body.append(dialog);
-  dialog.addEventListener('close', () => { $('terminalSettingsDialog').showModal(); utilityOpener?.focus(); });
+  dialog.addEventListener('close', () => { if (utilityFromSettings) $('terminalSettingsDialog').showModal(); utilityOpener?.focus(); });
   $('chartHomeClose').onclick = () => dialog.close();
   dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
   $('chartShortcuts').onclick = () => {
-    utilityOpener = document.activeElement; $('terminalSettingsDialog').close();
+    utilityOpener = document.activeElement; utilityFromSettings = $('terminalSettingsDialog').open; $('terminalSettingsDialog').close();
     $('chartHomeTitle').textContent = 'Keyboard shortcuts';
-    $('chartHomeContent').innerHTML = `<dl><dt>Search symbols</dt><dd><kbd>/</kbd></dd><dt>Compare symbols</dt><dd><kbd>Alt + C</kbd></dd><dt>Go to date</dt><dd><kbd>Alt + G</kbd></dd><dt>Undo drawing</dt><dd><kbd>Ctrl + Z</kbd></dd><dt>Redo drawing</dt><dd><kbd>Ctrl + Y</kbd></dd><dt>Cancel drawing / close dialog</dt><dd><kbd>Esc</kbd></dd></dl>`;
+    $('chartHomeContent').innerHTML = `<dl><dt>Search symbols</dt><dd><kbd>/</kbd> or <kbd>Ctrl / ⌘ + K</kbd></dd><dt>Focus chart / restore panels</dt><dd><kbd>Alt + F</kbd></dd><dt>Keyboard shortcuts</dt><dd><kbd>?</kbd></dd><dt>Navigate watchlist or search</dt><dd><kbd>↑ / ↓</kbd> then <kbd>Enter</kbd></dd><dt>Compare symbols</dt><dd><kbd>Alt + C</kbd></dd><dt>Go to date</dt><dd><kbd>Alt + G</kbd></dd><dt>Undo drawing</dt><dd><kbd>Ctrl / ⌘ + Z</kbd></dd><dt>Redo drawing</dt><dd><kbd>Ctrl / ⌘ + Y</kbd></dd><dt>Cancel drawing / close dialog / exit focus</dt><dd><kbd>Esc</kbd></dd></dl>`;
     dialog.showModal();
   };
   $('chartShare').onclick = () => {
     if (!selected) return;
-    utilityOpener = document.activeElement; $('terminalSettingsDialog').close();
+    utilityOpener = document.activeElement; utilityFromSettings = $('terminalSettingsDialog').open; $('terminalSettingsDialog').close();
     const url = new URL(location.href);
     url.search = new URLSearchParams(state()).toString();
     $('chartHomeTitle').textContent = 'Share chart';

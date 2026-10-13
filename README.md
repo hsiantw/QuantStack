@@ -1,5 +1,15 @@
 # QuantStack
 
+The chart workspace has a compact chart toolbar, a denser watchlist, and a
+full-dataset symbol picker. Click the symbol or press **/** or **Ctrl/Cmd+K**
+to search tickers and company names, filter stocks/crypto, and revisit recent
+symbols. Use **↑/↓** then **Enter** to open a result. The watchlist also supports
+arrow-key navigation. **Alt+F** enters chart focus mode; **Escape** restores
+the previous panels. The **?** button lists shortcuts. On small screens,
+tap outside the side panel to dismiss it. Quotes remain labeled as stored data.
+Run `python -m unittest test_workspace_experience` for interaction and responsive
+browser checks.
+
 All pages share one theme preference: System, Light, Dark, Midnight, Forest,
 or Paper. Use the Theme selector in the page header (chart settings in the
 workspace). It follows navigation and synchronizes across open tabs using

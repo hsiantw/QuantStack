@@ -1,0 +1,49 @@
+.workspace .workspace-symbol-shortcut{font-family:inherit;font-size:10px;line-height:1.4;color:var(--atlas-muted,#777e89);border:1px solid var(--atlas-border,#e3e5e9);border-radius:4px;padding:1px 4px;white-space:nowrap}
+.workspace #workspaceSymbolDialog{box-sizing:border-box;width:min(680px,calc(100vw - 32px));max-width:none;max-height:min(740px,calc(100dvh - 64px));padding:0;margin:auto;border:1px solid var(--atlas-border,#e3e5e9);border-radius:12px;background:var(--atlas-surface,#fff);color:var(--atlas-text,#20242c);box-shadow:0 24px 100px #0004;font:13px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;overflow:hidden}
+.workspace #workspaceSymbolDialog[open]{display:flex;flex-direction:column}
+.workspace #workspaceSymbolDialog::backdrop{background:#0b122b66;backdrop-filter:blur(3px)}
+#workspaceSymbolDialog [hidden]{display:none!important}
+#workspaceSymbolDialog button,#workspaceSymbolDialog input{font:inherit;color:inherit}
+#workspaceSymbolDialog button{cursor:pointer}
+#workspaceSymbolDialog :focus-visible{outline:2px solid var(--atlas-accent,#2962ff);outline-offset:2px}
+.workspace-symbol-search-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:21px 24px 16px;flex:none}
+.workspace-symbol-search-heading h2{font-size:22px;font-weight:650;letter-spacing:-.5px;margin:0}
+#workspaceSymbolSearchClose,#workspaceSymbolSearchClear{display:grid;place-items:center;width:34px;height:34px;flex:none;padding:7px;border:0;border-radius:6px;background:transparent;color:var(--atlas-muted,#777e89)}
+#workspaceSymbolSearchClose:hover,#workspaceSymbolSearchClear:hover{background:var(--atlas-hover,#f0f2f5);color:var(--atlas-text,#20242c)}
+.workspace-symbol-search-heading svg,.workspace-symbol-search-field>svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+.workspace-symbol-search-field{display:flex;align-items:center;gap:12px;padding:8px 23px;border-block:1px solid var(--atlas-border,#e3e5e9);flex:none;color:var(--atlas-muted,#777e89)}
+.workspace-symbol-search-field:focus-within{box-shadow:inset 3px 0 var(--atlas-accent,#2962ff)}
+#workspaceSymbolSearchInput{min-width:0;flex:1;height:38px;border:0;border-radius:0;padding:5px 0;outline:none;background:transparent;font-size:16px;color:var(--atlas-text,#20242c);box-shadow:none}
+#workspaceSymbolSearchInput::placeholder{color:var(--atlas-muted,#777e89);opacity:1}
+#workspaceSymbolSearchInput::-webkit-search-cancel-button{display:none}
+#workspaceSymbolSearchClear{font-size:23px;padding:0;width:28px;height:28px}
+.workspace-symbol-search-filters{display:flex;gap:7px;padding:16px 24px 12px;flex:none}
+#workspaceSymbolSearchFilters button{border:1px solid transparent;border-radius:6px;background:var(--atlas-raised,#f6f7fa);color:var(--atlas-muted,#777e89);padding:7px 15px;min-height:34px;font-size:12px;font-weight:550}
+#workspaceSymbolSearchFilters button:hover{color:var(--atlas-text,#20242c);background:var(--atlas-hover,#eef2fa)}
+#workspaceSymbolSearchFilters button[aria-pressed=true]{color:var(--atlas-accent,#2962ff);background:var(--atlas-hover,#eef2fa);border-color:var(--atlas-accent,#2962ff)}
+.workspace-symbol-search-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 24px 10px;min-height:28px;flex:none;color:var(--atlas-muted,#777e89);font-size:11px}
+#workspaceSymbolSearchClearRecent{border:0;background:transparent;padding:3px 0;font-size:11px;color:var(--atlas-accent,#2962ff)}
+#workspaceSymbolSearchClearRecent:hover{text-decoration:underline}
+#workspaceSymbolSearchResults{overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;min-height:0;flex:1;border-top:1px solid var(--atlas-border,#e3e5e9)}
+.workspace-symbol-search-option{display:flex;align-items:center;gap:12px;min-height:63px;padding:9px 24px;border-left:3px solid transparent;box-sizing:border-box;cursor:pointer;color:var(--atlas-text,#20242c)}
+.workspace-symbol-search-option[aria-selected=true]{background:var(--atlas-hover,#eef2fa);border-left-color:var(--atlas-accent,#2962ff)}
+.workspace-symbol-search-avatar{display:grid;place-items:center;flex:none;width:32px;height:32px;border:1px solid var(--atlas-border,#e3e5e9);border-radius:50%;font-size:10px;font-weight:700;color:var(--atlas-accent,#2962ff);background:var(--atlas-raised,#f6f7fa)}
+.workspace-symbol-search-avatar.is-crypto{border-radius:9px}
+.workspace-symbol-search-identity{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.workspace-symbol-search-ticker{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:650;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.workspace-symbol-search-recent{font-size:9px;font-weight:400;color:var(--atlas-muted,#777e89);padding:1px 5px;border:1px solid var(--atlas-border,#e3e5e9);border-radius:4px}
+.workspace-symbol-search-company{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--atlas-muted,#777e89)}
+.workspace-symbol-search-venue{display:flex;flex-direction:column;gap:4px;flex:none;max-width:140px;text-align:right;font-size:11px;color:var(--atlas-muted,#777e89)}
+.workspace-symbol-search-venue>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workspace-symbol-search-venue small{font-size:10px;opacity:.8}
+.workspace-symbol-search-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:56px 24px 64px;border-top:1px solid var(--atlas-border,#e3e5e9);min-height:150px}
+.workspace-symbol-search-empty strong{font-size:16px;font-weight:600}
+.workspace-symbol-search-empty p{max-width:340px;margin:10px 0 0;font-size:12px;color:var(--atlas-muted,#777e89);line-height:1.7}
+#workspaceSymbolSearchMore{flex:none;border:0;border-top:1px solid var(--atlas-border,#e3e5e9);background:var(--atlas-surface,#fff);color:var(--atlas-accent,#2962ff);padding:12px 20px;font-size:12px;min-height:44px}
+#workspaceSymbolSearchMore:hover{background:var(--atlas-hover,#eef2fa)}
+.workspace-symbol-search-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;flex:none;border-top:1px solid var(--atlas-border,#e3e5e9);background:var(--atlas-raised,#f6f7fa);color:var(--atlas-muted,#777e89);padding:12px 24px;font-size:10px}
+.workspace-symbol-search-keys{display:flex;align-items:center;gap:5px}
+.workspace-symbol-search-keys kbd{font-family:inherit;font-size:10px;line-height:1.3;padding:2px 4px;border:1px solid var(--atlas-border,#e3e5e9);border-radius:3px;background:var(--atlas-surface,#fff)}
+.workspace-symbol-search-keys kbd:not(:first-child){margin-left:4px}
+@media(max-width:1100px){.workspace .workspace-symbol-shortcut{display:none}}
+@media(max-width:600px){.workspace #workspaceSymbolDialog{width:calc(100vw - 20px);max-height:calc(100dvh - 32px);border-radius:10px}.workspace-symbol-search-heading{padding:17px 16px 12px}.workspace-symbol-search-heading h2{font-size:20px}.workspace-symbol-search-field{padding:8px 16px;gap:9px}.workspace-symbol-search-filters{padding:14px 16px 10px}.workspace-symbol-search-summary{padding-inline:16px}.workspace-symbol-search-option{padding:9px 14px;gap:10px}.workspace-symbol-search-venue{max-width:78px;font-size:10px}.workspace-symbol-search-company{font-size:11px}.workspace-symbol-search-footer{padding:11px 16px}.workspace-symbol-search-keys{display:none}#workspaceSymbolSearchFilters button{min-height:40px;padding:8px 15px}#workspaceSymbolSearchClose{width:40px;height:40px}.workspace-symbol-search-empty{padding:42px 20px}}

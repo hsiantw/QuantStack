@@ -19,7 +19,7 @@ def run():
                 page.goto(f'http://127.0.0.1:{server.server_port}')
                 page.wait_for_function("typeof rows !== 'undefined' && rows.length > 0")
                 if width < 600:
-                    page.locator('#workspaceSymbol').click()
+                    page.locator('#workspaceWatchlistToggle').click()
                 expect(page.locator('#workspaceSideWatchlist #schedulerButton')).to_be_visible()
                 expect(page.locator('#watchlistCollectionTitle')).to_have_text('LOCAL DATA COLLECTION')
                 page.locator('#schedulerButton').click()

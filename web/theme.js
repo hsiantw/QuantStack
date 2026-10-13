@@ -155,14 +155,19 @@ document.addEventListener('DOMContentLoaded', () => {
       links[(index+(event.key==='ArrowDown'?1:-1)+links.length)%links.length].focus();
     }else if(event.key==='Enter'&&document.activeElement===query){event.preventDefault();links[0]?.click();}
   });
+  const chartWorkspace = document.body.classList.contains('workspace') && !document.body.dataset.toolPage;
   document.addEventListener('keydown',event=>{
     const editing=event.target.closest?.('input,textarea,select,[contenteditable="true"],.ProseMirror');
+    if(chartWorkspace){
+      if(!editing && event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && event.key.toLowerCase()==='k'){event.preventDefault();open();}
+      return;
+    }
     if(((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k')||(!editing&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&event.key==='/')){event.preventDefault();open();}
   });
-  const button=document.createElement('button');button.type='button';button.className='site-navigator-trigger';button.setAttribute('aria-label','Search pages and tools');button.setAttribute('aria-haspopup','dialog');button.innerHTML='<span>Go to</span><kbd>Ctrl K</kbd>';button.onclick=open;
+  const button=document.createElement('button');button.type='button';button.className='site-navigator-trigger';button.setAttribute('aria-label','Search pages and tools');button.setAttribute('aria-haspopup','dialog');button.innerHTML=chartWorkspace?'<span>Tools</span><kbd>Alt K</kbd>':'<span>Go to</span><kbd>Ctrl K</kbd>';button.title=chartWorkspace?'Search pages and tools (Alt+K)':'Search pages and tools (Ctrl+K)';button.onclick=open;
   // Tool headers are built by their page script; defer insertion until that exists.
   const mount=()=>{
-    const header=document.querySelector('.tool-header-actions,.site-header,.topbar .header-tools,body > header nav,body > header,.prep-toolbar');
+    const header=chartWorkspace?document.querySelector('.header-actions'):document.querySelector('.tool-header-actions,.site-header,.topbar .header-tools,body > header nav,body > header,.prep-toolbar');
     if(header)header.prepend(button);else{button.classList.add('navigator-floating');document.body.append(button);}
   };
   requestAnimationFrame(mount);
