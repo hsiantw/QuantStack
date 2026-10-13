@@ -585,6 +585,8 @@ class Handler(BaseHTTPRequestHandler):
                          '/notes.js': ('notes.js', 'text/javascript'),
                          '/research.js': ('research.js', 'text/javascript'),
                          '/accounts.js': ('accounts.js', 'text/javascript'),
+                         '/site-theme.css': ('site-theme.css', 'text/css'),
+                         '/home-navigation.js': ('home-navigation.js', 'text/javascript'),
                          '/market-overview.js': ('market-overview.js', 'text/javascript'),
                          '/market-overview.css': ('market-overview.css', 'text/css'),
                          '/research-engine.js': ('research-engine.js', 'text/javascript'),

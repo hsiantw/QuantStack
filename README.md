@@ -1,5 +1,42 @@
 # QuantStack
 
+All pages share one theme preference: System, Light, Dark, Midnight, Forest,
+or Paper. Use the Theme selector in the page header (chart settings in the
+workspace). It follows navigation and synchronizes across open tabs using
+`atlas.theme`. System follows the device appearance. Saving an account theme
+also applies it immediately in this browser. The home-page Earth artwork keeps
+its dark photographic background while navigation and other content follow
+the selected palette. Run `python -m unittest test_site_theme` for cross-page,
+cross-tab, mobile, and system-appearance checks.
+
+Dedicated full-page tools are available at `/screener`, `/markets`, `/portfolio`,
+`/strategy`, `/options`, `/risk`, and the other destinations in **All tools**.
+Each page has shared navigation, theme selection, and a link back into charts.
+Symbol-specific tools include symbol, interval, and date controls. Screener
+filters, saved screens, sorting, columns, and CSV exports use the same storage
+and calculations as the chart workspace. Market and screener symbols open charts.
+Universe tools skip loading unrelated chart history. Run
+`python -m unittest test_tool_pages` for dedicated-page browser checks.
+
+The standalone screener uses compact filter dropdowns above the table. Each
+dropdown offers presets and **Manual setup**; **+** searches all supported
+filters. Manual setup groups descriptive, fundamental, performance and technical
+conditions in a grid. Edit up to 20 numeric rules, including multiple rules on
+the same field, preview matches, then **Apply filters** together. Cancel/Escape
+discards the draft. Descriptive filters always combine with AND; numeric rules
+can use AND or OR. Currency and units are explicit, and missing metrics only
+match an explicit missing-value condition. Saved screens use the same existing
+browser storage. Run `python -m unittest test_screener_manual test_tool_pages`
+for manual filter, table, navigation, and responsive checks.
+
+The root address now opens the QuantStack home page, with a symbol search and
+an **Explore** menu at the top right. Products, Markets, and Research link to
+dedicated pages. Charts remain at `/workspace/`, sign-in at `/login`,
+and account settings at `/account`. The chart logo returns to the home page.
+Analysis links such as `/workspace/#tool=portfolio` open the requested panel
+after chart initialization. Run `python -m unittest test_home test_login
+test_quantstack_gateway` to check the entry flow and routing.
+
 Use **+ Add symbols** in the chart watchlist to enroll stock/ETF tickers or crypto
 USD pairs in the local collector. Paste up to 100 symbols separated by commas or
 spaces; crypto inputs such as `BTC ETH` become `BTC-USD ETH-USD`. Saving merges

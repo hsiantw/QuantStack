@@ -127,14 +127,8 @@
   const sourceURL = path => data.publishedFiles.includes(path) ? `https://github.com/hsiantw/QuantStack/blob/${data.publishedCommit}/${path.split('/').map(encodeURIComponent).join('/')}` : null;
   $('revisionLink').href = '#merkle';
   $('revisionLink').title = 'Inspect the captured local commit and its verified tree hash';
-  const systemTheme = matchMedia('(prefers-color-scheme: dark)');
-  let theme = 'system';
-  try { theme = localStorage.getItem('atlas.architecture.theme') || 'system'; } catch {}
-  if (!['system','light','dark'].includes(theme)) theme = 'system';
-  function applyTheme() { document.documentElement.dataset.theme = theme === 'system' ? systemTheme.matches ? 'dark' : 'light' : theme; }
-  applyTheme(); $('mapTheme').value = theme;
-  $('mapTheme').onchange = event => { theme = event.target.value; try { localStorage.setItem('atlas.architecture.theme', theme); } catch {} applyTheme(); renderDiagram(); };
-  systemTheme.addEventListener('change', () => { if (theme === 'system') { applyTheme(); renderDiagram(); } });
+  window.atlasTheme.bind($('mapTheme'));
+  window.addEventListener('atlas-theme-change', () => renderDiagram());
   function element(tag, attributes = {}, text) { const node = document.createElementNS(NS, tag); Object.entries(attributes).forEach(([key,value]) => node.setAttribute(key, value)); if (text !== undefined) node.textContent = text; return node; }
   function inspect(node) {
     selectedNode = node.id; $('nodeTitle').textContent = node.title; $('nodeDescription').textContent = node.detail;
