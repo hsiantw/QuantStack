@@ -117,7 +117,7 @@
       const order=missing(x)?0:numeric?x-y:x.localeCompare(y,undefined,{numeric:true});
       return (state.view.direction==='asc'?order:-order)||a.symbol.localeCompare(b.symbol);
     }),
-    header:()=>`<div class="watchlist-column-head">${['symbol',...state.view.columns].map(key=>`<button type="button" data-watchlist-sort="${key}" title="${esc(key==='symbol'?'Sort by symbol':fields[key].help)}" aria-label="Sort by ${esc(key==='symbol'?'symbol':fields[key].name)}" aria-pressed="${state.view.sort===key}">${key==='symbol'?'Symbol':fields[key].short}${state.view.sort===key?(state.view.direction==='asc'?' ↑':' ↓'):''}</button>`).join('')}</div>`,
+    header:()=>`<div class="watchlist-column-head" title="Right-click to add or remove columns">${['symbol',...state.view.columns].map(key=>`<button type="button" data-watchlist-sort="${key}" title="${esc(key==='symbol'?'Sort by symbol':fields[key].help)} · Right-click to edit columns" aria-label="Sort by ${esc(key==='symbol'?'symbol':fields[key].name)}" aria-haspopup="menu" aria-pressed="${state.view.sort===key}">${key==='symbol'?'Symbol':fields[key].short}${state.view.sort===key?(state.view.direction==='asc'?' ↑':' ↓'):''}</button>`).join('')}</div>`,
     content:asset=>`<button class="asset watchlist-table-asset ${asset.symbol===selected?.symbol?'active':''}" data-symbol="${esc(asset.symbol)}"><span class="asset-info"><strong>${esc(asset.symbol)}${saved.has(asset.symbol)?' ★':''}</strong>${state.view.names?`<small>${esc(asset.name)}</small>`:''}</span>${state.view.columns.map(key=>metric(asset,key)).join('')}</button>`,
     accepts:symbol=>{
       const list=state.lists.find(l=>l.id===state.active);
@@ -136,10 +136,16 @@
 
   // A single bounded popover serves mouse, touch and keyboard entry points.
   const menu=document.createElement('div');menu.id='watchlistMenu';menu.className='watchlist-menu';menu.setAttribute('role','menu');menu.hidden=true;document.body.append(menu);
-  let anchor={x:0,y:0};
-  function closeMenu(restore=true) {menu.hidden=true;manage.setAttribute('aria-expanded','false');if(restore){const focus=opener?.isConnected?opener:target?$('assets').querySelector(`[data-watchlist-menu="${CSS.escape(target)}"]`)||selector:selector;focus.focus({preventScroll:true});}}
+  let anchor={x:0,y:0}, columnOrigin='symbol';
+  function closeMenu(restore=true) {menu.hidden=true;manage.setAttribute('aria-expanded','false');if(restore){const focus=menu.dataset.mode==='columns'?$('assets').querySelector(`[data-watchlist-sort="${CSS.escape(columnOrigin)}"]`)||$('assets').querySelector('[data-watchlist-sort="symbol"]')||$('watchlistColumns'):opener?.isConnected?opener:target?$('assets').querySelector(`[data-watchlist-menu="${CSS.escape(target)}"]`)||selector:selector;focus.focus({preventScroll:true});}}
   function position() {menu.style.left='0px';menu.style.top='0px';const box=menu.getBoundingClientRect();menu.style.left=Math.max(8,Math.min(anchor.x,innerWidth-box.width-8))+'px';menu.style.top=Math.max(8,Math.min(anchor.y,innerHeight-box.height-8))+'px';}
-  function showMenu(html,label) {menu.innerHTML=html;menu.setAttribute('aria-label',label);menu.hidden=false;position();menu.querySelector('button:not(:disabled)')?.focus({preventScroll:true});}
+  function showMenu(html,label,mode='') {menu.innerHTML=html;menu.dataset.mode=mode;menu.setAttribute('aria-label',label);menu.hidden=false;position();menu.querySelector('button:not(:disabled)')?.focus({preventScroll:true});}
+  function columnMenu(focusKey) {
+    const option=(key,label,checked,disabled=false)=>`<button type="button" role="menuitemcheckbox" data-watchlist-toggle="${key}" aria-checked="${checked}"${disabled?' disabled':''}><span>${esc(label)}</span><span aria-hidden="true">${checked?'✓':''}</span></button>`;
+    showMenu('<div class="watchlist-menu-title">Watchlist columns</div>'+option('symbol','Symbol (always shown)',true,true)+Object.entries(fields).map(([key,field])=>option(key,field.name,state.view.columns.includes(key))).join('')+'<hr>'+option('names','Company / instrument name',state.view.names)+'<hr><button type="button" role="menuitem" data-watchlist-toggle="defaults">Restore default columns</button>', 'Watchlist columns', 'columns');
+    if(focusKey)menu.querySelector(`[data-watchlist-toggle="${CSS.escape(focusKey)}"]`)?.focus({preventScroll:true});
+  }
+  function openColumns(element,x,y) {target=null;opener=element;columnOrigin=element?.dataset.watchlistSort||'symbol';anchor={x,y};columnMenu();}
   const action=(name,label,disabled=false)=>`<button type="button" role="menuitem" data-action="${name}"${disabled?' disabled':''}>${label}</button>`;
   function instrumentMenu() {
     const color=state.labels[target],list=state.active==='saved'?choices()[0]:activeList();
@@ -150,6 +156,8 @@
   }
   function openInstrument(symbol,element,x,y) {target=symbol;opener=element;anchor={x,y};instrumentMenu();}
   $('assets').addEventListener('contextmenu',event=>{
+    const header=event.target.closest('.watchlist-column-head');
+    if(header){event.preventDefault();openColumns(event.target.closest('[data-watchlist-sort]')||header.querySelector('button'),event.clientX,event.clientY);return;}
     const row=event.target.closest('.watchlist-row'),button=row?.querySelector('.asset');if(!button)return;
     event.preventDefault();openInstrument(button.dataset.symbol,button,event.clientX,event.clientY);
   });
@@ -159,6 +167,8 @@
   },true);
   $('assets').addEventListener('keydown',event=>{
     if(event.key!=='ContextMenu'&&!(event.shiftKey&&event.key==='F10'))return;
+    const header=event.target.closest('[data-watchlist-sort]');
+    if(header){event.preventDefault();event.stopPropagation();const box=header.getBoundingClientRect();openColumns(header,box.left,box.bottom);return;}
     const button=event.target.closest('.asset');if(!button)return;
     event.preventDefault();event.stopPropagation();const box=button.getBoundingClientRect();openInstrument(button.dataset.symbol,button,box.left,box.bottom);
   });
@@ -176,9 +186,18 @@
     items[next]?.focus();
   });
   document.addEventListener('pointerdown',event=>{if(!menu.hidden&&!menu.contains(event.target)&&!manage.contains(event.target))closeMenu(false);});
-  window.addEventListener('resize',()=>closeMenu(false));$('assets').addEventListener('scroll',()=>closeMenu(false));
+  window.addEventListener('resize',()=>closeMenu(false));$('assets').addEventListener('scroll',()=>{if(!menu.hidden&&menu.dataset.mode==='columns')position();else closeMenu(false);});
   menu.onclick=async event=>{
     const button=event.target.closest('button');if(!button||button.disabled)return;
+    if(button.dataset.watchlistToggle){
+      const key=button.dataset.watchlistToggle;
+      mutate(next=>{
+        if(key==='defaults'){next.view.columns=defaultView().columns;next.view.names=true;}
+        else if(key==='names')next.view.names=!next.view.names;
+        else if(Object.hasOwn(fields,key)){const checked=!next.view.columns.includes(key);next.view.columns=Object.keys(fields).filter(field=>field===key?checked:next.view.columns.includes(field));}
+      },'');
+      columnMenu(key);return;
+    }
     if(button.dataset.color){const color=button.dataset.color,removing=state.labels[target]===color;mutate(next=>{if(removing)delete next.labels[target];else next.labels[target]=color;},`${target}: ${removing?'label cleared':title(color)+' label saved'}. Saved in this browser; color watchlists updated.`);closeMenu();return;}
     if(button.dataset.list){toggleMembership(button.dataset.list,target);listMenu();return;}
     switch(button.dataset.action) {

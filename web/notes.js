@@ -239,7 +239,7 @@
     }
     window.addEventListener('storage', onStorage);
     cleanup = () => { rich.destroy(); clearTimeout(timer); clearTimeout(searchTimer); window.removeEventListener('storage', onStorage); };
-    try { notes = read(); customCategories = readCategories(); show(notes.find(n => n.id === selectedId) || notes.filter(n => !n.trashed && !n.archived).sort((a,b) => b.updatedAt.localeCompare(a.updatedAt))[0] || null); }
+    try { notes = read(); customCategories = readCategories(); const requestedId = new URLSearchParams(location.search).get('note'); show(notes.find(n => n.id === selectedId) || notes.find(n => n.id === requestedId && !n.trashed && !n.archived) || notes.filter(n => !n.trashed && !n.archived).sort((a,b) => b.updatedAt.localeCompare(a.updatedAt))[0] || null); }
     catch (error) { blocked = true; show(null); editor.inert = true; el('ideaNew').disabled = true; status(error.message, true); }
   }
 })();

@@ -107,7 +107,7 @@
 // Shared destination search: local navigation only, no extra market-data requests.
 document.addEventListener('DOMContentLoaded', () => {
   const destinations = [
-    ['Home','/','Start and explore'],['Charts','/workspace/','Symbols, drawings and indicators'],
+    ['Home','/','Start and explore'],['Dashboard','/dashboard','Your saved work and interview progress'],['Charts','/workspace/','Symbols, drawings and indicators'],
     ['Stock screener','/screener','Filters and saved screens'],['Market overview','/markets','Market movers and watchlists'],
     ['Sector rotation','/rotation','Sector momentum'],['Company fundamentals','/fundamentals','Company research'],
     ['Strategy tester','/strategy','Backtesting'],['Strategy comparison','/compare','Compare results'],
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const button=document.createElement('button');button.type='button';button.className='site-navigator-trigger';button.setAttribute('aria-label','Search pages and tools');button.setAttribute('aria-haspopup','dialog');button.innerHTML=chartWorkspace?'<span>Tools</span><kbd>Alt K</kbd>':'<span>Go to</span><kbd>Ctrl K</kbd>';button.title=chartWorkspace?'Search pages and tools (Alt+K)':'Search pages and tools (Ctrl+K)';button.onclick=open;
   // Tool headers are built by their page script; defer insertion until that exists.
   const mount=()=>{
-    const header=chartWorkspace?document.querySelector('.header-actions'):document.querySelector('.tool-header-actions,.site-header,.topbar .header-tools,body > header nav,body > header,.prep-toolbar');
+    const header=chartWorkspace?document.querySelector('.header-actions'):document.querySelector('.dashboard-header-actions') || document.querySelector('.tool-header-actions,.site-header,.topbar .header-tools,body > header nav,body > header,.prep-toolbar');
     if(header)header.prepend(button);else{button.classList.add('navigator-floating');document.body.append(button);}
   };
   requestAnimationFrame(mount);

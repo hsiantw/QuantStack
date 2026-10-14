@@ -27,7 +27,7 @@ def run():
                 page.goto(url+'/?symbol=AAPL')
                 page.wait_for_function("selected?.symbol==='AAPL' && rows.length>0")
                 def show_list():
-                    if not page.locator('#workspaceSideWatchlist').is_visible():page.locator('#workspaceWatchlistToggle').click()
+                    if not page.locator('#workspaceSideWatchlist').is_visible():page.locator('[data-side-panel="watchlist"]').click()
                 def row(symbol):
                     page.locator('#search').fill(symbol)
                     return page.locator(f'#assets .asset[data-symbol="{symbol}"]')
@@ -39,6 +39,7 @@ def run():
                     box=page.locator('#watchlistMenu').bounding_box()
                     assert box['x']>=0 and box['x']+box['width']<=width and box['y']>=0 and box['y']+box['height']<=900
                 show_list()
+                page.locator('#workspaceWatchlistFilters > summary').click()
                 # Sort real numeric values, keep unavailable values last, and save columns.
                 page.locator('#watchlistSort').select_option('market_cap')
                 expect(page.locator('#assets .asset').first).to_have_attribute('data-symbol','MSFT')

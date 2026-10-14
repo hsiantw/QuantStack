@@ -152,6 +152,11 @@ def create_app(dashboard_url, snapshot_dir=None, liquidation_symbols=(), account
         return web.FileResponse(ROOT / 'web' / 'account.html', headers={'Cache-Control': 'no-store'})
 
     app.router.add_get('/account', account_page)
+    async def user_dashboard_page(request):
+        return web.FileResponse(ROOT / 'web' / 'user-dashboard.html', headers={'Cache-Control': 'no-store'})
+
+    app.router.add_get('/dashboard', user_dashboard_page)
+    app.router.add_get('/dashboard/', user_dashboard_page)
     from crypto_scanner import scan_handler
     app.router.add_get('/api/crypto/scan', scan_handler)
     for asset in ('crypto-scanner.js', 'crypto-scanner.css'):
@@ -168,7 +173,7 @@ def create_app(dashboard_url, snapshot_dir=None, liquidation_symbols=(), account
     for key in TOOLS:
         app.router.add_get('/' + key, tool_page)
         app.router.add_get('/' + key + '/', tool_page)
-    for asset in ('login.css', 'login.js', 'account.css', 'account.js', 'home.css', 'home.js', 'home-earth.png', 'tool-page.css', 'tool-page.js', 'screener-page.css', 'screener-page.js', 'theme.js', 'site-theme.css'):
+    for asset in ('user-dashboard.js', 'user-dashboard.css', 'login.css', 'login.js', 'account.css', 'account.js', 'home.css', 'home.js', 'home-earth.png', 'tool-page.css', 'tool-page.js', 'screener-page.css', 'screener-page.js', 'theme.js', 'site-theme.css'):
         async def login_asset(request, name=asset):
             return web.FileResponse(ROOT / 'web' / name)
         app.router.add_get('/' + asset, login_asset)

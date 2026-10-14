@@ -7,6 +7,10 @@ symbols. Use **↑/↓** then **Enter** to open a result. The watchlist also sup
 arrow-key navigation. **Alt+F** enters chart focus mode; **Escape** restores
 the previous panels. The **?** button lists shortcuts. On small screens,
 tap outside the side panel to dismiss it. Quotes remain labeled as stored data.
+Right-click any watchlist column heading to add or remove price, performance,
+market-cap or volume columns. Changes save immediately; Symbol stays visible.
+The menu also supports **Shift+F10**, and the **Columns** button remains available
+for touch devices.
 Run `python -m unittest test_workspace_experience` for interaction and responsive
 browser checks.
 
@@ -156,6 +160,19 @@ before collection; charts become available after successful collection and, for
 the public website, publication of an updated market-data snapshot.
 
 ## Web interface
+
+The personal **Your dashboard** page at `/dashboard` brings together saved
+symbols, named watchlists, recent charts, searchable notebook entries and buyer
+fraud interview progress. Open it from the homepage, the chart header grid icon,
+or **Go to / Tools**. It reads this browser by default; signed-in users can
+preview **Saved account** separately without importing or replacing local work.
+This page is served by `serve_quantstack.py`, alongside Home and Account.
+
+The chart watchlist keeps **Filter & sort** collapsed until needed and remembers
+your choice. Active filters remain visible in its summary. Right-click a column
+heading to add or remove fields; use **Add a note** or **Symbol details** below
+the selected quote to continue research. The compact chrome and outlined symbol
+selection follow the user's TradingView desktop reference.
 
 Public website: **https://quantstack.onrender.com/**. Repository: **https://github.com/hsiantw/QuantStack**.
 

@@ -38,6 +38,48 @@ document.addEventListener('DOMContentLoaded', () => {
   addSymbol.title = 'Add a symbol to your watchlist';
   addSymbol.setAttribute('aria-label', 'Add symbol to watchlist');
   watchlist.querySelector('.sidebar-heading').insertBefore(addSymbol, el('watchlistManage'));
+  // Keep filtering within reach without permanently occupying the watchlist.
+  const filters = document.createElement('details');
+  filters.id = 'workspaceWatchlistFilters';
+  filters.className = 'workspace-watchlist-filters';
+  const filterSummary = document.createElement('summary');
+  filterSummary.textContent = 'Filter & sort';
+  filters.append(filterSummary);
+  watchlist.querySelector('.search').after(filters);
+  for (const selector of ['#filters', '.watchlist-controls', '.watchlist-display-tools']) filters.append(watchlist.querySelector(selector));
+  try { filters.open = localStorage.getItem('atlas.workspace.watchlistFilters.v1') === 'true'; } catch {}
+  filters.addEventListener('toggle', () => {
+    try { localStorage.setItem('atlas.workspace.watchlistFilters.v1', String(filters.open)); } catch {}
+  });
+  function describeFilters() {
+    const kind = el('filters').querySelector('.active')?.textContent.trim();
+    const color = el('watchlistColor').querySelector('[aria-pressed="true"]')?.getAttribute('aria-label');
+    const criteria = [kind !== 'All' ? kind : '', color !== 'All labels' ? color : ''].filter(Boolean);
+    filterSummary.textContent = 'Filter & sort' + (criteria.length ? ' · ' + criteria.join(' · ') : '');
+  }
+  const filterObserver = new MutationObserver(describeFilters);
+  filterObserver.observe(el('filters'), {subtree:true,attributes:true,attributeFilter:['class']});
+  filterObserver.observe(el('watchlistColor'), {subtree:true,attributes:true,attributeFilter:['aria-pressed']});
+  describeFilters();
+
+  const quoteActions = document.createElement('div');
+  quoteActions.className = 'workspace-quote-actions';
+  for (const [panel, label, path] of [
+    ['notes', 'Add a note', '<path d="M4 4h12v5M4 4v16h16v-8M10 14l1-4 7-7 3 3-7 7-4 1Z"/>'],
+    ['details', 'Symbol details', '<path d="M4 20V10h4v10m4 0V4h4v16m4 0V8h3v12"/>']
+  ]) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.dataset.quotePanel = panel;
+    button.innerHTML = svg(path) + '<span>' + label + '</span>';
+    button.onclick = () => document.querySelector(`[data-side-panel="${panel}"]`).click();
+    quoteActions.append(button);
+  }
+  document.querySelector('.workspace-quote-card').append(quoteActions);
+  const dashboard = document.createElement('a');
+  dashboard.href = '/dashboard'; dashboard.className = 'workspace-dashboard-link';
+  dashboard.title = 'Your dashboard'; dashboard.setAttribute('aria-label', 'Your dashboard');
+  dashboard.innerHTML = svg('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>');
+  headerActions.prepend(dashboard);
   el('workspaceWatchlistToggle').innerHTML = svg('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M14 3v18M7 8h4M7 12h4"/>');
   el('terminalCompare').title = 'Compare symbols (Alt+C)';
   for (const id of ['terminalGo', 'terminalSnapshot', 'terminalFullscreen']) {

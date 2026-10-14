@@ -6,188 +6,182 @@ button,input,select,textarea{font:inherit}button,select,input[type=search]{borde
 @media(max-width:720px){aside{max-height:none;overflow:visible}.prep-toolbar{gap:8px}.prep-toolbar button,.prep-toolbar select{font-size:.875rem}.prep-tabs button{flex:1;padding:8px}.note-tabs{max-width:100%}.prep-panel{padding:20px 16px}.practice-controls button{flex:1}textarea{min-height:260px}}
 @media print{html{color-scheme:light!important}body,section{background:#fff!important;color:#111!important}h1,h2,h3,p.answer,.key-points,.key-points strong{color:#111!important}.prep-toolbar,.prep-tabs,.prep-search,.prep-progress,.review-check,.section-notes,#prepStatus,.prep-back,#prepNotes,#prepPractice{display:none!important}#prepGuide,#prepGuide section{display:block!important}p.answer{background:none!important}}
 fieldset#practiceRubric{border:1px solid var(--border);border-radius:10px;margin-top:24px;padding:16px;font-size:.9rem}#practiceRubric input{accent-color:var(--accent)}#practiceRubric label{margin:8px 0}.prep-toolbar select{max-width:100%}.prep-toolbar label{min-width:0;flex-wrap:wrap}@media print{#practiceRubric{display:none}}
-</style><script src="./theme.js"></script><link rel="stylesheet" href="./site-theme.css"></head><body class="site-reference"><a class="skip" href="#main">Skip to interview prep</a><div class="layout"><aside><div class="brand"><span class="monogram" aria-hidden="true">IH</span><span>Ian Hsiao</span></div><p class="aside-title">Interview prep</p><nav aria-label="Guide sections"><a href="#assessment-reflection"><span>?</span>Assessment reflection</a><a href="#section-1"><span>01</span>Introduction</a><a href="#section-2"><span>02</span>Why Buyer Fraud?</a><a href="#section-3"><span>03</span>StubHub stories</a><a href="#section-4"><span>04</span>Financial experience</a><a href="#section-5"><span>05</span>Crypto experience</a><a href="#section-6"><span>06</span>Fraud case practice</a><a href="#section-7"><span>07</span>Routing &amp; communication</a><a href="#section-8"><span>08</span>Quick answers</a><a href="#algorithms"><span>09</span>Useful algorithms</a><a href="#section-9"><span>10</span>Final review</a><a href="#assessment-brief"><span>11</span>Assessment announcement</a><a href="#assessment-strategy"><span>12</span>45-minute strategy</a></nav></aside><main id="main"><header><p class="eyebrow">StubHub / viagogo</p><h1>Buyer Fraud<br>Interview prep</h1><p>Assessment completed ? Next step: interview conversation</p></header>
+/* Compact reading layout; practice and saved-note controls keep their spacing. */
+body{line-height:1.6}.layout{padding-top:30px;gap:30px}header{margin-bottom:18px}section{padding:22px 28px;margin-bottom:18px}.section-top{margin-bottom:12px}h2{font-size:1.3rem}h3{font-size:1rem;margin:18px 0 6px}p.answer{padding:10px 14px;line-height:1.6;margin-bottom:8px}.key-points{font-size:.875rem;line-height:1.6}p{margin-bottom:12px}.review-check{margin-top:18px;padding-top:12px}nav a{padding:7px 10px}.prep-toolbar{margin:14px 0}.prep-tabs{margin:16px 0}#prepQuestionCount{font-size:.875rem;color:var(--muted);margin-top:8px}#prepGuide section[id^=assessment-]:not(#assessment-reflection){background:var(--raised)}
+@media(max-width:720px){.layout{padding:18px 14px 32px}section{padding:18px}h3{margin-top:16px}p.answer{padding:10px 12px}}
+@media print{section{padding:0;break-before:auto}h3{break-after:avoid}#prepQuestionCount{color:#333!important}}
+</style><script src="./theme.js"></script><link rel="stylesheet" href="./site-theme.css"></head><body class="site-reference"><a class="skip" href="#main">Skip to interview prep</a><div class="layout"><aside><div class="brand"><span class="monogram" aria-hidden="true">IH</span><span>Ian Hsiao</span></div><p class="aside-title">Interview prep</p><nav aria-label="Guide sections"><a href="#assessment-reflection"><span>00</span>Assessment reflection</a><a href="#section-1"><span>01</span>Introduction</a><a href="#section-2"><span>02</span>Why Buyer Fraud?</a><a href="#section-3"><span>03</span>StubHub stories</a><a href="#section-4"><span>04</span>Financial experience</a><a href="#section-5"><span>05</span>Crypto experience</a><a href="#section-6"><span>06</span>Fraud case practice</a><a href="#section-7"><span>07</span>Routing &amp; communication</a><a href="#section-8"><span>08</span>Quick answers</a><a href="#algorithms"><span>09</span>Algorithms &amp; metrics</a><a href="#section-9"><span>10</span>Final review</a><a href="#assessment-brief"><span>11</span>Assessment archive</a><a href="#assessment-strategy"><span>12</span>Preparation reference</a></nav></aside><main id="main"><header><p class="eyebrow">StubHub / viagogo</p><h1>Buyer Fraud<br>Interview prep</h1><p>Assessment complete · Short answer cues for your interview.</p><p id="prepQuestionCount"></p></header>
 <section id="assessment-reflection" aria-labelledby="heading-reflection"><div class="section-top"><span class="number">NEXT</span><h2 id="heading-reflection">After the assessment</h2></div>
-<p class="key-points">The assessment is complete. Use these suggested talking points to reflect on your reasoning; adapt them to what you actually did. Results and reviewer feedback have not been supplied.</p>
+<p class="key-points">Suggested answers, not assessment results. Adapt them to what you actually did; reviewer feedback has not been supplied.</p>
 <h3>Looking back, how do you feel about your decisions?</h3>
-<p class="answer">I recognise that my assessment decisions may include false positives or missed risks. An unusual pattern can justify checking further without proving fraud. I would want to compare my reasoning with the reviewer?s feedback, understand which evidence was most decisive, and learn where I gave a signal too much or too little weight.</p>
+<p class="answer">My decisions may include false positives or missed risks. Unusual behaviour deserves checking, not an automatic fraud label. I would use feedback to understand which evidence I over- or underweighted.</p>
 <h3>How would you acknowledge possible false positives?</h3>
-<p class="answer">I may have interpreted some legitimate behaviour as suspicious. Travel, gifts, shared households or a genuine promotion could explain an unusual purchase, but I would need evidence to confirm any of those explanations. A false positive can create unnecessary friction for a genuine buyer, especially close to an event. I would balance that impact against the risk of allowing fraud and use the team?s approved verification or escalation process when the evidence is ambiguous.</p>
+<p class="answer">I may have flagged legitimate behaviour. I would test explanations such as travel, gifts or shared households against evidence, then use approved verification or escalation where uncertainty remains.</p>
 <h3>Would you change an answer now?</h3>
-<p class="answer">I would not change a decision simply because I feel less confident afterwards. I would explain what I knew at the time, what remained uncertain, and which additional fact would change my conclusion. If feedback showed that I overlooked meaningful counterevidence, I would acknowledge it and explain how I would improve my review next time.</p>
+<p class="answer">Only if meaningful new evidence or an overlooked fact changed the reasoning. I would explain what I knew, what remained uncertain and which fact would change my conclusion.</p>
 <h3>How would you evaluate your performance?</h3>
-<p class="answer">Without confirmed outcomes, I cannot say how accurate my decisions were. I would review both genuine buyers incorrectly flagged and fraud that was missed, as well as the clarity of my reasoning and time management. I would look for repeated mistakes rather than overreacting to one case, and apply the feedback within the team?s policy and my decision-making authority.</p>
+<p class="answer">Without confirmed outcomes, I cannot claim accuracy. I would review false positives, missed fraud, reasoning quality and time management, then look for repeated mistakes.</p>
 <h3>What will you bring into the interview?</h3>
-<ul><li><strong>One real reflection:</strong> a signal you weighed, a legitimate explanation you considered, and an uncertainty you could not resolve. Keep confidential case details out of these notes.</li><li><strong>One improvement:</strong> how you would check the most decision-relevant gap earlier or communicate your reasoning more clearly.</li><li><strong>One honest boundary:</strong> distinguish your support and escalation experience from owning a final fraud decision.</li></ul>
+<p class="answer">One real decision: strongest signal, legitimate explanation, unresolved gap and one improvement. Be clear where your support role ended and the fraud reviewer took over.</p>
 <h3>What would you ask the interviewer?</h3>
-<ul><li>How does the team review false positives and feed those lessons back to analysts?</li><li>How do you balance fraud prevention, genuine-buyer friction and event deadlines?</li><li>What does a strong escalation look like, and what should a new analyst learn first?</li><li>Is there feedback on my assessment reasoning that I could learn from?</li></ul>
+<p class="answer">How are false positives reviewed? What makes a useful escalation? Is there feedback on my assessment reasoning that I could learn from?</p>
 </section>
 <section id="section-1" aria-labelledby="heading-1"><div class="section-top"><span class="number">01</span><h2 id="heading-1">Introduction</h2></div>
+<p class="key-points">Aim for 45–60 seconds. Lead with your current role, then connect your background to Buyer Fraud.</p>
 <h3>Tell me about yourself</h3>
-<p class="answer">I currently work in Customer Service at StubHub/viagogo. I started in Seller Support and progressed to Hybrid, supporting buyers, fan sellers and brokers across chat, email and phone. I handle complex cases, apply policy and escalate potential risks.</p>
-<p class="answer">Before StubHub, I worked in financial planning at AIA, including compliance and fraud-related checks. I also worked in accounting, reviewing records and investigating discrepancies. My degree is in Business Analytics.</p>
-<p class="answer">Buyer Fraud brings together the areas I enjoy: understanding customer behaviour, checking transaction information and making careful decisions. I would bring frontline marketplace knowledge and a willingness to learn the team's specialist tools.</p>
-<ul class="key-points"><li><strong>Current role:</strong> Seller Support &rarr; Hybrid; buyers and sellers.</li><li><strong>Background:</strong> financial risk, accounting and analytics.</li><li><strong>Goal:</strong> investigate buyer risk and make evidence-based decisions.</li></ul>
+<p class="answer">I work in Customer Service at StubHub/viagogo, progressing from Seller Support to Hybrid across buyers, fan sellers and brokers. Earlier roles at AIA and in accounting built my checking and reconciliation skills; my degree is in Business Analytics. Buyer Fraud combines my marketplace knowledge with my interest in investigating inconsistencies and making careful, evidence-based decisions.</p>
 </section>
 <section id="section-2" aria-labelledby="heading-2"><div class="section-top"><span class="number">02</span><h2 id="heading-2">Why Buyer Fraud?</h2></div>
+<p class="key-points">Your value: marketplace knowledge, careful checks and clear communication.</p>
 <h3>Why this role, and why now?</h3>
-<p class="answer">Working across Seller Support and Hybrid has given me a broader understanding of the marketplace. I am especially interested in cases where the details do not fit and need a closer look. I want to build on that experience by reviewing higher-risk transactions, checking account history and helping protect genuine customers.</p>
+<p class="answer">Seller Support and Hybrid gave me a broader view of the marketplace. I enjoy investigating details that do not fit and want to develop that skill in transaction-risk review.</p>
 <h3>Why should we choose you?</h3>
-<p class="answer">I understand the marketplace from both buyer and seller support. I am used to applying policy, handling sensitive information and explaining difficult decisions calmly. My financial and analytics background also helps me check evidence carefully. I would need training on the team's fraud tools, but I would bring useful frontline experience from day one.</p>
-<ul class="key-points"><li>Marketplace knowledge + careful checks + clear communication.</li><li>Learn the team's tools, policies and decision limits.</li></ul>
+<p class="answer">I understand both sides of the marketplace, apply policy and communicate calmly. My financial and analytics background supports careful checks. I would bring that foundation while learning the team’s specialist tools.</p>
+<h3>What would be hardest about moving from support into fraud review?</h3>
+<p class="answer">Learning specialist tools and decision limits. I would build on marketplace knowledge, seek feedback and distinguish customer reassurance from evidence supporting a fraud decision.</p>
+<h3>How would you stay focused during repetitive reviews?</h3>
+<p class="answer">Use a consistent review sequence, document decisive facts and assess each case independently. Familiarity should not replace attention.</p>
 </section>
 <section id="section-3" aria-labelledby="heading-3"><div class="section-top"><span class="number">03</span><h2 id="heading-3">StubHub stories</h2></div>
-<p class="key-points">Fill brackets with a real incident. Keep each story to about 90 seconds: situation &rarr; action &rarr; result.</p>
+<p class="key-points">Use real examples. Keep each story to 60–90 seconds: situation → your checks → your action → known result.</p>
 <h3>A time you spotted unusual behaviour</h3>
-<p class="answer">While helping a [buyer/seller] with [issue], I noticed [specific inconsistency]. I checked [records] and asked [clarifying question]. I considered [possible explanation], but [remaining concern] needed further review. I [action or escalation] and documented the key facts. The outcome I can confirm was [result].</p>
-<ul class="key-points"><li>What did not match? What did you check?</li><li>What did you personally do? What happened next?</li></ul>
+<p class="answer">I noticed [specific inconsistency] in [case]. I checked [records], considered [legitimate explanation] and [acted/escalated] because [remaining concern]. I documented the facts; the outcome I can confirm was [result].</p>
 <h3>A difficult decision under time pressure</h3>
-<p class="answer">A customer contacted us about [issue] with [deadline]. They wanted [outcome], but I needed to follow [policy]. I acknowledged the urgency, checked [facts] and explained [available option]. I [action] and kept clear notes. The result was [observed outcome].</p>
-<ul class="key-points"><li>Acknowledge urgency; complete the necessary checks.</li><li>Explain the option and the next step clearly.</li></ul>
+<p class="answer">With [deadline] approaching, the customer wanted [outcome]. I checked [facts/policy], explained [available option] and took [action]. The result was [observed outcome].</p>
 <h3>Have you made the final fraud decision?</h3>
-<p class="answer">My experience is in customer support: identifying potential indicators and escalating through the appropriate route. I have not owned the final fraud decision. I can explain the evidence I reviewed, the action I took and where my responsibility ended.</p>
+<p class="answer">My experience is in identifying concerns and escalating from customer support, not owning final fraud decisions. I can explain my evidence, actions and the limits of my responsibility.</p>
+<h3>Tell me about a handoff you made easier for another team.</h3>
+<p class="answer">Use [real case]: unclear starting point → facts you organised → requested action → observable result. Describe your contribution without inventing downstream outcomes.</p>
+<h3>When did new evidence change your first impression?</h3>
+<p class="answer">Use [real case]: initial interpretation → contradictory evidence → revised action → lesson. Show how you checked your assumption rather than defended it.</p>
 </section>
 <section id="section-4" aria-labelledby="heading-4"><div class="section-top"><span class="number">04</span><h2 id="heading-4">Financial experience</h2></div>
+<p class="key-points">Name the actual check, tool and outcome. Keep unknown results unknown.</p>
 <h3>AIA: reviewing a potential risk</h3>
-<p class="answer">At AIA, I reviewed [customer request or transaction] and noticed [inconsistency or missing information]. I compared [records], requested [clarification] and considered whether there was a legitimate explanation. I then [action within my authority]. The outcome was [known result].</p>
-<ul class="key-points"><li>Specific inconsistency &rarr; checks &rarr; action &rarr; outcome.</li><li>Keep customer information confidential; distinguish potential risk from confirmed fraud.</li></ul>
+<p class="answer">I noticed [inconsistency] in [request]. I compared [records], requested [clarification], considered a legitimate explanation and took [authorised action]. The known outcome was [result].</p>
 <h3>Accounting: finding a discrepancy</h3>
-<p class="answer">At Prime Trader International, I worked on invoices, ledger entries and reconciliation. In one case, [record] did not match [other record]. I traced the dates, amounts and source information, identified [cause] and [corrected or escalated it]. The result was [known outcome].</p>
+<p class="answer">At Prime Trader International, I handled invoices, ledger entries and reconciliation. When [records] differed, I traced dates, amounts and source documents, then [corrected/escalated]. The confirmed result was [outcome].</p>
 <h3>What analytical tools have you used?</h3>
-<p class="answer">My Business Analytics degree covered data mining, spreadsheets, databases and programming for analysis. My background includes Excel, SPSS and SAS. In [real project], I used [tool] to investigate [question] and found [result]. My approach is to check data quality, compare relevant records and explain the findings clearly.</p>
-<ul class="key-points"><li>Prepare one real example and the tool you actually used.</li><li>If you do not recall an incident, describe your normal responsibilities.</li></ul>
+<p class="answer">My Business Analytics background includes Excel, SPSS and SAS. In [real project], I used [actual tool] to answer [question]. I checked data quality, compared records and explained [finding].</p>
 </section>
 <section id="section-5" aria-labelledby="heading-5"><div class="section-top"><span class="number">05</span><h2 id="heading-5">Crypto experience</h2></div>
+<p class="key-points">Connect the checking habits to this role; do not present personal projects as professional fraud investigations.</p>
 <h3>Tell me about your mining project</h3>
-<p class="answer">I started cryptocurrency mining during university and ran an independent project. I used mining pools across multiple platforms to spread my exposure, and checked payments by reviewing wallet-address activity.</p>
-<p class="answer">Later, I took part in forum-based fiat-to-crypto and crypto-to-fiat markets. I reviewed seller profiles and behavioural patterns, and checked possible wallet connections to services such as Tornado Cash.</p>
-<p class="answer">That experience taught me to consider transaction records and counterparty behaviour together. In Buyer Fraud, I would apply the same habit of checking the evidence and considering legitimate explanations, using the team's approved process.</p>
+<p class="answer">I began mining during university, used pools across platforms and checked wallet payments. Later, forum-based fiat/crypto trading led me to compare seller behaviour and wallet activity. The transferable habit is checking records and context together.</p>
 <h3>Does a mixer connection prove fraud?</h3>
-<p class="answer">No. A possible connection needs context and supporting evidence. I would distinguish a direct interaction from an indirect link and be clear about what I could not establish.</p>
+<p class="answer">No. Distinguish a direct interaction from an indirect link, check context and supporting evidence, and explain what you cannot establish. A wallet transfer alone does not establish identity or purchase authorisation.</p>
 <h3>One transaction example</h3>
-<p class="answer">While reviewing [transaction], I noticed [wallet activity or behaviour]. I checked [records or tool] and compared this with [other information]. I considered [legitimate explanation], then decided to [actual action]. The result was [known outcome].</p>
-<ul class="key-points"><li>Sequence: university mining &rarr; later forum trading and wallet-risk checks.</li><li>Prepare the coin, dates, actual tools and one real transaction.</li><li>A wallet transfer does not prove identity or purchase authorisation.</li></ul>
+<p class="answer">For [real transaction], I noticed [activity], checked [actual records/tool] and considered [legitimate explanation]. I took [actual action]; the known result was [outcome]. Prepare the coin, dates and your role.</p>
 </section>
 <section id="section-6" aria-labelledby="heading-6"><div class="section-top"><span class="number">06</span><h2 id="heading-6">Fraud case practice</h2></div>
-<p class="key-points">Hypothetical cases. Routing reflects the supplied 22 July 2026 guide; check current procedures during training.</p>
-<h3>&ldquo;I did not authorise this charge.&rdquo;</h3>
-<p class="answer">I would acknowledge the concern and follow the approved identity checks. I would establish whether this is a buyer charge, an authorisation hold, a seller fulfilment charge or an existing chargeback.</p>
-<p class="answer">For a qualifying unauthorised buyer charge, I would collect the required details through approved channels, document the customer's report and escalate to Buyer Fraud. I would explain the next step and advise them to contact their payment provider to secure the payment method.</p>
-<ul class="key-points"><li>Classify the issue before routing.</li><li>No full card details or promised refunds.</li></ul>
+<p class="key-points">Hypothetical cases. Answer: facts → risks and positives → decisive gap → action within your authority. Verify current internal procedures.</p>
+<h3>“I did not authorise this charge.”</h3>
+<p class="answer">Acknowledge the concern and use approved identity checks. Distinguish an unauthorised buyer charge from a hold, seller charge or existing dispute. Document and route appropriately; do not request full card details or promise a refund.</p>
 <h3>High-value order with inconsistent information</h3>
-<p class="answer">I would check the event deadline, account history, transaction details, recent changes and prior notes. I would look for supporting evidence and consider explanations such as a gift purchase or travel.</p>
-<p class="answer">I would follow approved verification and decision criteria. If the uncertainty exceeded my authority, I would escalate with the evidence, missing information and urgency clearly documented.</p>
-<ul class="key-points"><li>One unusual detail is a reason to check, not a verdict.</li><li>Balance potential loss with the impact on a genuine buyer.</li></ul>
+<p class="answer">Check account history, recent changes, payment details and the event deadline. Test legitimate explanations such as travel or gifts. Use approved verification; escalate unresolved risk with the evidence and missing information.</p>
 <h3>Tickets sent to an unknown email; event in six hours</h3>
-<p class="answer">I would check whether this is a delivery issue or confirmed account takeover. I would review the notes for Fraud Team confirmation and any account block. Re-transfer complaints follow the delivery workflow; confirmed takeover follows the account-protection and compensation routes.</p>
-<p class="answer">An unresolved qualifying Buyer Fraud case with an event within 24 hours meets the supplied guide's supervisor urgency criterion. I would flag the event time and evidence without promising an unblock or refund.</p>
-<ul class="key-points"><li>Unknown email alone does not confirm account takeover.</li><li>Check the case type, confirmation and urgency.</li></ul>
+<p class="answer">Separate delivery trouble from possible account takeover; an unknown email is not confirmation. Check notes and account status, use the correct route and flag urgency without promising an unblock or refund.</p>
+<h3>Payment succeeded and tickets were delivered. Does that resolve an unauthorised-charge concern?</h3>
+<p class="answer">Payment and delivery do not necessarily establish authorisation. Check the reported concern and supporting records through the approved process.</p>
+<h3>One person calls it a family gift; another denies authorising the charge. What next?</h3>
+<p class="answer">Record both accounts. Use approved identity and authorisation checks, preserve contradictions and escalate unresolved evidence. Do not choose the more persuasive speaker.</p>
+<h3>Several small purchases precede a much larger order. What would you check?</h3>
+<p class="answer">Examine timing, payment attempts, account history and related activity. Consider ordinary purchases as well as possible testing; the sequence alone proves neither.</p>
+<h3>The event starts in 15 minutes and your review is incomplete. What do you do?</h3>
+<p class="answer">Identify the decisive gap and alert the authorised reviewer immediately. Document available options and communicate uncertainty without promising clearance or skipping required checks.</p>
+<h3>The customer’s timeline conflicts with transaction timestamps. What next?</h3>
+<p class="answer">Check timezone, timestamp meaning and source reliability first. Ask a focused clarification, then document any remaining inconsistency.</p>
+<h3>An important field is missing. Would you assume the check passed?</h3>
+<p class="answer">Treat missing information as unknown. Seek an approved alternative source, explain the decision impact and follow the permitted route if uncertainty remains.</p>
+<h3>Purchase volume spikes during a popular presale. How would you assess it?</h3>
+<p class="answer">Confirm the sale window and compare similar buyers and events. Investigate unexplained differences instead of treating the whole traffic spike as suspicious.</p>
 </section>
 <section id="section-7" aria-labelledby="heading-7"><div class="section-top"><span class="number">07</span><h2 id="heading-7">Routing &amp; communication</h2></div>
-<h3>Routing reminders</h3>
-<ul class="key-points"><li><strong>Chargeback:</strong> Chargebacks route.</li><li><strong>Payment review or bank hold:</strong> payment-state guidance.</li><li><strong>Accidental or acknowledged family purchase:</strong> applicable sales/relisting policy.</li><li><strong>Direct buyer-seller contact:</strong> check first occurrence, repeat contact and available proof.</li><li><strong>Phishing or impersonation:</strong> preserve evidence and use the approved safety route.</li><li><strong>Unclear procedure:</strong> check the current article or ask a supervisor; avoid unsupported timelines.</li></ul>
-<h3>Handoff script</h3>
-<p class="answer">The customer reports [claim]. Records show [facts and timestamps]. I checked [sources] and completed [actions]. The unresolved concern is [discrepancy]. The event is at [date/time]. I am requesting [next action]. Supporting details are in the approved fields.</p>
-<h3>Speaking to a worried customer</h3>
-<p class="answer">I understand why this is concerning, especially with the event approaching. I have documented the issue and need to check it through our approved process. I will explain the next step, but I cannot confirm the outcome before the review is complete.</p>
-<h3>Potential phishing message</h3>
-<p class="answer">Please avoid the links in that message and use the official app or website to contact support. We can check the concern through the approved channel.</p>
+<p class="key-points">Classify the issue first. The supplied 22 July 2026 guide used a within-24-hours supervisor criterion for unresolved qualifying Buyer Fraud cases; verify current policy.</p>
+<h3>How would you choose the correct route?</h3>
+<p class="answer">Distinguish fraud concerns, chargebacks, payment holds, delivery issues and acknowledged purchases. Check the current article and decision limits. If unclear, ask the authorised reviewer rather than invent a timeline or outcome.</p>
+<h3>Give a concise handoff</h3>
+<p class="answer">Customer reports [claim]. Records show [facts/timestamps]. I checked [sources] and took [actions]. The gap is [uncertainty]. Event: [date/time/timezone]. Requested next action: [request].</p>
+<h3>What would you say to a worried customer?</h3>
+<p class="answer">“I understand the concern, especially with the event approaching. I have documented the issue and will follow our review process. I can explain the next step, but cannot confirm the outcome yet.”</p>
+<h3>How would you handle a potential phishing message?</h3>
+<p class="answer">Ask the customer to avoid the message’s links and contact support through the official app or website. Preserve relevant evidence through approved channels and follow the safety process.</p>
+<h3>A buyer asks exactly what triggered the review. What would you say?</h3>
+<p class="answer">Explain the review and permitted next steps plainly. Share authorised information without exposing detection details or accusing the buyer.</p>
+<h3>A buyer refuses additional verification. How would you respond?</h3>
+<p class="answer">Explain the purpose and approved options, acknowledge concerns and document the refusal. Follow the process; refusal alone is not proof of fraud.</p>
+<h3>A frustrated buyer demands an immediate guarantee. What would you say?</h3>
+<p class="answer">Acknowledge the impact, state confirmed facts and explain the next action. Give only supported timing and avoid guarantees outside your authority.</p>
+<h3>Your shift ends with an urgent case unresolved. How do you hand it over?</h3>
+<p class="answer">Confirm ownership. Summarise evidence, completed checks, the event deadline, pending action and the customer update needed through the approved handover process.</p>
 </section>
 <section id="section-8" aria-labelledby="heading-8"><div class="section-top"><span class="number">08</span><h2 id="heading-8">Quick answers</h2></div>
+<p class="key-points">Answer the question directly, then support it with one concrete example or check.</p>
 <h3>How would you prioritise a busy queue?</h3>
-<p class="answer">I would follow the team's priority rules, considering potential harm, event deadlines, case age and what action is still possible. I would flag urgent cases for supervisor attention and keep ownership and next steps clear.</p>
+<p class="answer">Follow team priorities using potential harm, event deadlines, case age and available interventions. Flag urgent cases, maintain ownership and make the next step clear.</p>
 <h3>What if you disagree with another agent?</h3>
-<p class="answer">I would compare the evidence and policy, explain my concern and listen for anything I missed. If the decision remained unclear or exceeded my authority, I would involve the appropriate reviewer.</p>
+<p class="answer">Compare evidence and policy, explain the concern and listen for missed context. If uncertainty remains or exceeds my authority, involve the appropriate reviewer.</p>
 <h3>Tell me about a mistake</h3>
-<p class="answer">I initially [real mistake]. I noticed it when [signal]. I corrected it by [action] and informed [relevant person]. Since then, I have used [specific check] to prevent it happening again.</p>
+<p class="answer">I initially [real mistake]. I noticed [signal], corrected it through [action] and informed [person]. I now use [specific check] to prevent a repeat.</p>
 <h3>How would you share a new fraud pattern?</h3>
-<p class="answer">I would check that the cases show a repeated pattern, summarise the common features and note any uncertainty or legitimate explanation. I would share relevant case references through the approved team channel.</p>
+<p class="answer">Confirm repeated features, note legitimate explanations and uncertainty, and share a concise summary with approved case references. Ask for review rather than declare a new rule myself.</p>
 <h3>Your first 30, 60 and 90 days?</h3>
-<p class="answer">First, I would learn the tools, policies and decision limits. Next, I would focus on handling cases consistently and applying feedback. As I become more confident, I would document recurring issues and share useful observations with the team.</p>
-<h3>Availability</h3>
-<p class="answer">I am available [actual days and hours], including [weekend availability]. My scheduling constraints are [if any].</p>
+<p class="answer">30: learn tools, policy and decision limits. 60: handle cases consistently and apply feedback. 90: contribute useful observations and improvements supported by reviewed cases.</p>
+<h3>What is your availability?</h3>
+<p class="answer">I am available [actual days/hours], including [weekend availability]. My scheduling constraints are [if any].</p>
+<h3>When would you stop investigating and make a recommendation?</h3>
+<p class="answer">When permitted criteria support a decision or further checks cannot resolve the key uncertainty. Document the rationale and escalate matters beyond your authority.</p>
+<h3>What would you track each week as an analyst?</h3>
+<p class="answer">Decision quality, confirmed outcomes, genuine-buyer friction, turnaround, overdue cases and rework. Interpret them together, accounting for case complexity.</p>
+<h3>What if faster reviews lead to more corrections?</h3>
+<p class="answer">Identify missed checks, review examples with a supervisor and improve the workflow. Judge speed alongside decision quality, rework and customer impact.</p>
 </section>
-<section id="algorithms" aria-labelledby="heading-algorithms"><div class="section-top"><span class="number">09</span><h2 id="heading-algorithms">Useful algorithms for buyer fraud</h2></div>
-<p class="key-points">Proposed interview ideas for a ticket marketplace, not claims about StubHub's internal systems. Examples are hypothetical. Signals depend on approved data access and team policy.</p>
-<h3>Your 45-second answer</h3>
-<p class="answer">I would start with velocity rules to spot bursts of payment attempts, then a risk model that combines several signals. Graph analysis could help connect related accounts, while behaviour changes could flag possible account takeover. For tickets, I would also prioritise review by the event deadline and what action is still possible. I would measure fraud losses alongside genuine buyers incorrectly stopped. These are approaches I would like to learn; I have not deployed them in my current role.</p>
-<h3>1. Sliding-window velocity rules: spot rapid attempts</h3>
-<p>Count attempts, failed payments and distinct payment tokens per account or device over recent time windows. A sudden burst across several accounts could trigger review or approved additional verification.</p>
-<ul class="key-points"><li><strong>Ticket example:</strong> one device repeatedly tries different payment methods for high-value tickets shortly before an event.</li><li><strong>Watch out:</strong> a popular ticket release, payment outage or shared household can create legitimate bursts. Compare with the event's normal traffic; do not block on an IP address alone.</li></ul>
-<p class="answer">Velocity means how much activity happens in a short time. I would check whether the burst has other risk indicators before treating it as suspicious.</p>
-<h3>2. Logistic regression or gradient-boosted trees: combine signals</h3>
-<p>Start with logistic regression as an interpretable baseline; compare it with a boosted-tree model such as XGBoost, which can capture interactions. Possible inputs include account age, recent payment failures, order value relative to past purchases, device changes and time until the event. Train against carefully reviewed historical outcomes.</p>
-<ul class="key-points"><li><strong>Ticket example:</strong> a new account buying expensive tickets is not enough by itself; several independent indicators could raise the review priority.</li><li><strong>Watch out:</strong> a score estimates risk, not guilt. Validate and calibrate it before interpreting it as a probability. Keep unauthorised-payment fraud separate from non-delivery disputes.</li></ul>
-<p class="answer">A model can combine weak signals into a more useful risk estimate. I would use the reasons behind the score to guide my investigation.</p>
-<h3>3. Graph analysis: connect related cases</h3>
-<p>Represent accounts, tokenised payment identifiers and devices as nodes, with edges for observed use. Connected components or community detection can surface groups for investigation; stronger, repeated links deserve more weight than a shared public network.</p>
-<ul class="key-points"><li><strong>Ticket example:</strong> several recently created buyer accounts share a device and payment token, with links to previously confirmed fraud.</li><li><strong>Watch out:</strong> families and shared devices create legitimate links. Association is a lead, not proof; inspect the underlying cases and timestamps.</li></ul>
-<p class="answer">I would look beyond one order to see whether related accounts show the same pattern, then verify the connections.</p>
-<h3>4. Sequence rules and change-point detection: flag account takeover</h3>
-<p>Compare recent account activity with its history. Sequence rules can identify a new-device login followed by a password or contact change and a purchase; change-point detection can flag a sustained shift in behaviour for review.</p>
-<ul class="key-points"><li><strong>Ticket example:</strong> an established account changes its email and then buys tickets for an imminent event from a new device.</li><li><strong>Watch out:</strong> travel, a replacement phone or a legitimate gift can explain changes. Approved identity checks and supporting evidence remain essential.</li></ul>
-<p class="answer">The sequence of changes may be more informative than any one change. I would check whether the activity fits the account's usual behaviour.</p>
-<h3>5. Isolation Forest: discover unfamiliar patterns</h3>
-<p>Isolation Forest flags observations that are easier to separate from the rest of the data. It can help find unusual combinations when confirmed fraud labels are limited. Compare similar event and buyer cohorts so ordinary differences do not dominate.</p>
-<ul class="key-points"><li><strong>Ticket example:</strong> an unusual combination of purchase frequency, value and account changes enters an analyst discovery queue.</li><li><strong>Watch out:</strong> unusual does not mean fraudulent. Use this for investigation and pattern discovery, not automatic rejection.</li></ul>
-<p class="answer">Anomaly detection could help discover a new pattern, but a reviewer still needs to establish what actually happened.</p>
-<h3>6. Cost-sensitive prioritisation: review the right case in time</h3>
-<p>Rank cases using estimated preventable loss, event urgency, case age and review effort. A priority queue can surface urgent cases while an ageing rule prevents older cases from being ignored. Event time affects the review deadline, not whether a buyer is guilty.</p>
-<ul class="key-points"><li><strong>Illustrative calculation:</strong> a calibrated 10% fraud probability &times; $500 net loss if fraudulent = $50 expected fraud loss. This alone does not justify a block: compare the likely benefit of each action with review cost, customer friction and false declines.</li><li><strong>Ticket example:</strong> escalate a risky order for an event in two hours when an authorised intervention is still possible, following the team's priority rules.</li></ul>
-<p class="answer">I would combine risk with urgency and the available action, so the team can protect customers before the event deadline.</p>
-<h3>How would you know these ideas work?</h3>
-<ul><li><strong>Use realistic labels:</strong> allow time for disputes to mature; distinguish confirmed fraud, legitimate orders and service-related disputes. Unresolved cases are not automatically legitimate.</li><li><strong>Avoid hindsight:</strong> train on older cases and test on later ones, using only information available at the decision time. Never use a later chargeback as an earlier checkout feature.</li><li><strong>Measure both sides:</strong> precision is the share of flagged cases that are fraud; recall is the share of actual fraud caught. Also track fraud loss per sales volume, genuine-buyer false declines, checkout completion and review time before the event.</li><li><strong>Handle rare fraud:</strong> accuracy can look high even when every fraud case is missed. Compare precision and recall at the team's actual review capacity; check calibration after class weighting or resampling.</li><li><strong>Validate safely:</strong> compare with existing rules in shadow mode, review false positives and monitor changes across events, new buyers and returning buyers. Use approved, minimised data and human review for ambiguous cases.</li></ul>
-<h3>Which would you suggest first?</h3>
-<p class="answer">I would begin with understandable velocity rules and a clear review queue, then test a simple risk model against that baseline. Graph and anomaly methods would be useful additions if the data and team capacity support them. My contribution would be spotting patterns from frontline cases, documenting evidence and feeding confirmed outcomes back to the team.</p>
-<h3>Further reading</h3>
-<p class="key-points">General technical references; the ticketing applications above are proposed adaptations: <a href="https://stripe.com/guides/radar-rules-101">Stripe: rules and velocity signals</a>; <a href="https://stripe.com/guides/primer-on-machine-learning-for-fraud-protection">Stripe: machine learning and review</a>; <a href="https://xgboost.readthedocs.io/en/stable/parameter.html">XGBoost: model parameters</a>; <a href="https://neo4j.com/developer/demos/fraud-demo/">Neo4j: graph fraud examples</a>; <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">scikit-learn: Isolation Forest</a>.</p>
+<section id="algorithms" aria-labelledby="heading-algorithms"><div class="section-top"><span class="number">09</span><h2 id="heading-algorithms">Algorithms &amp; metrics</h2></div>
+<p class="key-points">Interview ideas, not claims about the company’s systems or tools you have deployed. Learn the purpose, one example and one limitation.</p>
+<h3>How could analytics support Buyer Fraud?</h3>
+<p class="answer">Start with understandable velocity rules and a review queue. Models can combine signals; graphs connect cases; behaviour changes suggest further checks. Measure losses and genuine-buyer friction together. These are approaches I want to learn.</p>
+<h3>What is a sliding-window velocity rule?</h3>
+<p class="answer">Count recent attempts or payment failures over a time window. A burst can trigger review, but ticket releases, outages or shared households may explain it. Check supporting evidence.</p>
+<h3>How would a risk model help?</h3>
+<p class="answer">Logistic regression or boosted trees can combine signals such as account changes and payment failures. A score guides investigation; it is not proof. Check calibration, reviewed outcomes and legitimate explanations.</p>
+<h3>Where would graph analysis help?</h3>
+<p class="answer">Connect accounts, devices and tokenised payment identifiers to find related cases. Verify each link and timeline: shared networks or household devices can create innocent connections.</p>
+<h3>How could you spot account takeover?</h3>
+<p class="answer">Review the sequence: new-device access, contact changes and unusual purchases. Compare with account history and approved identity checks; a replacement phone or travel can explain individual changes.</p>
+<h3>What is anomaly detection useful for?</h3>
+<p class="answer">Methods such as Isolation Forest surface unfamiliar combinations for investigation. Compare similar buyer/event groups. Unusual behaviour is a lead, not a reason for automatic rejection.</p>
+<h3>How would you prioritise risk before an event?</h3>
+<p class="answer">Combine estimated preventable harm, deadline, case age and review effort. Urgency changes the review priority, not whether the buyer is fraudulent; consider customer friction and available authorised actions.</p>
+<h3>How would you know a fraud model works?</h3>
+<p class="answer">Use reviewed outcomes and later-period testing with only decision-time information. Track precision, recall, fraud loss, false declines and review time. Check differences across buyer/event groups and monitor changing patterns.</p>
+<h3>Which approach would you suggest first?</h3>
+<p class="answer">Understand the existing workflow, then test a simple, explainable baseline. Add complexity only if it improves outcomes within review capacity. My contribution is clear case evidence and feedback from frontline experience.</p>
+<h3>Two analysts have different fraud detection rates. Is the higher rate better?</h3>
+<p class="answer">Compare case mix, denominators, confirmed outcomes and false positives. A higher rate alone does not establish better judgment or customer protection.</p>
+<h3>What if a high risk score conflicts with reassuring case evidence?</h3>
+<p class="answer">Check the score’s available reasons, source quality and contrary evidence. Follow approved decision rules and document why the conflict needs further review.</p>
+<p class="key-points">Reference: <a href="https://stripe.com/guides/radar-rules-101">Stripe rules guide</a> · <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.IsolationForest.html">Isolation Forest documentation</a></p>
 </section>
 <section id="section-9" aria-labelledby="heading-9"><div class="section-top"><span class="number">10</span><h2 id="heading-9">Final review</h2></div>
-<h3>Five points to remember</h3>
-<ul><li>I know both sides of the marketplace.</li><li>I check customer explanations against records.</li><li>I bring financial risk awareness and analytical skills.</li><li>I separate suspicion from evidence.</li><li>I communicate clearly and work within my authority.</li></ul>
-<h3>Questions to ask: choose two or three</h3>
-<ul><li>What does success look like in the first three months?</li><li>How do you balance decision quality, speed and customer impact?</li><li>How are new agents trained on difficult cases?</li><li>Where could my Seller Support and Hybrid experience help most?</li></ul>
-<h3>Closing script</h3>
-<p class="answer">This role combines my marketplace knowledge, customer experience and interest in investigation. I would bring careful evidence review, clear communication and a willingness to learn. I am excited about the opportunity to help protect customers and the business.</p>
-<h3>Before the interview</h3>
-<ul class="key-points"><li>Fill the brackets with real details; keep customer information anonymous.</li><li>Prepare two work stories, one crypto example and one mistake.</li><li>Practise the introduction and stories in about 90 seconds each.</li><li>Remember your checks, your action and the outcome you know.</li></ul>
+<p class="key-points">Five anchors: marketplace knowledge · evidence · legitimate explanations · clear communication · decision limits.</p>
+<h3>What would you ask about the role?</h3>
+<p class="answer">Choose two or three: What defines success in 90 days? How is decision quality reviewed? How are difficult cases coached? Where would my Seller Support and Hybrid experience help most?</p>
+<h3>How would you close the interview?</h3>
+<p class="answer">“This role combines my marketplace experience with careful investigation. I would bring clear communication, evidence-based thinking and a willingness to learn, helping protect genuine customers and the business.”</p>
+<h3>What should you prepare before the interview?</h3>
+<p class="answer">Two real work stories, one mistake, one relevant crypto example and your availability. Replace every bracket with accurate details. Practise your introduction and explain only outcomes you can confirm.</p>
 </section>
-<section id="assessment-brief" aria-labelledby="heading-assessment-brief"><div class="section-top"><span class="number">11</span><h2 id="heading-assessment-brief">Assessment announcement ? archive</h2></div>
-<p class="answer"><strong>45 minutes, no break &middot; Submit by 11 October 2026 (EOD) &middot; No AI assistance.</strong></p>
-<p class="key-points">Organizer's message, supplied by you. The form URL was not included; open the original message to access it. The deadline and Slack availability have no stated timezone; confirm with Gwen if needed.</p>
-<blockquote>
-<p>Hi,<br>Thank you for your interest in the Buyer Fraud Analyst position!</p>
-<p>I know some of you may be nervous about the assessment and interview. Relax &mdash; you&rsquo;re not the only one! Take a deep breath, grab a coffee if you need one, and read the following information carefully.</p>
-<p>Please find the link to the assessment instruction below.<br>Buyer Fraud Analyst Assesssment &ndash; Fill out form</p>
-<p>The assessment will take 45 minutes with no break, so please make sure you are in a comfortable place and have a nice seat (and maybe another coffee!) before you begin.</p>
-<p><strong>Assessment Overview</strong></p>
-<p>The assessment is designed to evaluate your case-handling speed, logic and decision-making, information-search ability, familiarity with different events and marketing activities across GEOs, and understanding of buyer behavior. We are mainly looking at how you identify positive indicators, recognize potential risks, and explain your judgment.</p>
-<p>Please do not rely on the current transaction status. Analyze each case independently based on your own judgment and the information provided.</p>
-<p>Please be sure to submit it by Oct 11, 2026. (EOD)</p>
-<p><strong>Important &ndash; No AI Assistance</strong></p>
-<p>Please complete the assessment independently based on your own knowledge, experience, analysis, and judgment. AI tools or AI-assisted services are strictly prohibited.<br>You may use Google or other general search engines, as well as company/internal tools, where appropriate to research information relevant to the case.<br>And yes&hellip; we are fraud analysts &mdash; we can smell it! &#128521;</p>
-<p><strong>&#128227; Call for Help!</strong></p>
-<p>Gwen will be available on Slack this Friday from 3:00 PM&ndash;4:00 PM and Sunday from 7:00 AM&ndash;4:00 PM if you have any questions about the assessment process or are unable to access the assessment link.<br>You can also leave me a message on Slack outside of these time slots, I will get back to you shortly!</p>
-<p>Good luck, folks!<br>Enjoy the brain-storming hours, and have fun with it!</p>
-</blockquote>
+<section id="assessment-brief" aria-labelledby="heading-assessment-brief"><div class="section-top"><span class="number">11</span><h2 id="heading-assessment-brief">Assessment announcement — archive</h2></div>
+<p class="key-points">Completed assessment · Summary of the organiser’s supplied message.</p>
+<ul><li><strong>Format:</strong> 45 minutes, no break; deadline was 11 October 2026, EOD (timezone not supplied).</li><li><strong>Assessed:</strong> speed, logic, research, event/market context and buyer behaviour. Explain positive indicators, risks and judgment independently of the displayed transaction status.</li><li><strong>Rules:</strong> independent work; no AI assistance. General search engines and appropriate internal tools were permitted.</li><li><strong>Access:</strong> use the original message for the form; the URL was not supplied here. Ask Gwen about access or unclear instructions.</li></ul>
 </section>
-<section id="assessment-strategy" aria-labelledby="heading-assessment-strategy"><div class="section-top"><span class="number">12</span><h2 id="heading-assessment-strategy">Assessment preparation ? archive</h2></div>
-<p class="answer"><strong>Study before the assessment.</strong> This is an AI-created preparation guide, not an official scoring rubric. Close this guide and AI tools before starting; complete the assessment yourself. Do not paste live cases into AI or use AI-generated answers. Ask Gwen whether personal notes are allowed rather than assuming they are.</p>
-<h3>Before you press Start</h3>
-<ul><li>Check access using the original assessment link without starting the timed attempt. Set aside an uninterrupted 45 minutes plus a submission buffer before EOD.</li><li>Prepare a quiet seat, stable internet, power and permitted internal tools. Resolve access issues with Gwen before starting.</li><li>Review the concepts in advance: distinguish observed facts, possible explanations, missing information and decisions. Practise explaining both positive indicators and risks.</li><li>Use an accurate clock; do not change the system time for the assessment. Follow the assessment's timer.</li></ul>
-<h3>A practical 45-minute plan</h3>
-<ol><li><strong>Minutes 0&ndash;3: Read and scope.</strong> Read instructions, required fields and available decision options. Check the case count, point weights if shown, and whether you can return to earlier answers.</li><li><strong>Minutes 3&ndash;35: Work through every case.</strong> Allocate roughly 32 &divide; number of cases minutes per case if equally weighted. For 8 cases, that is 4 minutes each; for 10, about 3 minutes 12 seconds. Adjust for explicit point weights and complexity. Make targeted checks, then record a reasoned judgment.</li><li><strong>Minutes 35&ndash;41: Revisit uncertainty.</strong> If navigation permits, return to cases where one missing fact could change your decision. Resolve contradictions and complete gaps before polishing wording. If you cannot return, use this review time within each case before advancing.</li><li><strong>Minutes 41&ndash;45: Check and submit.</strong> Check required fields, case IDs, decision/reason consistency and unanswered items. Submit with time to confirm receipt; do not wait until the final second.</li></ol>
-<h3>Use the same reasoning sequence for each case</h3>
-<ol><li><strong>Frame the question.</strong> Identify what you must decide, the event date and location, and the evidence available at the decision time. Set aside the displayed transaction status: it is not your verdict.</li><li><strong>Find positive indicators.</strong> Look for corroborated consistency in account history, purchase behavior, payment details and the customer's explanation where supplied. Explain why a positive signal matters and what it cannot establish.</li><li><strong>Find risks and contradictions.</strong> Check supplied information for changes, unusual attempt patterns, conflicting details or relevant account links. Describe the actual evidence rather than attaching a label to the buyer.</li><li><strong>Consider a legitimate explanation.</strong> Could travel, a gift, a shared household, a presale or a promotion explain the pattern? Treat each as a hypothesis to check, not an invented fact. Country or nationality alone does not establish fraud.</li><li><strong>Research the decisive gap.</strong> Choose the unanswered question most likely to change your conclusion. If evidence is unavailable, state the uncertainty instead of assuming the missing check passed.</li><li><strong>Decide and explain.</strong> Use the assessment's permitted outcomes and supplied policy. Weigh the strongest supporting and opposing evidence; state remaining uncertainty and any allowed next step. Avoid inventing internal thresholds or powers you do not have.</li></ol>
-<h3>Research events, promotions and GEO context efficiently</h3>
-<ul><li>Write one specific question before searching: Was there a presale at this time? Did this promotion apply to this market? Does the event date match the customer's explanation?</li><li>Search the exact event or promotion name with city, date and relevant market. Prefer the organizer, venue, team, artist or official promotion terms; use approved internal tools for internal facts.</li><li>Check year, local timezone, sale window and eligibility. Record the source and relevant fact if the form permits. A real promotion may explain demand without proving a particular buyer is legitimate.</li><li>Use a short research budget, such as 30&ndash;60 seconds per question within your case allowance. Stop when you have enough evidence or the check is not resolving uncertainty. Use ordinary search results and source pages, avoiding AI summaries or chat features.</li><li>Keep customer and payment details inside approved systems; public searches should concern public event or promotion facts.</li></ul>
-<h3>Practise a concise explanation before the assessment</h3>
-<p>For practice, explain your decision in this order: <strong>judgment &rarr; strongest evidence &rarr; counterevidence &rarr; remaining uncertainty or permitted next step.</strong> Use your own wording during the assessment and answer the actual fields. A few specific sentences are more useful than a list of unexplained signals.</p>
-<ul><li><strong>Fact versus inference:</strong> distinguish what the record shows from what you think it could mean.</li><li><strong>Weight versus count:</strong> explain why evidence is persuasive; several related details may reflect one underlying issue.</li><li><strong>Proportionate conclusion:</strong> one unusual detail calls for investigation, not certainty. Positive history also does not eliminate all risk.</li><li><strong>Independent judgment:</strong> do not justify a decision by saying the transaction is already approved, cancelled or flagged.</li></ul>
-<h3>Final check</h3>
-<p>Did I answer every required field, include positives and risks where available, explain the decisive evidence, identify uncertainty honestly, and submit successfully? Keep the submission confirmation if available.</p>
+<section id="assessment-strategy" aria-labelledby="heading-assessment-strategy"><div class="section-top"><span class="number">12</span><h2 id="heading-assessment-strategy">Assessment preparation — archive</h2></div>
+<p class="key-points">Preparation reference, not an official rubric. The assessment is complete; use the interview topics above for your next step.</p>
+<p><strong>45-minute plan:</strong> 0–3 read; 3–35 review cases; 35–41 revisit uncertainty if permitted; 41–45 check and submit.</p>
+<p><strong>Reasoning:</strong> facts → positives → risks → legitimate explanation → decisive gap → permitted decision. Record uncertainty; do not invent checks or rely on the existing transaction status.</p>
+<p><strong>Research:</strong> check event, city, date, timezone and promotion terms against primary sources. Keep customer information in approved systems. Follow the original no-AI rule during an assessment.</p>
 </section>
-<footer>Updated 12 October 2026 &middot; Personal interview preparation</footer></main></div><script id="prepWorkspace">(() => {
+<footer>Updated 13 October 2026 &middot; Personal interview preparation</footer></main></div><script id="prepWorkspace">(() => {
   'use strict';
   const key = 'atlas.interview-prep.v1', themeKey = 'atlas.interview-theme';
   const main = document.querySelector('main'), header = main.querySelector('header');
@@ -283,6 +277,7 @@ fieldset#practiceRubric{border:1px solid var(--border);border-radius:10px;margin
   el('practiceAnswer').after(rubric);
   let question=-1, remaining=90, deadline=0, timer=null;
   let selectedQuestions=questions.filter(q=>!q.id.startsWith('assessment-') || q.id==='assessment-reflection');
+  el('prepQuestionCount').textContent=`${selectedQuestions.length} practice questions · 60–90 second answers · Use your real examples`;
   el('practiceFocus').onchange=()=>{selectedQuestions=questions.filter(q=>el('practiceFocus').value==='all'?(!q.id.startsWith('assessment-')||q.id==='assessment-reflection'):q.id===el('practiceFocus').value);question=-1;nextQuestion();};
   el('practiceDuration').onchange=resetTimer;
   function clock(){el('practiceClock').textContent=`${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`;}

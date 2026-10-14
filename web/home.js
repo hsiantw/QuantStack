@@ -30,6 +30,7 @@
       ['▥', 'Strategy comparison', chart('compare')]
     ],
     More: [
+      ['▦', 'Your dashboard', '/dashboard', 'Charts, saved work and interview prep'],
       ['♙', 'Your account', '/account'],
       ['→', 'Sign in', '/login'],
       ['◇', 'Project architecture', '/workspace/architecture.html'],
