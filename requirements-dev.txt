@@ -1,2 +1,3 @@
 -r requirements-lock.txt
+aiohttp>=3.12,<4
 playwright==1.63.0

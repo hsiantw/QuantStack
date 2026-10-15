@@ -9,7 +9,7 @@ import unittest
 import urllib.error
 import urllib.request
 from pathlib import Path
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from urllib.parse import urlencode
 from unittest.mock import patch
 from http.server import ThreadingHTTPServer
@@ -18,6 +18,40 @@ from market_data import connect, persist, persist_intraday
 
 
 class DashboardTests(unittest.TestCase):
+    def test_native_history_keeps_latest_10000_in_chronological_order(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'market.sqlite'
+            db = connect(path)
+            start = datetime(2024, 1, 1, tzinfo=timezone.utc)
+            rows = [('TEST', (start + timedelta(hours=i)).isoformat(), '60m',
+                     10., 11., 9., 10., 10., 100, 'USD', 'NMS', 'UTC', 'now')
+                    for i in range(10005)]
+            persist_intraday(db, 'TEST', '60m', rows, 'now', 0)
+            db.close()
+            with patch.object(dashboard, 'DATABASE', path):
+                history = dashboard.history({'symbol': ['TEST'], 'interval': ['1h']})
+            self.assertEqual(len(history), 10000)
+            self.assertEqual([row['date'] for row in history], [row[1] for row in rows[5:]])
+
+    def test_catalog_prefers_hourly_and_falls_back_to_latest_other_interval(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / 'market.sqlite'
+            db = connect(path)
+            for symbol, interval, stamp, close in (
+                    ('HOURLY', '60m', '2026-01-02T10:00:00+00:00', 10.),
+                    ('HOURLY', '1m', '2026-01-02T11:00:00+00:00', 11.),
+                    ('MINUTE', '1m', '2026-01-02T10:00:00+00:00', 12.),
+                    ('MINUTE', '5m', '2026-01-02T11:00:00+00:00', 13.)):
+                persist_intraday(db, symbol, interval, [
+                    (symbol, stamp, interval, close, close, close, close, close,
+                     100, 'USD', 'NMS', 'UTC', 'now')], 'now', 0)
+            db.close()
+            with patch.object(dashboard, 'DATABASE', path), patch.object(dashboard, 'ROOT', root):
+                assets = {asset['symbol']: asset for asset in dashboard.catalog()}
+            self.assertEqual((assets['HOURLY']['close'], assets['HOURLY']['quote_interval']), (10., '1h'))
+            self.assertEqual((assets['MINUTE']['close'], assets['MINUTE']['quote_interval']), (13., '5m'))
+
     def test_hourly_only_symbol_is_visible_without_minute_or_daily_data(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'market.sqlite'

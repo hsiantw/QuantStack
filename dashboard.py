@@ -75,7 +75,10 @@ def catalog():
             if not isinstance(market_cap, (int, float)) or not math.isfinite(market_cap) or market_cap < 0:
                 market_cap = None
             hourly = db.execute('''SELECT timestamp,close,currency,exchange,interval FROM intraday_prices
-              WHERE symbol=? ORDER BY (interval='60m') DESC, timestamp DESC LIMIT 1''', (symbol['symbol'],)).fetchone()
+              WHERE symbol=? AND interval='60m' ORDER BY timestamp DESC LIMIT 1''', (symbol['symbol'],)).fetchone()
+            if hourly is None:
+                hourly = db.execute('''SELECT timestamp,close,currency,exchange,interval FROM intraday_prices
+                  WHERE symbol=? ORDER BY timestamp DESC LIMIT 1''', (symbol['symbol'],)).fetchone()
             has_daily = bool(latest)
             if not latest and not hourly:
                 result.append(dict(symbol=symbol['symbol'], name=names.get(symbol['symbol'], symbol['symbol']),
@@ -161,9 +164,9 @@ def history(query):
             native = db.execute('''SELECT timestamp AS date,open,high,low,close,adjusted_close,
               volume,NULL AS dividends,NULL AS splits,source FROM intraday_prices
               WHERE symbol=? AND interval=? AND timestamp>=? AND timestamp<?
-              ORDER BY timestamp''', (symbol, '60m' if interval == '1h' else interval, lower, upper)).fetchall()
+              ORDER BY timestamp DESC LIMIT 10000''', (symbol, '60m' if interval == '1h' else interval, lower, upper)).fetchall()
             if native or interval == '1h':
-                return [dict(row) for row in native[-10000:]]
+                return [dict(row) for row in reversed(native)]
         if symbol == 'BTC-USD':
             exchange_rows = db.execute('''SELECT timestamp,source,open,high,low,close,volume
               FROM crypto_exchange_prices WHERE symbol=? AND interval='1m'

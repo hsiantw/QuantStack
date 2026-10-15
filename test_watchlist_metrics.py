@@ -47,7 +47,7 @@ class WatchlistMetricsTests(unittest.TestCase):
             db.execute('CREATE TABLE stock_metadata (symbol TEXT,name TEXT,market_cap REAL,currency TEXT,fetched_at TEXT)')
             db.execute("INSERT INTO stock_metadata VALUES ('TEST','Test asset',1500000000,'USD','2026-09-30')")
             db.commit();db.close()
-            with patch.object(dashboard,'DATABASE',path):
+            with patch.object(dashboard,'DATABASE',path), patch.object(dashboard,'ROOT',Path(directory)):
                 asset=dashboard.catalog()[0]
             self.assertEqual(asset['market_cap'],1500000000)
             self.assertEqual(asset['market_cap_currency'],'USD')

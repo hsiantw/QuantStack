@@ -2,9 +2,9 @@
 html[data-prep-theme=dark]{color-scheme:dark;--page:#101820;--surface:#182530;--raised:#223542;--text:#dce7ef;--muted:#a6bac9;--heading:#f0f6fb;--accent:#78d7d2;--border:#354a59;--focus:#f4b36b}
 body{background:var(--page);color:var(--text)}section{background:var(--surface);border-color:var(--border)}h1,h2,.brand{color:var(--heading)}h3,a,.eyebrow,.number,.key-points strong{color:var(--accent)}header p,.aside-title,.aside-note,.key-points,footer,nav a span{color:var(--muted)}nav a{color:var(--text)}nav a:hover,nav a:focus-visible,p.answer{background:var(--raised);color:var(--text)}.aside-note{border-color:var(--border)}.number{border-color:var(--accent)}.skip{background:var(--surface)}
 button,input,select,textarea{font:inherit}button,select,input[type=search]{border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--surface);color:var(--text)}button{cursor:pointer;line-height:1.5}button:hover{background:var(--raised)}button:disabled{opacity:.55;cursor:default}:is(button,input,select,textarea,a):focus-visible{outline:3px solid var(--focus);outline-offset:3px}textarea{width:100%;min-height:300px;resize:vertical;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:16px;line-height:1.8}[hidden]{display:none!important}
-.prep-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:20px 0}.prep-toolbar label{display:flex;gap:8px;align-items:center;font-size:.875rem}.prep-tabs{display:flex;gap:6px;border-bottom:1px solid var(--border);margin:22px 0;padding-bottom:8px}.prep-tabs button[aria-selected=true],.note-tabs button[aria-selected=true]{background:var(--accent);color:var(--page);border-color:var(--accent);font-weight:650}.prep-search{display:grid;gap:7px;margin-bottom:20px}.prep-search input{width:100%}.prep-progress{display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.875rem}.prep-progress progress{width:130px;accent-color:var(--accent)}.review-check{display:flex;gap:9px;align-items:center;margin-top:26px;padding-top:16px;border-top:1px solid var(--border);font-size:.875rem;color:var(--muted)}.review-check input{width:18px;height:18px;accent-color:var(--accent)}.section-notes{margin-top:12px}.prep-panel h2{margin-bottom:12px}.prep-panel p{color:var(--muted)}.note-tabs{display:flex;gap:7px;overflow-x:auto;padding:4px 3px 14px;margin:12px 0}.note-tabs button{flex:none;max-width:220px;text-align:left;font-size:.875rem}.note-meta{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;margin-top:8px;font-size:.875rem;color:var(--muted)}.practice-controls{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0}.practice-clock{font-size:2.5rem;font-variant-numeric:tabular-nums;font-weight:650;color:var(--heading)}#practiceAnswer{background:var(--raised);border-radius:8px;padding:20px;margin-top:18px}#practiceAnswer p{color:var(--text)}#prepStatus{color:var(--muted);font-size:.875rem;min-height:1.5em}#prepNoResults{padding:20px}.prep-back{font-size:.875rem}main{max-width:900px}aside{max-height:calc(100vh - 64px);overflow:auto}.layout{gap:36px}#practiceQuestion{font-size:1.35rem}#noteLabel{display:block;font-weight:650;margin:12px 0}
+.prep-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:20px 0}.prep-toolbar label{display:flex;gap:8px;align-items:center;font-size:.875rem}.prep-tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--border);margin:22px 0;padding-bottom:8px}.prep-tabs button[aria-selected=true],.note-tabs button[aria-selected=true]{background:var(--accent);color:var(--page);border-color:var(--accent);font-weight:650}.prep-search{display:grid;gap:7px;margin-bottom:20px}.prep-search input{width:100%}.prep-progress{display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.875rem}.prep-progress progress{width:130px;accent-color:var(--accent)}.review-check{display:flex;gap:9px;align-items:center;margin-top:26px;padding-top:16px;border-top:1px solid var(--border);font-size:.875rem;color:var(--muted)}.review-check input{width:18px;height:18px;accent-color:var(--accent)}.section-notes{margin-top:12px}.prep-panel h2{margin-bottom:12px}.prep-panel p{color:var(--muted)}.note-tabs{display:flex;gap:7px;overflow-x:auto;padding:4px 3px 14px;margin:12px 0}.note-tabs button{flex:none;max-width:220px;text-align:left;font-size:.875rem}.note-meta{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;margin-top:8px;font-size:.875rem;color:var(--muted)}.practice-controls{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0}.practice-clock{font-size:2.5rem;font-variant-numeric:tabular-nums;font-weight:650;color:var(--heading)}#practiceAnswer{background:var(--raised);border-radius:8px;padding:20px;margin-top:18px}#practiceAnswer p{color:var(--text)}#prepStatus{color:var(--muted);font-size:.875rem;min-height:1.5em}#prepNoResults{padding:20px}.prep-back{font-size:.875rem}main{max-width:900px}aside{max-height:calc(100vh - 64px);overflow:auto}.layout{gap:36px}#practiceQuestion{font-size:1.35rem}#noteLabel{display:block;font-weight:650;margin:12px 0}
 @media(max-width:720px){aside{max-height:none;overflow:visible}.prep-toolbar{gap:8px}.prep-toolbar button,.prep-toolbar select{font-size:.875rem}.prep-tabs button{flex:1;padding:8px}.note-tabs{max-width:100%}.prep-panel{padding:20px 16px}.practice-controls button{flex:1}textarea{min-height:260px}}
-@media print{html{color-scheme:light!important}body,section{background:#fff!important;color:#111!important}h1,h2,h3,p.answer,.key-points,.key-points strong{color:#111!important}.prep-toolbar,.prep-tabs,.prep-search,.prep-progress,.review-check,.section-notes,#prepStatus,.prep-back,#prepNotes,#prepPractice{display:none!important}#prepGuide,#prepGuide section{display:block!important}p.answer{background:none!important}}
+@media print{html{color-scheme:light!important}body,section{background:#fff!important;color:#111!important}h1,h2,h3,p.answer,.key-points,.key-points strong{color:#111!important}.prep-toolbar,.prep-tabs,.prep-search,.prep-progress,.review-check,.section-notes,#prepStatus,.prep-back,#prepNotes,#prepPractice{display:none!important}#prepGuide,#prepGuide section,#prepAnswers,#prepAnswers section{display:block!important}p.answer{background:none!important}}
 fieldset#practiceRubric{border:1px solid var(--border);border-radius:10px;margin-top:24px;padding:16px;font-size:.9rem}#practiceRubric input{accent-color:var(--accent)}#practiceRubric label{margin:8px 0}.prep-toolbar select{max-width:100%}.prep-toolbar label{min-width:0;flex-wrap:wrap}@media print{#practiceRubric{display:none}}
 /* Compact reading layout; practice and saved-note controls keep their spacing. */
 body{line-height:1.6}.layout{padding-top:30px;gap:30px}header{margin-bottom:18px}section{padding:22px 28px;margin-bottom:18px}.section-top{margin-bottom:12px}h2{font-size:1.3rem}h3{font-size:1rem;margin:18px 0 6px}p.answer{padding:10px 14px;line-height:1.6;margin-bottom:8px}.key-points{font-size:.875rem;line-height:1.6}p{margin-bottom:12px}.review-check{margin-top:18px;padding-top:12px}nav a{padding:7px 10px}.prep-toolbar{margin:14px 0}.prep-tabs{margin:16px 0}#prepQuestionCount{font-size:.875rem;color:var(--muted);margin-top:8px}#prepGuide section[id^=assessment-]:not(#assessment-reflection){background:var(--raised)}
@@ -181,7 +181,53 @@ body{line-height:1.6}.layout{padding-top:30px;gap:30px}header{margin-bottom:18px
 <p><strong>Reasoning:</strong> facts → positives → risks → legitimate explanation → decisive gap → permitted decision. Record uncertainty; do not invent checks or rely on the existing transaction status.</p>
 <p><strong>Research:</strong> check event, city, date, timezone and promotion terms against primary sources. Keep customer information in approved systems. Follow the original no-AI rule during an assessment.</p>
 </section>
-<footer>Updated 13 October 2026 &middot; Personal interview preparation</footer></main></div><script id="prepWorkspace">(() => {
+<footer>Updated 15 October 2026 &middot; Personal interview preparation</footer></main></div><template id="prepAnswersContent">
+<section><h2>Part 1 — General &amp; Behavioral Questions</h2>
+<h3>1. Tell me about yourself and why Buyer Fraud?</h3>
+<p class="answer">I currently work in customer support, with previous experience in accounting and financial planning, and a Business Analytics degree. I want to combine my analytical skills and marketplace knowledge to prevent fraud while protecting genuine customers.</p>
+<h3>2. How would you investigate a high-value order from a new account?</h3>
+<p class="answer">I&#x27;d check payment attempts, account history, devices, IP addresses, and links to known fraud. A new account alone doesn&#x27;t mean fraud, so I&#x27;d weigh positive and negative evidence before deciding.</p>
+<h3>3. What if the system flags an order, but your investigation suggests it&#x27;s legitimate?</h3>
+<p class="answer">I&#x27;d investigate the reason for the flag and compare it with positive indicators like successful purchase history and payment consistency. If major concerns are resolved, I&#x27;d accept within policy and document my reasoning.</p>
+<h3>4. How would you investigate potential account takeover (ATO)?</h3>
+<p class="answer">I&#x27;d review recent password/email changes, login history, devices, IP addresses, and payment activity. I&#x27;d verify the buyer through a trusted channel and hold or reject if significant concerns remained.</p>
+<h3>5. How would you prioritize 20 transactions?</h3>
+<p class="answer">I&#x27;d prioritize by fraud severity, event urgency, and financial exposure. I&#x27;d follow consistent checks, maintain accuracy, and document decisions without unnecessarily delaying genuine customers.</p>
+<h3>6. How would you handle an angry customer during verification?</h3>
+<p class="answer">I&#x27;d acknowledge their frustration, explain the security process, and follow approved verification steps. If verified and risks are resolved, I&#x27;d approve within policy; otherwise, explain the next steps professionally.</p>
+<h3>7. Tell me about a time you identified something suspicious.</h3>
+<p class="answer">During my crypto project, I recognized a wallet address but noticed unusual blockchain activity. I contacted my previous trading partner, confirmed the wallet was compromised, and avoided a potentially fraudulent transaction.</p>
+<h3>8. Tell me about a mistake you made.</h3>
+<p class="answer">I once provided an incorrect ticket transfer code. I acknowledged the error and introduced a checklist to double-check information, improving my accuracy and accountability.</p>
+<h3>9. Tell me about a time you solved a problem independently.</h3>
+<p class="answer">During a peer-to-peer crypto trade, I investigated unusual wallet activity, verified it with a previous contact, and independently decided not to proceed, preventing a potential loss.</p>
+<h3>10. How would you communicate a new fraud pattern?</h3>
+<p class="answer">I&#x27;d investigate shared devices, IPs, payment behavior, and purchasing patterns. I&#x27;d document supporting evidence and share it with the team, distinguishing suspected fraud from confirmed cases.</p>
+</section>
+<section><h2>Part 2 — Advanced Fraud Scenarios</h2>
+<h3>11. An established account makes three expensive purchases in 30 minutes.</h3>
+<p class="answer">I&#x27;d investigate purchase velocity, devices, payment activity, and account changes. I&#x27;d hold if permitted, accept if legitimate, or reject/escalate if significant fraud concerns remained.</p>
+<h3>12. A new buyer tries three cards but passes ID verification.</h3>
+<p class="answer">I&#x27;d investigate the failed payment reasons and payment authorization. ID verification is positive but doesn&#x27;t prove payment legitimacy. I&#x27;d accept only if significant concerns were resolved.</p>
+<h3>13. One of the attempted cards was reported stolen.</h3>
+<p class="answer">I&#x27;d verify the stolen-card report and investigate related payment attempts. If confirmed, I&#x27;d reject or escalate according to policy.</p>
+<h3>14. How would you explain a fraud rejection to an angry customer?</h3>
+<p class="answer">I&#x27;d acknowledge their frustration, explain that the order failed security review without revealing sensitive methods, verify payment status, and provide the appropriate next steps.</p>
+<h3>15. A verified £5,000 order uses a device linked to confirmed fraud.</h3>
+<p class="answer">I&#x27;d investigate the device connection and previous fraud cases. Successful verification doesn&#x27;t cancel out serious risk indicators. If unresolved, I&#x27;d lean toward rejecting or escalating.</p>
+<h3>16. The customer claims they used a shared workplace computer.</h3>
+<p class="answer">I&#x27;d consider the explanation but verify it against device history, account activity, and prior fraud connections. A plausible explanation alone isn&#x27;t proof of legitimacy.</p>
+<h3>17. Your shift ends, but an urgent £6,000 order remains unresolved.</h3>
+<p class="answer">I&#x27;d prioritize critical checks, escalate through available channels, and document findings. I&#x27;d ensure an authorized colleague takes ownership rather than leaving the case unattended.</p>
+<h3>18. Six accounts purchase expensive tickets using the same IP.</h3>
+<p class="answer">I&#x27;d investigate shared devices, payment patterns, account creation times, and fraud links. A shared IP is suspicious but isn&#x27;t proof of coordinated fraud.</p>
+<h3>19. A buyer attempts five cards with different names.</h3>
+<p class="answer">I&#x27;d treat this as high risk for stolen-card fraud or card testing. I&#x27;d investigate payment failures, authorization, devices, and account activity before holding, rejecting, or escalating within policy.</p>
+<h3>20. You approved an order, but the cardholder later reports fraud.</h3>
+<p class="answer">I&#x27;d promptly report and investigate the incident, coordinate appropriate loss-prevention actions, review any missed indicators, and share lessons with the team.</p>
+</section>
+</template>
+<script id="prepWorkspace">(() => {
   'use strict';
   const key = 'atlas.interview-prep.v1', themeKey = 'atlas.interview-theme';
   const main = document.querySelector('main'), header = main.querySelector('header');
@@ -204,14 +250,17 @@ body{line-height:1.6}.layout{padding-top:30px;gap:30px}header{margin-bottom:18px
   tools.innerHTML = `<a class="prep-back" href="./">← Back to QuantStack</a>
     <div class="prep-toolbar"><label>Theme <select id="prepTheme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label><button id="prepExport" type="button">Export notes</button><button id="prepPrint" type="button">Print guide</button></div>
     <div class="prep-progress"><progress id="prepProgress" max="${sections.length}" value="0" aria-label="Sections reviewed"></progress><span id="prepProgressText"></span></div>
-    <div class="prep-tabs" role="tablist" aria-label="Interview workspace"><button id="tab-guide" role="tab" aria-controls="prepGuide" aria-selected="true">Study guide</button><button id="tab-practice" role="tab" aria-controls="prepPractice" aria-selected="false" tabindex="-1">Practice</button><button id="tab-notes" role="tab" aria-controls="prepNotes" aria-selected="false" tabindex="-1">Notes & comments</button></div><p id="prepStatus" role="status" aria-live="polite"></p>`;
+    <div class="prep-tabs" role="tablist" aria-label="Interview workspace"><button id="tab-guide" role="tab" aria-controls="prepGuide" aria-selected="true">Study guide</button><button id="tab-answers" role="tab" aria-controls="prepAnswers" aria-selected="false" tabindex="-1">My answers</button><button id="tab-practice" role="tab" aria-controls="prepPractice" aria-selected="false" tabindex="-1">Practice</button><button id="tab-notes" role="tab" aria-controls="prepNotes" aria-selected="false" tabindex="-1">Notes & comments</button></div><p id="prepStatus" role="status" aria-live="polite"></p>`;
   header.after(tools);
   const guide = document.createElement('div'); guide.id = 'prepGuide'; guide.setAttribute('role','tabpanel'); guide.setAttribute('aria-labelledby','tab-guide');
   guide.innerHTML = '<label class="prep-search">Find a topic<input id="prepSearch" type="search" placeholder="Search questions, answers or algorithms"></label><p id="prepSearchStatus" role="status"></p><p id="prepNoResults" hidden>No matching sections. Try a different search.</p>';
   tools.after(guide); sections.forEach(s => guide.append(s));
+  const answers = document.createElement('div'); answers.id='prepAnswers'; answers.hidden=true; answers.setAttribute('role','tabpanel'); answers.setAttribute('aria-labelledby','tab-answers');
+  answers.append(document.getElementById('prepAnswersContent').content.cloneNode(true));
+  guide.after(answers);
   const notes = document.createElement('section'); notes.id='prepNotes'; notes.className='prep-panel'; notes.hidden=true; notes.setAttribute('role','tabpanel'); notes.setAttribute('aria-labelledby','tab-notes');
   notes.innerHTML = '<h2>Your notes & comments</h2><p>Use a tab for each topic, or keep general feedback together. Notes save as you type in this browser. Export a copy before clearing site data. From the same site address, QuantStack’s Save to account also includes these notes.</p><div id="noteTabs" class="note-tabs" role="tablist" aria-label="Note topics"></div><div id="notePanel" role="tabpanel"><label id="noteLabel" for="prepNote"></label><textarea id="prepNote" maxlength="50000" placeholder="Add your examples, comments, feedback or follow-up questions…"></textarea></div><div class="note-meta"><span id="noteSaved" role="status"></span><span id="noteCount"></span></div>';
-  guide.after(notes);
+  answers.after(notes);
   const practice = document.createElement('section'); practice.id='prepPractice'; practice.className='prep-panel'; practice.hidden=true; practice.setAttribute('role','tabpanel'); practice.setAttribute('aria-labelledby','tab-practice');
   practice.innerHTML = '<h2>Practise out loud</h2><p>Choose a topic and answer length, then compare it with your prepared talking points. Use real examples and explain what you checked, what you did and what happened.</p><p id="practiceTopic"></p><h3 id="practiceQuestion"></h3><output id="practiceClock" class="practice-clock" aria-label="Time remaining">1:30</output><div class="practice-controls"><button id="practiceTimer">Start timer</button><button id="practiceReset">Reset timer</button><button id="practiceReveal" aria-controls="practiceAnswer" aria-expanded="false">Reveal talking points</button><button id="practiceNext">Next question</button><button id="practiceNote">Add feedback</button></div><p id="practiceStatus" role="status" aria-live="polite"></p><div id="practiceAnswer" hidden></div>';
   notes.after(practice);
@@ -226,7 +275,7 @@ body{line-height:1.6}.layout{padding-top:30px;gap:30px}header{margin-bottom:18px
   function showTab(name) {
     if (tab==='practice' && name!=='practice') pauseTimer();
     tab=name;
-    for (const [id,panel] of [['guide',guide],['practice',practice],['notes',notes]]) { panel.hidden=id!==name; el('tab-'+id).setAttribute('aria-selected',String(id===name)); el('tab-'+id).tabIndex=id===name?0:-1; }
+    for (const [id,panel] of [['guide',guide],['answers',answers],['practice',practice],['notes',notes]]) { panel.hidden=id!==name; el('tab-'+id).setAttribute('aria-selected',String(id===name)); el('tab-'+id).tabIndex=id===name?0:-1; }
   }
   function keyboardTabs(container, activate) {
     container.addEventListener('keydown', event => {
@@ -236,7 +285,7 @@ body{line-height:1.6}.layout{padding-top:30px;gap:30px}header{margin-bottom:18px
       buttons[next].focus(); activate(buttons[next]);
     });
   }
-  for (const name of ['guide','practice','notes']) el('tab-'+name).onclick=()=>showTab(name);
+  for (const name of ['guide','answers','practice','notes']) el('tab-'+name).onclick=()=>showTab(name);
   keyboardTabs(document.querySelector('.prep-tabs'), button=>button.click());
   function chooseNote(id) {
     state.note=id; const topic=topics.find(t=>t.id===id);

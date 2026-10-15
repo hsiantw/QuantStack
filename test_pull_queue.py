@@ -95,8 +95,9 @@ class PullQueueTests(unittest.TestCase):
             assets = dashboard.catalog()
         self.assertEqual(len(bars), 1)
         self.assertEqual(bars[0]['date'], stamp)
-        self.assertEqual(assets[0]['quote_interval'], '5m')
-        self.assertFalse(assets[0]['has_daily'])
+        asset = next(asset for asset in assets if asset['symbol'] == 'TEST')
+        self.assertEqual(asset['quote_interval'], '5m')
+        self.assertFalse(asset['has_daily'])
 
     def test_http_enqueue_and_origin_boundary(self):
         from dashboard import Handler

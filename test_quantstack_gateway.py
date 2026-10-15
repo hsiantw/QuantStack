@@ -1,6 +1,8 @@
 """Integration tests for HTTP, websocket, and hosted-snapshot routing."""
 import gzip
 import json
+import sqlite3
+from contextlib import closing
 from pathlib import Path
 import tempfile
 import unittest
@@ -8,7 +10,21 @@ import unittest
 from aiohttp import ClientSession, WSServerHandshakeError, web
 from aiohttp.test_utils import TestServer
 
-from serve_quantstack import create_app
+from serve_quantstack import create_app, has_market_data
+
+
+class MarketDataDetectionTests(unittest.TestCase):
+    def test_partial_schema_and_empty_database(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'market.sqlite'
+            self.assertFalse(has_market_data(path))
+            self.assertFalse(path.exists())
+            with closing(sqlite3.connect(path)) as db:
+                db.execute('CREATE TABLE intraday_prices (close REAL)')
+                self.assertFalse(has_market_data(path))
+                db.execute('INSERT INTO intraday_prices VALUES (10)')
+                db.commit()
+            self.assertTrue(has_market_data(path))
 
 
 class GatewayTests(unittest.IsolatedAsyncioTestCase):

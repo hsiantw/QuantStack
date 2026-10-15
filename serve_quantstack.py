@@ -35,8 +35,10 @@ def has_market_data(path):
         return False
     try:
         with closing(sqlite3.connect(path.as_uri() + '?mode=ro', uri=True)) as connection:
+            tables = {row[0] for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'")}
             return any(connection.execute(f'SELECT 1 FROM {table} LIMIT 1').fetchone()
-                       for table in ('prices', 'intraday_prices'))
+                       for table in ('prices', 'intraday_prices') if table in tables)
     except sqlite3.Error:
         return False
 

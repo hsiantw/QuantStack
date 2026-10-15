@@ -1,10 +1,11 @@
 """Bounded, public Ethereum activity lookup; no attribution or risk scoring."""
 import asyncio
+import json
 import re
 from datetime import datetime, timezone
 from decimal import Decimal, localcontext
 
-from aiohttp import ClientSession, ClientTimeout, web
+from aiohttp import ClientError, ClientSession, ClientTimeout, web
 
 SOURCE = 'https://github.com/tornadocash/tornado-cli/blob/master/config.js'
 POOL_GROUPS = {
@@ -64,13 +65,14 @@ async def fetch_feed(session, action, address, limit):
                 if size > 12 * 1024 * 1024:
                     raise ValueError('Response too large')
                 chunks.append(chunk)
-            import json
             payload = json.loads(b''.join(chunks))
+        if not isinstance(payload, dict):
+            raise ValueError('Expected a provider response object')
         if payload.get('status') in ('1', '2'):
             return payload
         if payload.get('result') == [] and 'no transactions' in str(payload.get('message', '')).lower():
             return payload
-    except (Exception, asyncio.TimeoutError):
+    except (ClientError, OSError, ValueError, asyncio.TimeoutError):
         pass
     return {'error': 'Provider unavailable or rate limited. Retry later.'}
 
@@ -90,6 +92,9 @@ async def scan(address, days, limit):
             continue
         parsed, invalid = [], False
         for row in rows[:limit]:
+            if not isinstance(row, dict):
+                invalid = True
+                continue
             try:
                 parsed.append(normalize(row, feed, address))
             except (ValueError, TypeError, KeyError):

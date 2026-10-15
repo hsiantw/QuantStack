@@ -15,6 +15,18 @@ POOL = next(iter(CONTRACTS))
 
 
 class ScannerTests(unittest.IsolatedAsyncioTestCase):
+    async def test_malformed_records_preserve_valid_activity_and_mark_partial_coverage(self):
+        async def fake(session, action, address, limit):
+            if action == 'balance':
+                return {'status': '1', 'result': '0'}
+            return {'status': '1', 'result': [None, [], 'invalid', {
+                'from': ADDRESS, 'to': POOL, 'timeStamp': str(int(time.time())),
+                'isError': '0', 'value': '1'}]}
+        with patch('crypto_scanner.fetch_feed', fake):
+            result = await scan(ADDRESS, 30, 100)
+        self.assertEqual(len(result['activity']), 3)
+        self.assertTrue(all(item['state'] == 'partial' for item in result['coverage']))
+
     def test_evidence_and_precision(self):
         row = dict(timeStamp='100', **{'from': ADDRESS, 'to': POOL.upper(), 'isError': '1'})
         record = normalize(row, 'transactions', ADDRESS)
