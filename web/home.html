@@ -19,6 +19,22 @@
     <a class="start-button" href="/workspace/">Open charts <span>↗</span></a>
   </header>
   <nav class="home-quick-nav" aria-label="Quick access"><a href="/workspace/">Charts</a><a href="/screener">Stock screener</a><a href="/markets">Markets</a><a href="/portfolio">Portfolios</a><a href="/strategy">Strategy tester</a><a href="/ideas">Idea notebook</a></nav><main id="main">
+    <section class="launchpad" aria-labelledby="launchpadTitle">
+      <div class="launchpad-heading"><div><p class="eyebrow">YOUR DAILY STARTING POINT</p><h2 id="launchpadTitle">Your apps &amp; websites</h2><p>Keep your go-to market tools one click away.</p></div><div class="shortcut-toolbar"><button id="shortcutCustomize" type="button" aria-pressed="false">Customize</button><button id="shortcutAdd" class="shortcut-primary" type="button">+ Add shortcut</button></div></div>
+      <p id="shortcutHelp" class="shortcut-help" hidden>Drag a handle to reorder. You can also use the move buttons, or focus a handle and press the arrow keys.</p>
+      <ul id="shortcutGrid" class="shortcut-grid" aria-label="Website shortcuts"></ul>
+      <p id="shortcutEmpty" hidden>No shortcuts yet. Add a website to make this space yours.</p>
+      <div class="shortcut-footer"><span>Saved in this browser · External sites open in a new tab</span><span id="shortcutStatus" role="status" aria-live="polite"></span><button id="shortcutUndo" type="button" hidden>Undo removal</button></div>
+      <noscript>Enable JavaScript to customize shortcuts. <a href="https://finviz.com/">Finviz</a> · <a href="https://finance.yahoo.com/">Yahoo Finance</a></noscript>
+    </section>
+    <dialog id="shortcutDialog" class="shortcut-dialog" aria-labelledby="shortcutDialogTitle">
+      <form id="shortcutForm"><div class="shortcut-dialog-heading"><h2 id="shortcutDialogTitle">Add a shortcut</h2><button id="shortcutClose" type="button" aria-label="Close shortcut editor">×</button></div>
+        <label for="shortcutName">Name</label><input id="shortcutName" maxlength="50" required placeholder="e.g. Yahoo Finance" autocomplete="off">
+        <label for="shortcutUrl">Website address</label><input id="shortcutUrl" type="text" inputmode="url" maxlength="2048" required placeholder="https://finance.yahoo.com" autocomplete="off" aria-describedby="shortcutUrlHelp"><p id="shortcutUrlHelp">Enter a website address, or a QuantStack path such as /workspace/.</p>
+        <label for="shortcutColor">Icon color</label><select id="shortcutColor"><option value="blue">Blue</option><option value="violet">Violet</option><option value="green">Green</option><option value="amber">Amber</option><option value="rose">Rose</option><option value="slate">Slate</option></select>
+        <p id="shortcutError" role="alert"></p><div class="shortcut-dialog-actions"><button id="shortcutCancel" type="button">Cancel</button><button class="shortcut-primary" type="submit">Save shortcut</button></div>
+      </form>
+    </dialog>
     <section class="hero" aria-labelledby="heroTitle">
       <div class="hero-copy"><p class="eyebrow"><span></span> YOUR MARKETS. YOUR PERSPECTIVE.</p><h1 id="heroTitle">A wider view.<br>A sharper edge.</h1><p class="hero-description">Explore the markets. Test your ideas.<br class="mobile-break"> Make the whole picture yours.</p><a class="hero-button" href="/workspace/">Launch your workspace <span>↗</span></a><p class="hero-note">Charts, research, and analysis. All in one place.</p></div>
       <div class="earth" role="img" aria-label="Sunrise over the blue curve of Earth"></div>
