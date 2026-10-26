@@ -167,7 +167,7 @@ function liquidationBucketKey(value) {
     return instant.toISOString().slice(0, 10);
   }
   if (interval === '1d') return value.slice(0, 10);
-  const span = interval === '1h' ? 3600000 : interval === '15m' ? 900000 : interval === '5m' ? 300000 : 60000;
+  const span = (parseInt(interval, 10) || 1) * (interval.endsWith('h') ? 3600000 : 60000);
   return new Date(Math.floor(instant.getTime() / span) * span).toISOString().replace('.000Z', '+00:00');
 }
 

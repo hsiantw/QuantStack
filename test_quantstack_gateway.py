@@ -6,6 +6,7 @@ from contextlib import closing
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from aiohttp import ClientSession, WSServerHandshakeError, web
 from aiohttp.test_utils import TestServer
@@ -103,6 +104,14 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
         await self.gateway.start_server()
 
     async def test_snapshot_serves_current_ui_and_local_prices(self):
+        # Enrollment is a user setting; keep this fixture independent of it.
+        from snapshot_catalog import snapshot_catalog
+        config = Path(self.temporary.name) / 'configured.json'
+        config.write_text(json.dumps({'symbols': ['SOL-USD']}))
+        configured = patch('serve_quantstack.snapshot_catalog',
+                           side_effect=lambda assets, _: snapshot_catalog(assets, config))
+        configured.start()
+        self.addCleanup(configured.stop)
         await self.use_snapshot()
         async with self.client.get(self.gateway.make_url('/workspace/')) as response:
             html = await response.text()

@@ -193,7 +193,7 @@ async def serve(host, port):
         import json
         config = json.loads((ROOT / 'config.json').read_text(encoding='utf-8'))
         liquidation_symbols = tuple(symbol for symbol in config.get('symbols', [])
-                                    if isinstance(symbol, str) and symbol.endswith('-USD'))
+                                    if config.get('liquidations_enabled', True) and isinstance(symbol, str) and symbol.endswith('-USD'))
     dashboard = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
     threading.Thread(target=dashboard.serve_forever, daemon=True).start()
     runner = None

@@ -40,7 +40,9 @@
     for (const id of ['submit', 'signinTab', 'registerTab']) el(id).disabled = true;
     el('status').textContent = mode === 'register' ? 'Creating your account…' : 'Signing in…';
     try {
+      await window.QuantLocalPreferences?.flush();
       await api(mode, {username: el('username').value.trim(), password: el('password').value});
+      window.QuantLocalPreferences?.pause();
       el('password').value = '';
       try { localStorage.setItem('quantstack.accountChanged', crypto.randomUUID()); } catch {}
       location.assign('/workspace/');

@@ -173,6 +173,11 @@
     await Promise.all(comparisons.map(async item => {
       if (item.symbol === selected.symbol) return;
       const q = new URLSearchParams(params); q.set('symbol', item.symbol);
+      if (q.has('before') || q.has('after')) {
+        q.delete('before'); q.delete('after');
+        q.set('start', rows[0].date.slice(0, 10));
+        q.set('end', rows.at(-1).date.slice(0, 10));
+      }
       try {
         const result = await api('/api/history?' + q);
         if (version !== requestVersion || chartGeneration !== generation) return;
@@ -183,6 +188,7 @@
     if (version === requestVersion && chartGeneration === generation) drawComparison();
   }
   const originalLoadHistory = loadHistory;
+  window.addEventListener('chart-history-page', refreshComparisons);
   loadHistory = async function() {
     requestVersion++;
     for (const item of comparisons) { item.data = new Map(); item.status = 'Loading'; }
@@ -465,7 +471,7 @@
     try { prefs = JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch {}
     const params = new URLSearchParams(location.search);
     if (params.has('symbol')) prefs = Object.fromEntries(params);
-    const intervals = window.ATLAS_STATIC ? ['1d', '1w', '1mo'] : ['1d', '1h', '1w', '1mo'];
+    const intervals = window.ATLAS_STATIC ? ['1d', '1w', '1mo'] : ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '1d', '1w', '1mo'];
     interval = intervals.includes(prefs.interval) ? prefs.interval : '1d';
     period = periods.includes(prefs.period) ? prefs.period : '1Y';
     if (period === 'CUSTOM') {

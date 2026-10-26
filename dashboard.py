@@ -79,6 +79,15 @@ def catalog():
             if hourly is None:
                 hourly = db.execute('''SELECT timestamp,close,currency,exchange,interval FROM intraday_prices
                   WHERE symbol=? ORDER BY timestamp DESC LIMIT 1''', (symbol['symbol'],)).fetchone()
+            quote_source = 'Yahoo Finance'
+            if symbol['symbol'] == 'BTC-USD':
+                exchange_quote = db.execute('''SELECT timestamp,close,'USD' AS currency,
+                    source AS exchange,interval,source FROM crypto_exchange_prices
+                    WHERE symbol='BTC-USD' AND interval='1m'
+                    ORDER BY timestamp DESC,source LIMIT 1''').fetchone()
+                if exchange_quote and (hourly is None or exchange_quote['timestamp'] > hourly['timestamp']):
+                    hourly = exchange_quote
+                    quote_source = exchange_quote['source']
             has_daily = bool(latest)
             if not latest and not hourly:
                 result.append(dict(symbol=symbol['symbol'], name=names.get(symbol['symbol'], symbol['symbol']),
@@ -103,6 +112,7 @@ def catalog():
             result.append(dict(symbol=symbol['symbol'], name=names.get(symbol['symbol'], symbol['symbol']),
                                **daily, quote_timestamp=quote['timestamp'] if use_hourly else latest['date'],
                                quote_interval=('1h' if hourly['interval'] == '60m' else hourly['interval']) if use_hourly else '1d', change=change,
+                               quote_source=quote_source if use_hourly else 'Yahoo Finance',
                                has_daily=has_daily,
                                has_data=True,
                                **performance, market_cap=market_cap,
@@ -138,12 +148,51 @@ def aggregate_daily_bars(rows, interval):
     return list(grouped.values())
 
 
+def btc_archive_bars(db, minutes, lower, upper, forward=False):
+    """Read at most 1,000 complete UTC buckets from the verified minute archive."""
+    span = minutes * 60
+    direction = 'ASC' if forward else 'DESC'
+    edge = db.execute(f'''SELECT timestamp FROM crypto_exchange_prices
+        WHERE symbol='BTC-USD' AND interval='1m' AND source='Bitstamp'
+        AND timestamp>=? AND timestamp<? ORDER BY timestamp {direction} LIMIT 1''',
+        (lower, upper)).fetchone()
+    if not edge:
+        return []
+    stamp = int(datetime.fromisoformat(edge[0]).timestamp())
+    if forward:
+        first = (stamp + span - 1) // span * span
+        last = first + span * 1000
+    else:
+        last = (stamp + 60) // span * span
+        first = last - span * 1000
+    lower = max(lower, datetime.fromtimestamp(first, timezone.utc).isoformat())
+    upper = min(upper, datetime.fromtimestamp(last, timezone.utc).isoformat())
+    rows = db.execute('''WITH buckets AS (
+        SELECT CAST(unixepoch(timestamp)/? AS INTEGER)*? AS bucket,
+            MIN(timestamp) AS first,MAX(timestamp) AS last,MAX(high) AS high,
+            MIN(low) AS low,SUM(volume) AS volume
+        FROM crypto_exchange_prices WHERE symbol='BTC-USD' AND interval='1m'
+            AND source='Bitstamp' AND timestamp>=? AND timestamp<?
+        GROUP BY bucket HAVING COUNT(*)=?
+    ) SELECT b.bucket,o.open,b.high,b.low,c.close,b.volume FROM buckets b
+      JOIN crypto_exchange_prices o ON o.symbol='BTC-USD' AND o.interval='1m'
+        AND o.source='Bitstamp' AND o.timestamp=b.first
+      JOIN crypto_exchange_prices c ON c.symbol='BTC-USD' AND c.interval='1m'
+        AND c.source='Bitstamp' AND c.timestamp=b.last ORDER BY b.bucket''',
+        (span, span, lower, upper, minutes)).fetchall()
+    return [dict(date=datetime.fromtimestamp(r['bucket'], timezone.utc).isoformat(),
+                 open=r['open'], high=r['high'], low=r['low'], close=r['close'],
+                 adjusted_close=r['close'], volume=r['volume'], dividends=None,
+                 splits=None, sources=1, source='Bitstamp') for r in rows]
+
+
 def history(query):
     symbol = query.get('symbol', ['AAPL'])[0]
     interval = query.get('interval', ['1d'])[0]
-    intervals = {'1m': 1, '5m': 5, '15m': 15, '1h': 60, '1d': 0, '1w': 0, '1mo': 0}
+    intervals = {'1m': 1, '3m': 3, '5m': 5, '15m': 15, '30m': 30,
+                 '1h': 60, '2h': 120, '4h': 240, '1d': 0, '1w': 0, '1mo': 0}
     if interval not in intervals:
-        raise ValueError('Interval must be 1m, 5m, 15m, 1h, 1d, 1w, or 1mo.')
+        raise ValueError('Choose a supported minute, hour, daily, weekly or monthly interval.')
     start, end = query.get('start', ['0001-01-01'])[0], query.get('end', ['9999-12-31'])[0]
     date.fromisoformat(start)
     date.fromisoformat(end)
@@ -158,7 +207,23 @@ def history(query):
             return aggregate_daily_bars(rows, interval)
         lower = start + 'T00:00:00+00:00'
         upper = (date.fromisoformat(end) + timedelta(days=1)).isoformat() + 'T00:00:00+00:00' if end != '9999-12-31' else '9999-12-31T23:59:59+00:00'
-        if interval in ('1h', '5m', '15m'):
+        before, after = query.get('before', [None])[0], query.get('after', [None])[0]
+        if before or after:
+            if symbol != 'BTC-USD' or not intervals[interval] or (before and after):
+                raise ValueError('Use one history cursor with BTC-USD intraday bars.')
+            cursor = datetime.fromisoformat(before or after)
+            if cursor.tzinfo is None:
+                raise ValueError('History cursor must include a timezone.')
+            cursor = cursor.astimezone(timezone.utc)
+            if before:
+                upper = min(upper, cursor.isoformat())
+            else:
+                lower = max(lower, (cursor + timedelta(minutes=intervals[interval])).isoformat())
+        if symbol == 'BTC-USD' and intervals[interval] > 1 and db.execute('''
+            SELECT 1 FROM crypto_exchange_prices WHERE symbol='BTC-USD'
+            AND interval='1m' AND source='Bitstamp' LIMIT 1''').fetchone():
+            return btc_archive_bars(db, intervals[interval], lower, upper, bool(after))
+        if interval in ('1h', '3m', '5m', '15m', '30m', '2h', '4h'):
             # Native provider candles retain their exchange/session alignment.
             # Do not mix them with UTC-hour rollups of partial minute coverage.
             native = db.execute('''SELECT timestamp AS date,open,high,low,close,adjusted_close,
@@ -168,6 +233,23 @@ def history(query):
             if native or interval == '1h':
                 return [dict(row) for row in reversed(native)]
         if symbol == 'BTC-USD':
+            # Bound rows before materializing a multi-million-minute archive.
+            # The end-date control lets users inspect any historical window.
+            direction = 'ASC' if after else 'DESC'
+            boundary = db.execute(f'''SELECT timestamp FROM (
+              SELECT timestamp FROM (SELECT DISTINCT timestamp FROM crypto_exchange_prices
+              WHERE symbol=? AND interval='1m' AND timestamp>=? AND timestamp<?
+              ORDER BY timestamp {direction} LIMIT 10000)
+              UNION SELECT timestamp FROM (SELECT timestamp FROM intraday_prices
+              WHERE symbol=? AND interval='1m' AND timestamp>=? AND timestamp<?
+              ORDER BY timestamp {direction} LIMIT 10000)
+              ) ORDER BY timestamp {direction} LIMIT 1 OFFSET 9999''',
+              (symbol, lower, upper, symbol, lower, upper)).fetchone()
+            if boundary:
+                if after:
+                    upper = min(upper, (datetime.fromisoformat(boundary[0]) + timedelta(minutes=1)).isoformat())
+                else:
+                    lower = boundary[0]
             exchange_rows = db.execute('''SELECT timestamp,source,open,high,low,close,volume
               FROM crypto_exchange_prices WHERE symbol=? AND interval='1m'
               AND timestamp>=? AND timestamp<? ORDER BY timestamp,source''', (symbol, lower, upper)).fetchall()
@@ -201,7 +283,7 @@ def history(query):
     result = []
     for item in raw:
         stamp = datetime.fromisoformat(item['timestamp']).astimezone(timezone.utc)
-        bucket = stamp.replace(minute=(stamp.minute // minutes) * minutes, second=0, microsecond=0)
+        bucket = datetime.fromtimestamp(int(stamp.timestamp()) // (minutes * 60) * (minutes * 60), timezone.utc)
         key = bucket.isoformat()
         if not result or result[-1]['date'] != key:
             result.append(dict(date=key, open=item['open'], high=item['high'], low=item['low'],
@@ -565,6 +647,9 @@ class Handler(BaseHTTPRequestHandler):
                          '/indicators.js': ('indicators.js', 'text/javascript'),
                          '/drawings.js': ('drawings.js', 'text/javascript'),
                          '/chart-scale.js': ('chart-scale.js', 'text/javascript'),
+                         '/chart-history.js': ('chart-history.js', 'text/javascript'),
+                         '/timeframes.js': ('timeframes.js', 'text/javascript'),
+                         '/timeframes.css': ('timeframes.css', 'text/css'),
                          '/chart-scale.css': ('chart-scale.css', 'text/css'),
                          '/workspace.js': ('workspace.js', 'text/javascript'),
                          '/workspace-experience.js': ('workspace-experience.js', 'text/javascript'),
@@ -579,6 +664,8 @@ class Handler(BaseHTTPRequestHandler):
                          '/theme.css': ('theme.css', 'text/css'),
                          '/strategy-engine.js': ('strategy-engine.js', 'text/javascript'),
                          '/strategy.js': ('strategy.js', 'text/javascript'),
+                         '/strategy-worker.js': ('strategy-worker.js', 'text/javascript'),
+                         '/strategy.css': ('strategy.css', 'text/css'),
                          '/markov-engine.js': ('markov-engine.js', 'text/javascript'),
                          '/markov-worker.js': ('markov-worker.js', 'text/javascript'),
                          '/markov.js': ('markov.js', 'text/javascript'),

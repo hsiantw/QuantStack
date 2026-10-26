@@ -2,6 +2,7 @@
   'use strict';
   const el = id => document.getElementById(id), key = 'atlas.strategy.v1';
   const pane = el('workspaceStrategyPanel');
+  const workerURL = new URL('./strategy-worker.js', document.currentScript.src);
   const catalog = AtlasBacktest.catalog;
   const names = {...Object.fromEntries(Object.entries(catalog).map(([id, item]) => [id, item.label])), custom: 'Custom entry / exit'};
   const descriptions = {...Object.fromEntries(Object.entries(catalog).map(([id, item]) => [id, item.description])), custom: 'Build separate entry and exit conditions. Indicators use the selected raw or adjusted OHLC. Periods count bars in the selected chart interval.'};
@@ -22,12 +23,58 @@
   el('strategyDescription').insertAdjacentHTML('beforebegin', `<div class="strategy-builder-actions"><button id="strategyCustomize" type="button" class="secondary">Customize this preset</button></div><div id="strategyRuleBuilder" class="strategy-rule-builder" hidden><p class="strategy-rule-help">Signals are evaluated at the close and filled at the next open. Crossing rules require the previous bar to be on the other side or equal. All indicators must finish warming up before trading begins. Stops and targets remain active alongside your exit rules.</p>${['entry', 'exit'].map(side => `<section class="strategy-condition-group" aria-labelledby="st-${side}-title"><div class="strategy-condition-heading"><h3 id="st-${side}-title">${side === 'entry' ? 'Entry · buy when' : 'Exit · sell when'}</h3><label>Match<select id="st-${side}-mode"><option value="all">All conditions (AND)</option><option value="any">Any condition (OR)</option></select></label><button type="button" class="secondary" data-add-condition="${side}">+ Add condition</button></div><div id="st-${side}-rules"></div></section>`).join('')}</div><div class="strategy-saved"><label>Setup name<input id="strategySetupName" maxlength="80" placeholder="My trend strategy"></label><button id="strategySaveSetup" type="button" class="secondary">Save setup</button><label>Saved setups<select id="strategySavedSetup" aria-label="Saved strategy setups"></select></label><button id="strategyDeleteSetup" type="button" class="secondary" disabled>Delete setup</button></div><p id="strategySetupNotice" role="status"></p>`);
   let customConditions = AtlasBacktest.rulesFor(AtlasBacktest.defaults), setups = Object.create(null);
   el('strategyDescription').insertAdjacentHTML('afterend', '<div id="strategyRulePreview" class="strategy-rule-preview" aria-label="Strategy entry and exit summary"></div>');
+  // Keep one set of controls for both the chart dock and the full research page.
+  const layout = document.createElement('div'); layout.className = 'strategy-lab';
+  layout.innerHTML = `<div class="strategy-setup"><div class="strategy-section-heading"><span>01 / CONFIGURE</span><strong>Your strategy</strong></div>
+    <div class="strategy-setup-tabs" role="tablist" aria-label="Strategy settings">${['Signal','Risk','Saved'].map((name,i) => `<button type="button" id="strategy${name}Tab" role="tab" aria-controls="strategy${name}Config" aria-selected="${i===0}" tabindex="${i===0?0:-1}">${['Strategy','Risk & costs','Saved setups'][i]}</button>`).join('')}</div></div>
+    <div class="strategy-output"><div class="strategy-output-heading"><div><span>02 / ANALYZE</span><h3>Test results</h3></div><span id="strategyState" class="strategy-state">Ready to test</span></div>
+    <div id="strategyEmpty" class="strategy-empty"><svg viewBox="0 0 96 64" aria-hidden="true"><path d="M4 52H92M4 32H92M4 12H92"/><path d="M5 47L20 39L32 43L49 22L64 29L77 12L91 6"/></svg><h3>Turn your rules into a test.</h3><p>Choose a preset or build your own conditions, set your risk, then run against the loaded price history.</p><div><span>01 Choose rules</span><span>02 Set risk</span><span>03 Explore results</span></div></div></div>`;
+  pane.querySelector('.strategy-header').after(layout);
+  const form = el('strategyForm'), config = pane.querySelector('.strategy-config');
+  layout.querySelector('.strategy-setup').append(form);
+  for (const name of ['Signal','Risk','Saved']) {
+    const section=document.createElement('section'); section.id=`strategy${name}Config`; section.setAttribute('role','tabpanel'); section.setAttribute('aria-labelledby',`strategy${name}Tab`); section.hidden=name!=='Signal'; form.append(section);
+  }
+  el('strategySignalConfig').innerHTML=`<div class="strategy-families" aria-label="Strategy families">${['Trend','Reversion','Momentum','Breakout'].map(name=>`<button type="button" data-strategy-family="${name}" aria-pressed="false">${name}</button>`).join('')}</div><div class="strategy-field-grid" id="strategySignalFields"></div>`;
+  el('strategyRiskConfig').innerHTML='<h3>Capital & position</h3><div class="strategy-field-grid" id="strategyCapitalFields"></div><div class="strategy-allocation"><label for="strategyAllocationRange">Position size <output id="strategyAllocationValue">100%</output></label><input id="strategyAllocationRange" type="range" min="1" max="100" value="100" aria-label="Position size percent"><div>'+[25,50,75,100].map(n=>`<button type="button" data-allocation="${n}">${n}%</button>`).join('')+'</div></div><h3>Execution & protection</h3><div class="strategy-field-grid" id="strategyCostFields"></div><p class="strategy-rule-help">Costs apply on entry and exit. Set stop loss or take profit to 0 to turn it off.</p><p id="strategyRiskSummary" class="strategy-risk-summary"></p>';
+  [...config.querySelectorAll('label')].forEach(label=>{
+    const id=label.querySelector('input,select').id;
+    const target=id==='st-kind'||label.dataset.strategyGroup?'strategySignalFields':['st-capital','st-allocation'].includes(id)?'strategyCapitalFields':'strategyCostFields';
+    el(target).append(label);
+  });
+  el('strategySignalConfig').append(el('strategyDescription'),el('strategyRulePreview'),pane.querySelector('.strategy-builder-actions'),el('strategyRuleBuilder'));
+  el('strategySavedConfig').append(pane.querySelector('.strategy-saved'),el('strategySetupNotice'));
+  const headerActions=document.createElement('div'); headerActions.className='strategy-header-actions';
+  headerActions.innerHTML='<button type="button" id="strategyCancel" class="secondary" hidden>Cancel</button>';
+  headerActions.append(el('strategyExport'),el('strategyRun')); pane.querySelector('.strategy-header').append(headerActions);
+  el('strategyRun').setAttribute('form','strategyForm'); el('strategyRun').type='submit'; el('strategyRun').textContent='Run backtest →'; config.remove();
+  const output=layout.querySelector('.strategy-output'); output.insertBefore(el('strategyStatus'),el('strategyEmpty')); output.insertBefore(el('strategyError'),el('strategyEmpty'));
+  output.append(el('strategyResults'),pane.querySelector('.strategy-method'));
+  el('strategyOverview').insertAdjacentHTML('afterbegin','<div class="strategy-chart-toolbar"><div><h3>Equity journey</h3><span>Track performance through every bar</span></div><label><input id="strategyBenchmark" type="checkbox" checked> Buy &amp; hold</label><label class="strategy-chart-mode">View<select id="strategyChartMode"><option value="equity">Equity</option><option value="return">Return %</option></select></label></div>');
+  el('strategyCurve').tabIndex=0; el('strategyCurve').setAttribute('aria-describedby','strategyCurveHint');
+  el('strategyCurve').insertAdjacentHTML('afterend','<div class="strategy-inspect"><label for="strategyInspect">Inspect timeline</label><input id="strategyInspect" type="range" min="0" max="1" value="0"><span id="strategyCurveHint">Drag or use arrow keys to inspect</span></div>');
+  el('strategyTrades').insertAdjacentHTML('afterbegin','<div class="strategy-trade-tools"><div><h3>Trade explorer</h3><span>Select a trade to inspect its execution</span></div><label>Show<select id="strategyTradeFilter"><option value="all">All trades</option><option value="winners">Winning trades</option><option value="losers">Losing trades</option></select></label><label>Sort<select id="strategyTradeSort"><option value="oldest">Oldest first</option><option value="newest">Newest first</option><option value="pnl">Highest P&amp;L</option></select></label></div><div id="strategyTradeDetail" class="strategy-trade-detail" hidden></div>');
+  const setupTabs=['Signal','Risk','Saved'];
+  function setupTab(name,focus=false) {
+    for(const n of setupTabs) { el(`strategy${n}Config`).hidden=n!==name; el(`strategy${n}Tab`).setAttribute('aria-selected',String(n===name)); el(`strategy${n}Tab`).tabIndex=n===name?0:-1; }
+    if(focus) el(`strategy${name}Tab`).focus();
+  }
+  for(const name of setupTabs) el(`strategy${name}Tab`).onclick=()=>setupTab(name);
+  pane.querySelector('.strategy-setup-tabs').onkeydown=event=>{
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+    event.preventDefault(); const i=setupTabs.findIndex(n=>el(`strategy${n}Tab`)===document.activeElement);
+    setupTab(event.key==='Home'?'Signal':event.key==='End'?'Saved':setupTabs[(i+(event.key==='ArrowRight'?1:2))%3],true);
+  };
+  form.addEventListener('invalid',event=>{ const section=event.target.closest('[role=tabpanel]'); if(section) setupTab(setupTabs.find(n=>section.id===`strategy${n}Config`)); },true);
+  pane.querySelectorAll('[data-strategy-family]').forEach(button=>button.onclick=()=>{ el('st-kind').value=Object.keys(catalog).find(id=>catalog[id].family===button.dataset.strategyFamily); configure(); invalidate('Strategy changed. Run a backtest to explore its performance.'); });
+  el('strategyAllocationRange').oninput=event=>{el('st-allocation').value=event.target.value;};
+  pane.querySelectorAll('[data-allocation]').forEach(button=>button.onclick=()=>{el('st-allocation').value=button.dataset.allocation;el('st-allocation').dispatchEvent(new Event('input',{bubbles:true}));});
   const setupsKey = 'atlas.strategy.setups.v1';
   try {
     const stored = JSON.parse(localStorage.getItem(setupsKey) || '{}');
     for (const [name, settings] of Object.entries(stored)) if (name.length <= 80 && settings && typeof settings === 'object') setups[name] = settings;
   } catch {}
-  let result = null, resultSymbol = '', resultCurrency = '', resultInterval = '', tradePage = 0;
+  let result = null, resultSymbol = '', resultCurrency = '', resultInterval = '', tradePage = 0, worker = null, runId = 0, inspected = -1;
   try {
     const prefs = JSON.parse(localStorage.getItem(key) || '{}');
     applySettings(prefs);
@@ -45,6 +92,11 @@
   }
   function configure() {
     const kind = el('st-kind').value;
+    pane.querySelectorAll('[data-strategy-family]').forEach(button=>button.setAttribute('aria-pressed',String(catalog[kind]?.family===button.dataset.strategyFamily)));
+    const allocation=Number(el('st-allocation').value);
+    el('strategyAllocationRange').value=String(allocation); el('strategyAllocationValue').value=`${allocation}%`;
+    pane.querySelectorAll('[data-allocation]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.allocation)===allocation)));
+    el('strategyRiskSummary').textContent=`${fmt(Number(el('st-capital').value)*allocation/100)} allocated per entry · ${Number(el('st-commission').value)+Number(el('st-slippage').value)}% costs per side`;
     pane.querySelectorAll('[data-strategy-group]').forEach(label => {
       const group = label.dataset.strategyGroup;
       label.hidden = !(catalog[kind]?.controls || []).includes(group);
@@ -123,14 +175,19 @@
   el('strategySavedSetup').onchange = event => {
     const name = event.target.value; el('strategyDeleteSetup').disabled = !name;
     if (!Object.hasOwn(setups, name)) return;
-    applySettings(setups[name]); el('strategySetupName').value = name; renderRules();
+    applySettings(setups[name]); el('strategySetupName').value = name; renderRules(); setupTab('Signal');
     invalidate('Setup loaded. Run the backtest for the current symbol and range.');
   };
   el('strategyDeleteSetup').onclick = () => { const name = el('strategySavedSetup').value; if (!name) return; delete setups[name]; renderSetups(); storeSetups(`Deleted “${name}”.`); };
   function invalidate(message) {
+    runId++; worker?.terminate(); worker=null;
+    el('strategyRun').disabled=false; el('strategyRun').textContent='Run backtest →'; el('strategyCancel').hidden=true;
+    pane.setAttribute('aria-busy','false'); el('strategyState').textContent='Ready to test';
     result = null; el('strategyResults').hidden = true; el('strategyExport').disabled = true;
+    el('strategyEmpty').hidden=false; el('strategyTradeDetail').hidden=true;
     el('strategyError').hidden = true; el('strategyStatus').textContent = message;
   }
+  el('strategyCancel').onclick=()=>invalidate('Backtest cancelled. Your settings are unchanged.');
   function context() {
     el('strategyContext').textContent = `${selected?.symbol || 'No symbol'} · ${interval} · ${rows.length.toLocaleString()} loaded bars${rows.length ? ` · ${rows[0].date.slice(0,10)} – ${rows.at(-1).date.slice(0,10)}` : ''} · ${selected?.currency || 'quote currency'}`;
   }
@@ -141,23 +198,52 @@
       if (!selected || !rows.length) throw Error('Load a symbol with price history first.');
       if (el('rangeSummary').textContent.startsWith('Loading')) throw Error('Wait for the chart data to finish loading.');
       const settings = params();
-      result = AtlasBacktest.run(rows, settings); resultSymbol = selected.symbol; resultCurrency = selected.currency || ''; resultInterval = interval; tradePage = 0;
+      const currentRun=runId, symbol=selected.symbol, currency=selected.currency||'', chartInterval=interval;
+      el('strategyRun').disabled=true; el('strategyRun').textContent='Testing…'; el('strategyCancel').hidden=false;
+      el('strategyState').textContent='Running'; pane.setAttribute('aria-busy','true');
+      worker=new Worker(workerURL);
+      worker.onmessage=event=>{
+        if(currentRun!==runId) return;
+        worker.terminate(); worker=null;
+        if(event.data.error) { fail(event.data.error); return; }
+        result=event.data.result; resultSymbol=symbol; resultCurrency=currency; resultInterval=chartInterval; tradePage=0; inspected=-1;
+        el('strategyRun').disabled=false; el('strategyRun').textContent='Run again →'; el('strategyCancel').hidden=true;
+        pane.setAttribute('aria-busy','false'); el('strategyState').textContent='Test complete'; el('strategyEmpty').hidden=true;
       try { localStorage.setItem(key, JSON.stringify(settings)); } catch {}
       const metric = (name, value, cls = '') => `<div><span>${name}</span><strong class="${cls}">${value}</strong></div>`;
       el('strategyMetrics').innerHTML = metric('Net profit', `${fmt(result.netProfit)} ${esc(resultCurrency)}`, result.netProfit >= 0 ? 'positive' : 'negative') + metric('Total return', pct(result.returnPct), result.returnPct >= 0 ? 'positive' : 'negative') + metric('Buy & hold', pct(result.benchmarkPct)) + metric('Max drawdown', `${fmt(result.maxDrawdown)}%`, 'negative') + metric('Closed trades', String(result.trades.length)) + metric('Win rate', result.winRate == null ? '—' : `${fmt(result.winRate)}%`) + metric('Profit factor', result.profitFactor === Infinity ? '∞' : fmt(result.profitFactor)) + metric('Fees paid', fmt(result.fees)) + metric('Exposure', `${fmt(result.exposurePct)}%`);
       el('strategyResults').hidden = false; el('strategyExport').disabled = !result.trades.length;
+      el('strategyInspect').max=String(result.curve.length-1); el('strategyInspect').value=String(result.curve.length-1);
       el('strategyStatus').textContent = `${names[settings.kind]} · ${result.start} to ${result.end} · ${result.warmup} warmup bars · ${settings.adjusted ? 'Adjusted' : 'Raw'} prices. ${result.trades.length ? 'Test complete.' : 'No trades matched these conditions.'}`;
       renderTrades(); renderPerformance(); drawCurve();
-    } catch (error) { invalidate('Test not run. Check the settings or loaded range.'); el('strategyError').hidden = false; el('strategyError').textContent = error.message; }
+      };
+      worker.onerror=()=>{if(currentRun===runId) fail('The backtest could not finish. Please try again.');};
+      worker.postMessage({rows,settings});
+    } catch (error) { fail(error.message); }
   };
+  function fail(message) { invalidate('Test not run. Check the settings or loaded range.'); el('strategyState').textContent='Check settings'; el('strategyError').hidden=false; el('strategyError').textContent=message; }
+  function filteredTrades() {
+    const filter=el('strategyTradeFilter').value, sort=el('strategyTradeSort').value;
+    const list=(result?.trades||[]).map((trade,index)=>({trade,index})).filter(({trade:t})=>filter==='all'||(filter==='winners'?t.pnl>0:t.pnl<0));
+    if(sort==='newest') list.reverse(); else if(sort==='pnl') list.sort((a,b)=>b.trade.pnl-a.trade.pnl);
+    return list;
+  }
   function renderTrades() {
-    const trades = result?.trades || [], start = tradePage * 50;
-    el('strategyTradeRows').innerHTML = trades.slice(start, start + 50).map((t, i) => `<tr><td>${start + i + 1}</td><td>${esc(t.entry)}</td><td>${esc(t.exit)}</td><td>${fmt(t.entryPrice, 4)}</td><td>${fmt(t.exitPrice, 4)}</td><td>${fmt(t.quantity, 4)}</td><td class="${t.pnl >= 0 ? 'positive' : 'negative'}">${fmt(t.pnl)}</td><td>${pct(t.returnPct)}</td><td>${fmt(t.fees)}</td><td>${t.bars}</td><td>${t.reason}</td></tr>`).join('') || '<tr><td colspan="11">No trades. Try a longer range or different parameters.</td></tr>';
-    el('strategyTradePage').textContent = trades.length ? `${start + 1}–${Math.min(start + 50, trades.length)} of ${trades.length} trades` : '0 trades';
+    const trades = filteredTrades(), start = tradePage * 50;
+    el('strategyTradeRows').innerHTML = trades.slice(start, start + 50).map(({trade:t,index}) => `<tr data-trade-index="${index}"><td><button type="button" data-inspect-trade="${index}" aria-label="Inspect trade ${index+1}">${index+1} ↗</button></td><td>${esc(t.entry)}</td><td>${esc(t.exit)}</td><td>${fmt(t.entryPrice, 4)}</td><td>${fmt(t.exitPrice, 4)}</td><td>${fmt(t.quantity, 4)}</td><td class="${t.pnl >= 0 ? 'positive' : 'negative'}">${fmt(t.pnl)}</td><td>${pct(t.returnPct)}</td><td>${fmt(t.fees)}</td><td>${t.bars}</td><td>${esc(t.reason)}</td></tr>`).join('') || '<tr><td colspan="11">No matching trades. Try another filter or strategy.</td></tr>';
+    el('strategyTradePage').textContent = trades.length ? `${start + 1}–${Math.min(start + 50, trades.length)} of ${trades.length} trades` : '0 matching trades';
     el('strategyPrev').disabled = tradePage === 0; el('strategyNext').disabled = start + 50 >= trades.length;
   }
   el('strategyPrev').onclick = () => { tradePage--; renderTrades(); };
   el('strategyNext').onclick = () => { tradePage++; renderTrades(); };
+  for(const id of ['strategyTradeFilter','strategyTradeSort']) el(id).onchange=()=>{tradePage=0;el('strategyTradeDetail').hidden=true;renderTrades();};
+  el('strategyTradeRows').onclick=event=>{
+    const row=event.target.closest('[data-trade-index]'); if(!row||!result) return;
+    const t=result.trades[Number(row.dataset.tradeIndex)];
+    el('strategyTradeDetail').hidden=false;
+    el('strategyTradeDetail').innerHTML=`<div><span>Trade ${Number(row.dataset.tradeIndex)+1}</span><strong class="${t.pnl>=0?'positive':'negative'}">${pct(t.returnPct)} <small>${fmt(t.pnl)} ${esc(resultCurrency)}</small></strong></div><dl><div><dt>Entry</dt><dd>${esc(t.entry)} · ${fmt(t.entryPrice,4)}</dd></div><div><dt>Exit</dt><dd>${esc(t.exit)} · ${fmt(t.exitPrice,4)}</dd></div><div><dt>Exit reason</dt><dd>${esc(t.reason)} · ${t.bars} bars</dd></div><div><dt>Trading fees</dt><dd>${fmt(t.fees)} ${esc(resultCurrency)}</dd></div></dl><button type="button" id="strategyShowTrade" class="secondary">View on equity curve →</button>`;
+    el('strategyShowTrade').onclick=()=>{inspected=result.curve.findIndex(r=>r.date===t.exit);resultTab('Overview');drawCurve(inspected);el('strategyCurve').focus();};
+  };
   function renderPerformance() {
     const stats = result.performance;
     const value = (v, digits = 2) => v == null ? '—' : fmt(v, digits);

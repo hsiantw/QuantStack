@@ -18,6 +18,40 @@ from market_data import connect, persist, persist_intraday
 
 
 class DashboardTests(unittest.TestCase):
+    def test_btc_archive_is_bounded_and_old_ranges_are_accessible(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'market.sqlite'
+            db = connect(path)
+            start = datetime(2012, 1, 1, tzinfo=timezone.utc)
+            candles = [('BTC-USD', (start + timedelta(minutes=i)).isoformat(),
+                        '1m', 'Bitstamp', 10., 11., 9., 10., .5, 'now')
+                       for i in range(10005)]
+            with db:
+                db.executemany('INSERT INTO crypto_exchange_prices VALUES (?,?,?,?,?,?,?,?,?,?)', candles)
+            db.close()
+            with patch.object(dashboard, 'DATABASE', path):
+                latest = dashboard.history({'symbol': ['BTC-USD'], 'interval': ['1m']})
+                old = dashboard.history({'symbol': ['BTC-USD'], 'interval': ['1m'],
+                                         'end': ['2012-01-01']})
+                previous = dashboard.history({'symbol': ['BTC-USD'], 'interval': ['1m'],
+                                              'before': [latest[0]['date']]})
+                following = dashboard.history({'symbol': ['BTC-USD'], 'interval': ['1m'],
+                                               'after': [previous[-1]['date']]})
+                empty = dashboard.history({'symbol': ['BTC-USD'], 'interval': ['1m'],
+                                           'before': [candles[0][1]]})
+                asset = next(a for a in dashboard.catalog() if a['symbol'] == 'BTC-USD')
+            self.assertEqual(len(latest), 10000)
+            self.assertEqual(latest[0]['date'], candles[5][1])
+            self.assertEqual(len(old), 1440)
+            self.assertEqual(old[0]['date'], candles[0][1])
+            self.assertEqual(old[0]['volume'], .5)
+            self.assertEqual([r['date'] for r in previous], [r[1] for r in candles[:5]])
+            self.assertEqual(following, latest)
+            self.assertEqual(empty, [])
+            self.assertEqual(asset['quote_source'], 'Bitstamp')
+            self.assertEqual(asset['quote_interval'], '1m')
+            self.assertEqual(asset['quote_timestamp'], candles[-1][1])
+
     def test_native_history_keeps_latest_10000_in_chronological_order(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'market.sqlite'

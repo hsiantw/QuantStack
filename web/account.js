@@ -157,7 +157,8 @@
   });
   $('signOut').onclick = () => perform(async () => {
     if (!confirm('Sign out and clear this browser workspace? Save recent chart changes to your account first.')) { message('Sign-out canceled.'); return; }
-    await verify(); const id = user.id; await api('logout',{account_id:id});
+    await verify(); const id = user.id; await window.QuantLocalPreferences?.flush(); await api('logout',{account_id:id});
+    window.QuantLocalPreferences?.pause();
     signedOut();
     try { Object.keys(localStorage).filter(key => key.startsWith('atlas.')).forEach(key => localStorage.removeItem(key)); sessionStorage.removeItem('quantstack.accountRevision.' + id); localStorage.setItem('quantstack.accountChanged',crypto.randomUUID()); }
     catch { message('Signed out. Browser storage could not be cleared; clear site data before using a shared device.'); return; }

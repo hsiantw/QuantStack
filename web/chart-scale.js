@@ -90,8 +90,11 @@ draw = function() {
   const palette = chartPalette();
   const g = geometry(), {canvas, w, h, left, top, pw, ph, data, x, y} = g;
   const dpr = devicePixelRatio || 1;
-  canvas.width = Math.max(1, Math.round(w * dpr)); canvas.height = Math.max(1, Math.round(h * dpr));
-  const c = canvas.getContext('2d'); c.scale(dpr, dpr); c.fillStyle = palette.surface; c.fillRect(0, 0, w, h);
+  const pixelWidth = Math.max(1, Math.round(w * dpr)), pixelHeight = Math.max(1, Math.round(h * dpr));
+  if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+  if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
+  const c = canvas.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.textAlign = 'left'; c.setLineDash([]); c.fillStyle = palette.surface; c.fillRect(0, 0, w, h);
   syncChartScaleControls();
   if (!data.length || w < 100 || h < 80) return;
   c.font = `${chartAppearance.fontSize}px Segoe UI, sans-serif`; c.lineWidth = 1;
@@ -240,16 +243,25 @@ document.addEventListener('pointerdown', event => { if (!scaleMenu.hidden && !sc
 window.addEventListener('resize', () => closeScaleMenu());
 
 let chartNavigationGesture = null;
+let chartDrawFrame = null;
+function requestChartDraw() {
+  if (chartDrawFrame !== null) return;
+  chartDrawFrame = requestAnimationFrame(() => { chartDrawFrame = null; draw(); });
+}
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+const isArchiveChart = () => !window.ATLAS_STATIC && selected?.symbol === 'BTC-USD' && ['1m','3m','5m','15m','30m','1h','2h','4h'].includes(interval);
+const chartArchivePageSize = () => interval === '1m' ? 10000 : 1000;
 // Allow space around the complete loaded history, using the same limits for
 // wheel zoom, time-axis scaling and panning.
-const chartTimeCount = count => clamp(Math.round(count), Math.min(5, rows.length), rows.length * 5);
+const chartTimeCount = count => clamp(Math.round(count), Math.min(5, rows.length), isArchiveChart() ? Math.min(chartArchivePageSize() / 2, rows.length) : rows.length * 5);
 function moveChartTime(target, count = viewCount) {
+  const direction = target - (viewStart - chartScale.offset);
   viewCount = chartTimeCount(count);
   const maximum = Math.max(0, rows.length - viewCount);
   const keepVisible = Math.min(rows.length, viewCount * .2);
-  target = clamp(target, keepVisible - viewCount, rows.length - keepVisible);
+  target = isArchiveChart() ? clamp(target, 0, maximum) : clamp(target, keepVisible - viewCount, rows.length - keepVisible);
   viewStart = clamp(Math.round(target), 0, maximum); chartScale.offset = viewStart - target;
+  window.queueChartHistory?.(direction);
 }
 function zoomChartTime(factor, ratio = .5) {
   const origin = viewStart - chartScale.offset, old = viewCount, next = chartTimeCount(old * factor);
@@ -280,7 +292,13 @@ window.addEventListener('pointermove', event => {
       const next = chartTimeCount(gesture.count * Math.exp(clamp(-dx / 200, -5, 5)));
       moveChartTime(gesture.start + (gesture.count - next), next);
     } else {
-      moveChartTime(gesture.start - dx / g.pw * gesture.count, gesture.count);
+      const requested = gesture.start - dx / g.pw * gesture.count;
+      moveChartTime(requested, gesture.count);
+      if (isArchiveChart() && Math.abs(viewStart - chartScale.offset - requested) > 1e-6) {
+        // Discard movement beyond a loading boundary instead of releasing it
+        // as a jump when the next page arrives.
+        gesture.start = viewStart - chartScale.offset; gesture.x = event.clientX;
+      }
       // Auto keeps fitting the visible bars while panning through time, even
       // when the pointer drifts vertically. Only a manual scale pans in price.
       if (gesture.kind === 'pan' && !gesture.wasAuto) {
@@ -289,7 +307,7 @@ window.addEventListener('pointermove', event => {
         if (bounds.every(value => Number.isFinite(g.inverse(value)))) { chartScale.auto = false; chartScale.bounds = bounds; }
       }
     }
-    hover = -1; hoverY = null; hoverAnchor = null; draw(); return;
+    hover = -1; hoverY = null; hoverAnchor = null; requestChartDraw(); return;
   }
   if (event.target !== $('chart')) return;
   const g = geometry(), px = event.clientX - g.box.left, py = event.clientY - g.box.top;
@@ -312,7 +330,7 @@ $('chart').addEventListener('wheel', event => {
   if (px >= g.left + g.pw) zoomChartPrice(g, Math.exp(clamp(event.deltaY / 600, -.5, .5)), g.transform(g.price(clamp(py, g.top, g.top + g.ph))));
   else if (event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) moveChartTime(viewStart - chartScale.offset + (event.deltaX || event.deltaY) / g.pw * viewCount);
   else zoomChartTime(Math.exp(clamp(event.deltaY / 600, -.5, .5)), clamp((px - g.left) / g.pw, 0, 1));
-  hover = -1; hoverY = null; draw();
+  hover = -1; hoverY = null; requestChartDraw();
 }, {capture: true, passive: false});
 $('chart').addEventListener('dblclick', event => {
   if (tool !== 'cursor') return;

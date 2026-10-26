@@ -16,11 +16,11 @@ FIELDS = ['date', 'open', 'high', 'low', 'close', 'adjusted_close', 'volume', 'd
 
 WEB_ASSETS = (
     'index.html', 'interview-prep.html', 'style.css', 'app.js', 'indicators.js', 'drawings.js',
-    'indicators.css', 'chart-scale.js', 'chart-scale.css', 'screener.js', 'screener.css',
+    'indicators.css', 'chart-scale.js', 'chart-history.js', 'chart-scale.css', 'timeframes.js', 'timeframes.css', 'screener.js', 'screener.css',
     'workspace.js', 'workspace.css', 'workspace-experience.js', 'workspace-experience.css',
     'workspace-search.js', 'workspace-search.css', 'terminal.js', 'data-pulls.js', 'watchlists.js',
     'watchlists.css', 'terminal.css', 'theme.js', 'theme.css', 'site-theme.css',
-    'strategy-engine.js', 'strategy.js', 'markov-engine.js', 'markov-worker.js', 'markov.js',
+    'strategy-engine.js', 'strategy.js', 'strategy-worker.js', 'strategy.css', 'markov-engine.js', 'markov-worker.js', 'markov.js',
     'markov.css', 'brownian-engine.js', 'brownian-worker.js', 'brownian.js', 'risk-engine.js',
     'risk.js', 'research-engine.js', 'research-worker.js', 'research.js', 'notes.js',
     'note-editor.js', 'accounts.js', 'home-navigation.js', 'research.css', 'static-data.js',
@@ -35,6 +35,7 @@ def build():
     for name in WEB_ASSETS:
         shutil.copyfile(ROOT / 'web' / name, OUTPUT / name)
     index = (OUTPUT / 'index.html').read_text(encoding='utf-8-sig')
+    index = index.replace('<script src="/workspace/api/account/local-preferences.js"></script>', '')
     index = index.replace('href="/style.css"', 'href="./style.css"').replace('href="/"', 'href="./"')
     for asset in WEB_ASSETS:
         index = index.replace('"/' + asset, '"./' + asset)

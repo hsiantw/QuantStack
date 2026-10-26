@@ -233,4 +233,6 @@ def install_accounts(app, path=None, public_origin=None):
         except AccountError as error:
             return web.json_response({'error': error.message}, status=error.status, headers=headers)
 
+    from local_preferences import install_preferences
+    install_preferences(app, store, path)
     app.router.add_route('*', '/workspace/api/account/{action}', endpoint)

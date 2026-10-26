@@ -71,10 +71,15 @@
   async function authenticate(action) {
     if (!el('accountForm').reportValidity()) return;
     await perform(async () => {
+      await window.QuantLocalPreferences?.flush();
       const data = await api(action, {username: el('accountUsername').value.trim(), password: el('accountPassword').value});
       el('accountPassword').value = ''; setUser(data.user);
       signalAccountChange();
       el('accountStatus').textContent = revision === null ? 'Signed in. Load your saved workspace to continue on this device.' : 'Signed in. Choose Save to account to upload this browser workspace.';
+      if (window.QuantLocalPreferences) {
+        try { sessionStorage.setItem('quantstack.reopenAccount', '1'); } catch {}
+        window.QuantLocalPreferences.pause(); location.reload();
+      }
     });
   }
   el('accountForm').onsubmit = event => { event.preventDefault(); authenticate('login'); };
@@ -118,7 +123,9 @@
   el('accountLogout').onclick = () => {
     if (!confirm('Sign out and clear notes, drawings and settings from this browser? Save to your account first to keep local changes.')) return;
     perform(async () => {
+      await window.QuantLocalPreferences?.flush();
       await api('logout', {account_id: user.id});
+      window.QuantLocalPreferences?.pause();
       try { sessionStorage.removeItem(key()); } catch {}
       setUser(null);
       // Clear all same-origin tabs' shared browser workspace before reloading.
@@ -135,4 +142,9 @@
     if (event.key?.startsWith('atlas.') && dialog.open) el('accountStatus').textContent = 'The browser workspace changed in another tab. Reload before saving to your account.';
   });
   render();
+  try {
+    if (sessionStorage.getItem('quantstack.reopenAccount')) {
+      sessionStorage.removeItem('quantstack.reopenAccount'); button.click();
+    }
+  } catch {}
 })();

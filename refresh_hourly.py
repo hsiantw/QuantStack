@@ -57,6 +57,8 @@ def fetch_hourly(symbol, start, end, attempts=3, pause=0.5, stop=None):
 
 
 def tracked_symbols(db, config):
+    if config.get('collection_symbols_only'):
+        return sorted(set(config.get('symbols', [])))
     symbols = set(config.get('symbols', []))
     symbols.update(row[0] for row in db.execute('SELECT symbol FROM state'))
     symbols.update(row[0] for row in db.execute("SELECT symbol FROM intraday_state WHERE interval='60m'"))

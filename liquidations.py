@@ -120,7 +120,7 @@ async def collect_force_orders(session, database_path, symbols):
 def read_liquidations(database_path, symbol, start, end, interval):
     if not symbol.endswith('-USD'):
         raise ValueError('Liquidation events are available for configured crypto USD symbols.')
-    if interval not in ('1m', '5m', '15m', '1h', '1d', '1w', '1mo'):
+    if interval not in ('1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '1d', '1w', '1mo'):
         raise ValueError('Interval must be 1m, 5m, 15m, 1h, 1d, 1w, or 1mo.')
     db = connect(database_path)
     try:
@@ -131,7 +131,8 @@ def read_liquidations(database_path, symbol, start, end, interval):
         state = db.execute('SELECT status,started_at,connected_at,last_event_at,error FROM liquidation_collector_state WHERE id=1').fetchone()
     finally:
         db.close()
-    seconds = {'1m': 60, '5m': 300, '15m': 900, '1h': 3600}
+    seconds = {'1m': 60, '3m': 180, '5m': 300, '15m': 900, '30m': 1800,
+               '1h': 3600, '2h': 7200, '4h': 14400}
     grouped = {}
     for row in rows:
         instant = datetime.fromisoformat(row['timestamp']).astimezone(timezone.utc)

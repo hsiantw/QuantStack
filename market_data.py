@@ -93,6 +93,8 @@ def process_lock(path):
 
 
 def universe(db, config):
+    if config.get('collection_symbols_only'):
+        return sorted(set(config['symbols']))
     symbols = set(config['symbols'])
     if config['sp500']:
         cache = DATA / 'sp500.json'

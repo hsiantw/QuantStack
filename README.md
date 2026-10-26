@@ -615,11 +615,23 @@ on a separately hosted instance. Static previews have no account backend.
 
 ### Device settings and update automation
 
-User preferences persist on the device through browser `localStorage`: chart
-appearance, selected chart/range, indicators, drawings, watchlists, notes and
-workspace layout. Return using the same browser profile and site address
-(including port). Clearing site data removes these preferences; private browsing
-does not retain them after the session ends. No IP-based account is required.
+On the local app, watchlists, starred timeframes, home shortcuts, chart appearance,
+selected chart/range, indicators and workspace layout save automatically to
+`data/local-preferences.sqlite`, excluded from Git. Existing browser preferences
+are imported on the first refresh. **Saved on this PC** in the watchlist panel
+confirms the backup; failed saves retry automatically. Preferences restore before
+the chart loads, including after an app restart or opening a fresh browser profile.
+Signed-in accounts have separate local preferences; signing out restores the
+guest preferences without deleting the account's backup. Keep this database when
+moving or backing up the local app.
+
+This automatic backup is available only through a loopback address such as
+`http://127.0.0.1:8501`. Hosted and static sites retain browser `localStorage`
+behavior. Notes and drawings remain in browser storage unless explicitly saved
+to an account or exported below. Return to those using the same browser profile
+and site address (including port); clearing site data or ending a private browsing
+session removes browser-only work. Passwords and sessions are never included in
+the preference backup.
 
 Open **Symbol notes** on the chart's right rail to take notes that save as you
 type, or choose **Open idea notebook** for titled, searchable notes with categories

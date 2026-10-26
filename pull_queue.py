@@ -53,6 +53,9 @@ def validate(payload, now=None):
 
 
 def enqueue(payload, root=ROOT):
+    config = json.loads((root / 'config.json').read_text(encoding='utf-8')) if (root / 'config.json').exists() else {}
+    if config.get('priority_pulls_enabled') is False:
+        raise ValueError('Priority pulls are paused during the BTC/USD archive backfill.')
     values = validate(payload)
     with closing(connection(root)) as db, db:
         db.execute('BEGIN IMMEDIATE')
@@ -117,7 +120,8 @@ def start_worker(root=ROOT):
             try:
                 with closing(connection(root)) as queue:
                     pending = queue.execute("SELECT 1 FROM requests WHERE status IN ('queued','running') LIMIT 1").fetchone()
-                if pending:
+                config = json.loads((root / 'config.json').read_text(encoding='utf-8'))
+                if pending and config.get('priority_pulls_enabled', True):
                     with process_lock(root / 'data' / 'ingestion.lock'), closing(connect(root / 'data' / 'market.sqlite')) as db:
                         drain(db, json.loads((root / 'config.json').read_text(encoding='utf-8')), root)
             except (OSError, RuntimeError, sqlite3.Error):
