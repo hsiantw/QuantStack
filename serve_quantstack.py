@@ -74,7 +74,7 @@ async def snapshot(request):
 
 
 async def proxy(request):
-    if request.path in ('/workspace/api/local-scheduler', '/workspace/api/pull-queue'):
+    if request.path in ('/workspace/api/local-scheduler', '/workspace/api/pull-queue', '/workspace/api/database') or request.path.startswith('/workspace/api/analysis'):
         from local_scheduler import local_request
         if not local_request(request.remote, request.host, request.headers.get('Origin')):
             raise web.HTTPForbidden(text='Collector settings are available locally only.')

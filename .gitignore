@@ -5,6 +5,7 @@ site/
 deployment.json
 *.log
 .venv-integration/
+.venv-analysis/
 QuantStack-main/static/market-data/
 
 .test-tmp/

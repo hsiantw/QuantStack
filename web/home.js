@@ -76,9 +76,36 @@
   document.addEventListener('click', event => { if (!event.composedPath().includes(toggle.parentElement)) close(); });
   document.addEventListener('focusin', event => { if (!event.target.closest('.destination')) close(); });
   const search = document.getElementById('symbolSearch');
+  const suggestions = document.createElement('datalist'); suggestions.id = 'homeSymbolSuggestions';
+  search.after(suggestions); search.setAttribute('list', suggestions.id);
+  search.setAttribute('autocomplete', 'off'); search.setAttribute('spellcheck', 'false');
+  search.placeholder = 'Search symbol or company'; search.setAttribute('aria-label', 'Search symbol or company');
+  let catalog = [], catalogRequest = null;
+  function suggest() {
+    search.setCustomValidity('');
+    const term = search.value.trim().toUpperCase();
+    const matches = catalog.filter(asset => asset.symbol.includes(term) || String(asset.name || '').toUpperCase().includes(term));
+    matches.sort((a,b) => Number(b.symbol.startsWith(term)) - Number(a.symbol.startsWith(term)) || a.symbol.localeCompare(b.symbol));
+    suggestions.replaceChildren(...matches.slice(0,12).map(asset => {
+      const option = document.createElement('option'); option.value = asset.symbol; option.label = asset.name || asset.symbol; return option;
+    }));
+  }
+  // Fetch only when someone uses search; custom shortcuts remain immediately usable.
+  search.addEventListener('focus', () => {
+    if (catalogRequest) return;
+    catalogRequest = fetch('/workspace/api/symbols').then(response => response.ok ? response.json() : []).then(items => {
+      catalog = Array.isArray(items) ? items.filter(item => item && typeof item.symbol === 'string' && /^[A-Z0-9^][A-Z0-9.^=-]{0,29}$/.test(item.symbol)) : [];
+      suggest();
+    }).catch(() => { catalogRequest = null; });
+  });
+  search.addEventListener('input', suggest);
   search.form.addEventListener('submit', event => {
-    search.value = search.value.trim().toUpperCase();
-    if (!search.value) { event.preventDefault(); search.focus(); }
+    const value = search.value.trim();
+    const named = catalog.find(asset => String(asset.name || '').toLowerCase() === value.toLowerCase());
+    search.value = named?.symbol || value.toUpperCase().replace(/^([A-Z0-9]+)\/USD$/, '$1-USD');
+    if (!/^[A-Z0-9^][A-Z0-9.^=-]{0,29}$/.test(search.value)) {
+      event.preventDefault(); search.setCustomValidity('Choose a suggested company or enter a ticker such as AAPL or BTC-USD.'); search.reportValidity();
+    }
   });
 })();
 

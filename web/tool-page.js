@@ -25,6 +25,12 @@
     }
     el('toolNavigationLinks').append(section);
   }
+  const localTools=document.createElement('section');
+  const localHeading=document.createElement('h2');localHeading.textContent='Data & research';localTools.append(localHeading);
+  for(const [label,href] of [['Research tools','/workspace/?research=strategy'],['Database browser','/workspace/?database=1']]){
+    const link=document.createElement('a');link.href=href;link.textContent=label;localTools.append(link);
+  }
+  el('toolNavigationLinks').append(localTools);
   shell.querySelectorAll('.tool-header nav a').forEach(link => {
     if (link.getAttribute('href') === '/' + key) link.setAttribute('aria-current', 'page');
   });
@@ -57,13 +63,24 @@
     el('toolIntervals').append(el('intervals'));
     el('toolDates').append(document.querySelector('.dates'));
   }
-  el('toolSymbolForm').onsubmit = event => {
+  el('toolSymbolForm').onsubmit = async event => {
     event.preventDefault();
     const symbol = el('toolSymbol').value.trim().toUpperCase();
     if (!assets.some(asset => asset.symbol === symbol)) { el('toolContextStatus').textContent = 'Symbol is not in your stored universe. Choose an available symbol.'; return; }
-    const params = new URLSearchParams(location.search); params.set('symbol', symbol);
-    params.set('interval', interval); params.set('period', period);
-    location.assign('/' + key + '?' + params);
+    const button = el('toolSymbolForm').querySelector('button');
+    button.disabled = true; button.textContent = 'Loading…'; el('toolSymbolForm').setAttribute('aria-busy','true');
+    el('toolContextStatus').textContent = `Loading ${symbol}…`;
+    try {
+      // Keep this tool's current form and draft settings when changing its symbol.
+      await select(symbol);
+      el('toolSymbol').value = symbol;
+      const params = new URLSearchParams(location.search); params.set('symbol', symbol);
+      params.set('interval', interval); params.set('period', period);
+      params.set('start',el('start').value); params.set('end',el('end').value);
+      history.replaceState(null,'','/' + key + '?' + params);
+      updateContext();
+    } catch (error) { el('toolContextStatus').textContent = error.message || 'Could not load this symbol. Try again.'; }
+    finally { button.disabled = false; button.textContent = 'Load'; el('toolSymbolForm').removeAttribute('aria-busy'); }
   };
   window.initializeToolPage = () => {
     el('toolLoading').remove();

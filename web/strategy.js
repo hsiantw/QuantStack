@@ -230,7 +230,7 @@
   }
   function renderTrades() {
     const trades = filteredTrades(), start = tradePage * 50;
-    el('strategyTradeRows').innerHTML = trades.slice(start, start + 50).map(({trade:t,index}) => `<tr data-trade-index="${index}"><td><button type="button" data-inspect-trade="${index}" aria-label="Inspect trade ${index+1}">${index+1} ↗</button></td><td>${esc(t.entry)}</td><td>${esc(t.exit)}</td><td>${fmt(t.entryPrice, 4)}</td><td>${fmt(t.exitPrice, 4)}</td><td>${fmt(t.quantity, 4)}</td><td class="${t.pnl >= 0 ? 'positive' : 'negative'}">${fmt(t.pnl)}</td><td>${pct(t.returnPct)}</td><td>${fmt(t.fees)}</td><td>${t.bars}</td><td>${esc(t.reason)}</td></tr>`).join('') || '<tr><td colspan="11">No matching trades. Try another filter or strategy.</td></tr>';
+    el('strategyTradeRows').innerHTML = trades.slice(start, start + 50).map(({trade:t,index}) => `<tr data-trade-index="${index}" tabindex="0" aria-label="Inspect trade ${index+1}, ${esc(t.entry)} to ${esc(t.exit)}"><td><button type="button" data-inspect-trade="${index}" aria-label="Inspect trade ${index+1}">${index+1} ↗</button></td><td>${esc(t.entry)}</td><td>${esc(t.exit)}</td><td>${fmt(t.entryPrice, 4)}</td><td>${fmt(t.exitPrice, 4)}</td><td>${fmt(t.quantity, 4)}</td><td class="${t.pnl >= 0 ? 'positive' : 'negative'}">${fmt(t.pnl)}</td><td>${pct(t.returnPct)}</td><td>${fmt(t.fees)}</td><td>${t.bars}</td><td>${esc(t.reason)}</td></tr>`).join('') || '<tr><td colspan="11">No matching trades. Try another filter or strategy.</td></tr>';
     el('strategyTradePage').textContent = trades.length ? `${start + 1}–${Math.min(start + 50, trades.length)} of ${trades.length} trades` : '0 matching trades';
     el('strategyPrev').disabled = tradePage === 0; el('strategyNext').disabled = start + 50 >= trades.length;
   }
@@ -243,6 +243,11 @@
     el('strategyTradeDetail').hidden=false;
     el('strategyTradeDetail').innerHTML=`<div><span>Trade ${Number(row.dataset.tradeIndex)+1}</span><strong class="${t.pnl>=0?'positive':'negative'}">${pct(t.returnPct)} <small>${fmt(t.pnl)} ${esc(resultCurrency)}</small></strong></div><dl><div><dt>Entry</dt><dd>${esc(t.entry)} · ${fmt(t.entryPrice,4)}</dd></div><div><dt>Exit</dt><dd>${esc(t.exit)} · ${fmt(t.exitPrice,4)}</dd></div><div><dt>Exit reason</dt><dd>${esc(t.reason)} · ${t.bars} bars</dd></div><div><dt>Trading fees</dt><dd>${fmt(t.fees)} ${esc(resultCurrency)}</dd></div></dl><button type="button" id="strategyShowTrade" class="secondary">View on equity curve →</button>`;
     el('strategyShowTrade').onclick=()=>{inspected=result.curve.findIndex(r=>r.date===t.exit);resultTab('Overview');drawCurve(inspected);el('strategyCurve').focus();};
+  };
+  el('strategyTradeRows').onkeydown=event=>{
+    if(event.target.matches('tr[data-trade-index]') && ['Enter',' '].includes(event.key)) {
+      event.preventDefault(); event.target.click();
+    }
   };
   function renderPerformance() {
     const stats = result.performance;
@@ -277,21 +282,26 @@
     const name = event.key === 'Home' ? resultTabs[0] : event.key === 'End' ? resultTabs.at(-1) : resultTabs[(current + (event.key === 'ArrowRight' ? 1 : resultTabs.length - 1)) % resultTabs.length];
     resultTab(name); el(`strategy${name}Tab`).focus();
   };
-  function drawCurve(index = -1) {
+  function drawCurve(index = inspected) {
     if (!result || el('strategyOverview').hidden) return;
     const canvas = el('strategyCurve'), box = canvas.getBoundingClientRect(); if (!box.width) return;
     const w = box.width, h = 240, dpr = devicePixelRatio || 1, c = canvas.getContext('2d'), palette = window.atlasTheme.palette;
     canvas.width = w * dpr; canvas.height = h * dpr; c.scale(dpr, dpr); c.fillStyle = palette.surface; c.fillRect(0, 0, w, h);
     const curve = result.curve, left = 12, right = 86, width = Math.max(1, w - left - right);
-    let low = result.parameters.capital, high = low;
-    curve.forEach(r => { low = Math.min(low, r.equity, r.benchmark); high = Math.max(high, r.equity, r.benchmark); });
-    const span = high - low || high * 0.01, x = i => left + i / Math.max(1, curve.length - 1) * width, y = v => 18 + (high - v) / span * 135;
+    const showBenchmark=el('strategyBenchmark').checked, returns=el('strategyChartMode').value==='return';
+    const display=value=>returns?(value/result.parameters.capital-1)*100:value;
+    pane.querySelector('.strategy-chart-toolbar h3').textContent=returns?'Return & drawdown':'Equity & drawdown';
+    pane.querySelector('.strategy-legend span:nth-child(2)').hidden=!showBenchmark;
+    let low = display(result.parameters.capital), high = low;
+    curve.forEach(r => { low = Math.min(low, display(r.equity), ...(showBenchmark?[display(r.benchmark)]:[])); high = Math.max(high, display(r.equity), ...(showBenchmark?[display(r.benchmark)]:[])); });
+    const span = high - low || Math.max(1,Math.abs(high)*0.01), x = i => left + i / Math.max(1, curve.length - 1) * width, y = v => 18 + (high - v) / span * 135;
     c.font = '10px Segoe UI'; c.lineWidth = 1;
-    for (let j = 0; j < 4; j++) { const value = high - span * j / 3; c.strokeStyle = palette.grid; c.beginPath(); c.moveTo(left, y(value)); c.lineTo(left + width, y(value)); c.stroke(); c.fillStyle = palette.muted; c.fillText(fmt(value, 0), left + width + 8, y(value) + 4); }
-    for (const [field, color] of [['benchmark', '#a78bfa'], ['equity', palette.accent]]) { c.beginPath(); curve.forEach((r, i) => i ? c.lineTo(x(i), y(r[field])) : c.moveTo(x(i), y(r[field]))); c.strokeStyle = color; c.lineWidth = 1.8; c.stroke(); }
+    for (let j = 0; j < 4; j++) { const value = high - span * j / 3; c.strokeStyle = palette.grid; c.beginPath(); c.moveTo(left, y(value)); c.lineTo(left + width, y(value)); c.stroke(); c.fillStyle = palette.muted; c.fillText(fmt(value, returns?1:0)+(returns?'%':''), left + width + 8, y(value) + 4); }
+    const lines=showBenchmark?[['benchmark', '#a78bfa'], ['equity', palette.accent]]:[['equity',palette.accent]];
+    for (const [field, color] of lines) { c.beginPath(); curve.forEach((r, i) => i ? c.lineTo(x(i), y(display(r[field]))) : c.moveTo(x(i), y(display(r[field])))); c.strokeStyle = color; c.lineWidth = 1.8; c.stroke(); }
     c.beginPath(); c.moveTo(left, 174); curve.forEach((r, i) => c.lineTo(x(i), 174 + (-r.drawdown / (result.maxDrawdown || 1)) * 37)); c.lineTo(left + width, 174); c.closePath(); c.fillStyle = '#f2364535'; c.fill();
     c.fillStyle = palette.muted; c.fillText(`−${fmt(result.maxDrawdown)}%`, left + width + 8, 205); c.fillText(curve[0].date.slice(0,10), left, 232); c.textAlign = 'right'; c.fillText(curve.at(-1).date.slice(0,10), left + width, 232); c.textAlign = 'left';
-    if (index >= 0) { const r = curve[index]; c.strokeStyle = palette.muted; c.setLineDash([3,3]); c.beginPath(); c.moveTo(x(index), 10); c.lineTo(x(index), 214); c.stroke(); el('strategyCurveValue').textContent = `${r.date} · Equity ${fmt(r.equity)} · Buy & hold ${fmt(r.benchmark)} ${resultCurrency} · Drawdown ${fmt(r.drawdown)}%`; }
+    if (index >= 0) { const r = curve[index]; c.strokeStyle = palette.muted; c.setLineDash([3,3]); c.beginPath(); c.moveTo(x(index), 10); c.lineTo(x(index), 214); c.stroke(); el('strategyCurveValue').textContent = `${r.date} · ${returns?'Return':'Equity'} ${fmt(display(r.equity))}${returns?'%':' '+resultCurrency}${showBenchmark?` · Buy & hold ${fmt(display(r.benchmark))}${returns?'%':' '+resultCurrency}`:''} · Drawdown ${fmt(r.drawdown)}%`; el('strategyInspect').value=String(index); el('strategyInspect').setAttribute('aria-valuetext',el('strategyCurveValue').textContent); }
     else el('strategyCurveValue').textContent = `Final equity ${fmt(result.finalEquity)} ${resultCurrency} · Initial capital ${fmt(result.parameters.capital)} ${resultCurrency}`;
   }
   el('strategyCurve').onpointermove = event => {
@@ -299,6 +309,16 @@
     drawCurve(Math.max(0, Math.min(result.curve.length - 1, Math.round((event.clientX - box.left - 12) / Math.max(1, box.width - 98) * (result.curve.length - 1)))));
   };
   el('strategyCurve').onpointerleave = () => drawCurve();
+  el('strategyInspect').oninput=event=>{inspected=Number(event.target.value);drawCurve();};
+  el('strategyCurve').onkeydown=event=>{
+    if(!result||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+    event.preventDefault();
+    const current=inspected<0?result.curve.length-1:inspected;
+    inspected=event.key==='Home'?0:event.key==='End'?result.curve.length-1:Math.max(0,Math.min(result.curve.length-1,current+(event.key==='ArrowRight'?1:-1)));
+    drawCurve();
+  };
+  el('strategyBenchmark').onchange=()=>drawCurve();
+  el('strategyChartMode').onchange=()=>drawCurve();
   new ResizeObserver(() => drawCurve()).observe(el('strategyCurve'));
   window.addEventListener('atlas-theme-change', () => drawCurve());
   const load = loadHistory;

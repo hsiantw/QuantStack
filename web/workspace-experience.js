@@ -128,6 +128,43 @@ document.addEventListener('DOMContentLoaded', () => {
   focus.setAttribute('aria-label', 'Focus chart');
   focus.title = 'Focus chart (Alt+F)';
   focus.onclick = () => focusChart(!focused);
+
+  // Keep the chart's frequent actions visible and group occasional controls.
+  const options = document.createElement('details');
+  options.id = 'workspaceChartOptions'; options.className = 'workspace-chart-options';
+  options.innerHTML = '<summary aria-label="Chart options">Chart options <span aria-hidden="true">⌄</span></summary><div class="workspace-chart-options-body"></div>';
+  const optionsBody = options.querySelector('div');
+  const source = actions.querySelector('.analysis-source');
+  if (source) optionsBody.append(source);
+  for (const [id, label] of [['terminalGo','Go to date'],['terminalSnapshot','Save chart image'],['terminalFullscreen','Full screen'],['usageButton','Collection activity']]) {
+    const button = el(id); if (!button) continue;
+    button.classList.remove('workspace-icon-action');
+    button.setAttribute('aria-label', label);
+    if (id === 'usageButton') button.textContent = label;
+    optionsBody.append(button);
+  }
+  actions.append(options);
+  optionsBody.addEventListener('click', event => { if (event.target.closest('button')) options.open = false; });
+  document.addEventListener('pointerdown', event => { if (!options.contains(event.target)) options.open = false; });
+  options.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); options.open=false; options.querySelector('summary').focus(); }
+  });
+  const sourceButton = document.createElement('button');
+  sourceButton.type='button'; sourceButton.id='workspaceCandleSource'; sourceButton.title='Change candle source';
+  quoteLine.append(sourceButton);
+  const updateSource=()=>{sourceButton.textContent=el('analysisChartSource')?.value || 'Automatic source';};
+  sourceButton.onclick=()=>{options.open=true;el('analysisChartSource')?.focus();};
+  el('analysisChartSource')?.addEventListener('change', updateSource);updateSource();
+  window.addEventListener('chart-history-loaded',updateSource);
+
+  // Empty charts give the next useful action, rather than a dead end.
+  const empty = el('chartEmpty');
+  empty.addEventListener('click', event => {
+    const action = event.target.closest('[data-empty-action]')?.dataset.emptyAction;
+    if(action==='symbol') el('workspaceSymbol')?.click();
+    else if(action==='database') window.openMarketDatabase?.();
+    else if(action==='retry') loadHistory();
+  });
   // Opening an analysis panel should always reveal it, including from a deep link.
   window.addEventListener('workspace:dock', event => { if (event.detail && focused) focusChart(false); });
 

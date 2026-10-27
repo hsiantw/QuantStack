@@ -111,6 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ['Stock screener','/screener','Filters and saved screens'],['Market overview','/markets','Market movers and watchlists'],
     ['Sector rotation','/rotation','Sector momentum'],['Company fundamentals','/fundamentals','Company research'],
     ['Strategy tester','/strategy','Backtesting'],['Strategy comparison','/compare','Compare results'],
+    ['Research tools','/workspace/?research=strategy','Strategy validation, portfolio reports and factor research'],
+    ['Database browser','/workspace/?database=1','Inspect collected candles, tables and data coverage'],
     ['Portfolio','/portfolio','Holdings and allocation'],['Returns & risk','/risk','Drawdowns and returns'],
     ['Options lab','/options','Pricing and payoffs'],['Pairs analysis','/pairs','Spreads and correlations'],
     ['Forecast lab','/forecast','Forecast evaluation'],['Markov analysis','/markov','Market regimes'],

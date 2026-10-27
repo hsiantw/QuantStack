@@ -198,6 +198,10 @@ def history(query):
     date.fromisoformat(end)
     if start > end:
         raise ValueError('Start date must be before the end date.')
+    source = query.get('candle_source', [''])[0]
+    if source:
+        from analysis_history import source_history
+        return source_history(DATABASE, query)
     with database() as db:
         if interval in ('1d', '1w', '1mo'):
             rows = db.execute('''SELECT date,open,high,low,close,adjusted_close,volume,dividends,splits
@@ -547,7 +551,7 @@ class Handler(BaseHTTPRequestHandler):
         return local_request(self.client_address[0], self.headers.get('Host', ''), self.headers.get('Origin'))
 
     def do_POST(self):
-        if urlparse(self.path).path not in ('/api/local-scheduler', '/api/pull-queue'):
+        if urlparse(self.path).path not in ('/api/local-scheduler', '/api/pull-queue', '/api/analysis', '/api/analysis/cancel'):
             self.send(404, b'Not found', 'text/plain')
             return
         if not self.scheduler_allowed() or self.headers.get('Content-Type') != 'application/json':
@@ -559,7 +563,15 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError('Invalid request size.')
             from local_scheduler import enroll
             payload = json.loads(self.rfile.read(size))
-            if urlparse(self.path).path == '/api/pull-queue':
+            if urlparse(self.path).path.startswith('/api/analysis'):
+                from analysis_jobs import manager
+                if urlparse(self.path).path.endswith('/cancel'):
+                    if not isinstance(payload, dict) or not isinstance(payload.get('id'), str):
+                        raise ValueError('Choose a research job to cancel.')
+                    value = manager().cancel(payload['id'])
+                else:
+                    value = manager().submit(payload)
+            elif urlparse(self.path).path == '/api/pull-queue':
                 from pull_queue import enqueue, start_worker
                 value = enqueue(payload)
                 start_worker()
@@ -585,7 +597,20 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
         try:
-            if url.path in ('/api/local-scheduler', '/api/pull-queue'):
+            if url.path == '/api/database':
+                if not self.scheduler_allowed():
+                    self.send(403, b'{"error":"Database browsing is available on the local app only."}', 'application/json')
+                    return
+                from database_browser import inspect
+                value = inspect(DATABASE, parse_qs(url.query))
+            elif url.path == '/api/analysis':
+                if not self.scheduler_allowed():
+                    self.send(403, b'{"error":"Research tools are available on the local app only."}', 'application/json')
+                    return
+                from analysis_jobs import manager
+                job_id = parse_qs(url.query).get('id', [None])[0]
+                value = manager().get(job_id) if job_id else manager().available()
+            elif url.path in ('/api/local-scheduler', '/api/pull-queue'):
                 if not self.scheduler_allowed():
                     self.send(403, b'{"error":"Available on the local app only."}', 'application/json')
                     return
@@ -643,6 +668,10 @@ class Handler(BaseHTTPRequestHandler):
                     self.send(200, path.read_bytes(), mime + '; charset=utf-8')
                     return
                 files = {'/interview-prep.html': ('interview-prep.html', 'text/html'),
+                         '/analysis.js': ('analysis.js', 'text/javascript'),
+                         '/analysis.css': ('analysis.css', 'text/css'),
+                         '/database.js': ('database.js', 'text/javascript'),
+                         '/database.css': ('database.css', 'text/css'),
                          '/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'),
                          '/indicators.js': ('indicators.js', 'text/javascript'),
                          '/drawings.js': ('drawings.js', 'text/javascript'),
