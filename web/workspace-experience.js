@@ -190,6 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (restoreFocus) drawToggle.focus();
   }
   drawToggle.onclick = () => {
+    if (focused) focusChart(false);
     const open = body.classList.toggle('workspace-mobile-drawings');
     drawToggle.setAttribute('aria-expanded', String(open));
     if (open) el('drawingTools').querySelector('button.active')?.focus();
