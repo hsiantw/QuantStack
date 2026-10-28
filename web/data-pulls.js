@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const key = 'quantstack.pullFavorites.v1', limits = {'1m':7,'5m':59,'15m':59,'60m':729,'1d':36500};
   let favorites = [{name:'Last 7 days · 1 hour',range:'relative',days:7,interval:'60m'}, {name:'Last 30 days · daily',range:'relative',days:30,interval:'1d'}];
   try { const stored=JSON.parse(localStorage.getItem(key)); if(Array.isArray(stored)) favorites=stored.filter(p=>p && typeof p.name==='string' && limits[p.interval] && ['relative','custom'].includes(p.range)).slice(0,50); } catch {}
-  let available = false, busy = false, timer;
+  let available = false, busy = false, refreshing = false, timer;
   const endpoint = new URL('./api/pull-queue', location.href);
   function fields() { return {range:get('pullRange').value, days:Number(get('pullDays').value), interval:get('pullInterval').value,start:get('pullStart').value,end:get('pullEnd').value}; }
   function rangeUI() {
@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return data;
   }
   async function refresh() {
+    clearTimeout(timer);
+    if (!dialog.open || document.hidden || refreshing) return;
+    refreshing = true;
     try {
       const data=await request();available=true;
       get('pullRequests').replaceChildren(...data.requests.map(item=>{
@@ -57,14 +60,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }));
       if(!data.requests.length)get('pullRequests').textContent='No requests yet.';
     } catch(error) {available=false;get('pullMessage').textContent=error.message;}
-    get('pullSubmit').disabled=!available||busy;
-    clearTimeout(timer);if(dialog.open)timer=setTimeout(refresh,4000);
+    finally {
+      refreshing=false;
+      get('pullSubmit').disabled=!available||busy;
+      if(dialog.open && !document.hidden)timer=setTimeout(refresh,4000);
+    }
   }
   button.onclick=()=>{
     get('pullSymbol').value=selected?.symbol||'';get('pullKind').value=selected?.symbol?.endsWith('-USD')?'crypto':'stocks';
     get('pullMessage').textContent='';get('pullSubmit').disabled=true;dialog.showModal();refresh();
   };
   get('pullClose').onclick=()=>dialog.close();dialog.addEventListener('close',()=>clearTimeout(timer));
+  document.addEventListener('visibilitychange',()=>{clearTimeout(timer);if(!document.hidden && dialog.open)refresh();});
   get('pullRange').onchange=get('pullInterval').onchange=rangeUI;
   get('pullRefresh').onclick=refresh;
   get('pullApply').onclick=()=>{const p=favorites[Number(get('pullFavorites').value)];if(!p)return;for(const name of ['range','days','interval','start','end'])get('pull'+name[0].toUpperCase()+name.slice(1)).value=p[name]??'';rangeUI();};

@@ -26,6 +26,10 @@ class PullQueueTests(unittest.TestCase):
     def enqueue(self, symbol='AAPL', **kwargs):
         return queue.enqueue(dict(symbol=symbol, days=7, interval='60m', **kwargs), self.root)
 
+    def fetched_bars(self, symbol, start, end, **kwargs):
+        stamp = start.isoformat()
+        return [(symbol, stamp, '60m', 1, 2, 1, 2, 2, 10, 'USD', 'NMS', 'UTC', stamp)], 0, [], None
+
     def test_validation(self):
         now = datetime(2026, 10, 3, tzinfo=timezone.utc)
         symbol, interval, start, end = queue.validate({'symbol':'btc', 'kind':'crypto', 'days':7}, now)
@@ -41,6 +45,50 @@ class PullQueueTests(unittest.TestCase):
         first = queue.enqueue(request, self.root)
         self.assertEqual(queue.enqueue(request, self.root), first)
         self.assertEqual(queue.status(self.root)['requests'][0]['end'], '2026-01-03T00:00:00+00:00')
+
+    def test_disabled_worker_avoids_sqlite_and_resumes_after_enable(self):
+        self.enqueue('WAITING')
+        config_path = self.root / 'config.json'
+        config_path.write_text(json.dumps({'priority_pulls_enabled': False}))
+        with patch.object(queue, 'connection') as connect, patch('idle_collector.allowed') as idle:
+            queue.worker_step(self.root)
+            connect.assert_not_called()
+            idle.assert_not_called()
+        config_path.write_text(json.dumps({'priority_pulls_enabled': True}))
+        with patch('idle_collector.allowed', return_value=True), \
+             patch.object(refresh_hourly, 'fetch_bars', side_effect=self.fetched_bars) as fetch:
+            queue.worker_step(self.root)
+        fetch.assert_called_once()
+        self.assertEqual(queue.status(self.root)['requests'][0]['status'], 'complete')
+
+    @unittest.skipUnless(queue.os.name == 'nt', 'Windows activity policy')
+    def test_active_pc_leaves_worker_queue_untouched(self):
+        (self.root / 'config.json').write_text('{}')
+        with patch('idle_collector.allowed', return_value=False), patch.object(queue, 'connection') as connect:
+            queue.worker_step(self.root)
+            connect.assert_not_called()
+
+    def test_activity_between_requests_preserves_pending_work(self):
+        self.enqueue('FIRST'); self.enqueue('SECOND')
+        with closing(queue.connection(self.root)) as db, db:
+            db.execute("UPDATE requests SET status='running' WHERE symbol='SECOND'")
+        with patch.object(refresh_hourly, 'fetch_bars', side_effect=self.fetched_bars) as fetch:
+            with patch.object(queue, 'background_ready', side_effect=[True, False]) as ready:
+                queue.drain(self.db, {}, self.root, ready=ready)
+            self.assertEqual(fetch.call_count, 1)
+            states = {r['symbol']: r['status'] for r in queue.status(self.root)['requests']}
+            self.assertEqual(states, {'FIRST': 'complete', 'SECOND': 'queued'})
+            queue.drain(self.db, {}, self.root, ready=lambda: True)
+            self.assertEqual(fetch.call_count, 2)
+        self.assertTrue(all(r['status'] == 'complete' for r in queue.status(self.root)['requests']))
+
+    def test_enqueue_wakes_worker_after_commit(self):
+        seen = []
+        def wake():
+            seen.extend(r['symbol'] for r in queue.status(self.root)['requests'])
+        with patch.object(queue._wake, 'set', side_effect=wake):
+            self.enqueue('COMMITTED')
+        self.assertEqual(seen, ['COMMITTED'])
 
     def test_fifo_failure_recovery_and_new_arrivals(self):
         self.enqueue('FIRST'); self.enqueue('FAIL')

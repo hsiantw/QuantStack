@@ -2,15 +2,17 @@
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
 import json
+import os
 import sqlite3
 import threading
-import time
 
 from market_data import ROOT
 
 INTERVALS = {'1m': 7, '5m': 59, '15m': 59, '60m': 729, '1d': 36500}
 _worker = None
 _guard = threading.Lock()
+_wake = threading.Event()
+RECHECK_SECONDS = 30
 
 
 def connection(root=ROOT):
@@ -61,11 +63,14 @@ def enqueue(payload, root=ROOT):
         db.execute('BEGIN IMMEDIATE')
         existing = db.execute("SELECT id FROM requests WHERE symbol=? AND interval=? AND start=? AND end=? AND status IN ('queued','running')", values).fetchone()
         if existing:
-            return dict(id=existing['id'], status='queued')
-        if db.execute("SELECT COUNT(*) FROM requests WHERE status IN ('queued','running')").fetchone()[0] >= 100:
-            raise ValueError('Queue is full. Wait for current requests to finish.')
-        item = db.execute('INSERT INTO requests(symbol,interval,start,end,created) VALUES (?,?,?,?,?)', (*values, datetime.now(timezone.utc).isoformat()))
-        return dict(id=item.lastrowid, status='queued')
+            result = dict(id=existing['id'], status='queued')
+        else:
+            if db.execute("SELECT COUNT(*) FROM requests WHERE status IN ('queued','running')").fetchone()[0] >= 100:
+                raise ValueError('Queue is full. Wait for current requests to finish.')
+            item = db.execute('INSERT INTO requests(symbol,interval,start,end,created) VALUES (?,?,?,?,?)', (*values, datetime.now(timezone.utc).isoformat()))
+            result = dict(id=item.lastrowid, status='queued')
+    _wake.set()  # Notify only after the request has committed.
+    return result
 
 
 def status(root=ROOT):
@@ -73,7 +78,7 @@ def status(root=ROOT):
         return {'requests': [dict(row) for row in db.execute("SELECT * FROM requests ORDER BY CASE status WHEN 'running' THEN 0 WHEN 'queued' THEN 1 ELSE 2 END,id DESC LIMIT 100")]}
 
 
-def drain(db, config, root=ROOT):
+def drain(db, config, root=ROOT, ready=None):
     """Run FIFO priority requests before the next regular job; recover interrupted work."""
     from refresh_hourly import fetch_bars
     from market_data import persist, persist_intraday, record_api_request
@@ -81,6 +86,8 @@ def drain(db, config, root=ROOT):
         with queue:
             queue.execute("UPDATE requests SET status='queued' WHERE status='running'")
         while True:
+            if ready is not None and not ready():
+                return  # Keep unstarted requests queued while the PC is active.
             with queue:
                 job = queue.execute("SELECT * FROM requests WHERE status='queued' ORDER BY id LIMIT 1").fetchone()
                 if job is None:
@@ -112,21 +119,43 @@ def drain(db, config, root=ROOT):
                     queue.execute("UPDATE requests SET status='failed',error=? WHERE id=?", (str(exc), job['id']))
 
 
+def background_ready(config):
+    if not config.get('priority_pulls_enabled', True):
+        return False
+    if os.name == 'nt':
+        from idle_collector import allowed
+        return allowed()
+    return True
+
+
+def worker_step(root=ROOT):
+    """Check policy before touching SQLite; scheduled consumers also drain the queue."""
+    from market_data import connect, process_lock
+    config = json.loads((root / 'config.json').read_text(encoding='utf-8'))
+    if not background_ready(config):
+        return
+    with closing(connection(root)) as queue:
+        pending = queue.execute("SELECT 1 FROM requests WHERE status IN ('queued','running') LIMIT 1").fetchone()
+    if pending:
+        with process_lock(root / 'data' / 'ingestion.lock'):
+            config = json.loads((root / 'config.json').read_text(encoding='utf-8'))
+            if background_ready(config):
+                with closing(connect(root / 'data' / 'market.sqlite')) as db:
+                    drain(db, config, root, ready=lambda: background_ready(config))
+
+
 def start_worker(root=ROOT):
     global _worker
     def run():
-        from market_data import connect, process_lock
         while True:
+            # Clear before inspecting durable state so an enqueue during the
+            # check remains signalled, and one before it is found in SQLite.
+            _wake.clear()
             try:
-                with closing(connection(root)) as queue:
-                    pending = queue.execute("SELECT 1 FROM requests WHERE status IN ('queued','running') LIMIT 1").fetchone()
-                config = json.loads((root / 'config.json').read_text(encoding='utf-8'))
-                if pending and config.get('priority_pulls_enabled', True):
-                    with process_lock(root / 'data' / 'ingestion.lock'), closing(connect(root / 'data' / 'market.sqlite')) as db:
-                        drain(db, json.loads((root / 'config.json').read_text(encoding='utf-8')), root)
-            except (OSError, RuntimeError, sqlite3.Error):
-                pass  # A scheduled collector may own the lock; it also drains this queue.
-            time.sleep(2)
+                worker_step(root)
+            except (OSError, RuntimeError, ValueError, sqlite3.Error):
+                pass  # Retry transient config reads and a busy ingestion lock.
+            _wake.wait(RECHECK_SECONDS)
     with _guard:
         if _worker is None or not _worker.is_alive():
             _worker = threading.Thread(target=run, daemon=True, name='priority-pulls')

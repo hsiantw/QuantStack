@@ -6,6 +6,8 @@ import json
 import sqlite3
 import statistics
 import math
+import threading
+import time
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,6 +19,37 @@ from architecture_assets import ARCHITECTURE_ASSETS
 
 ROOT = Path(__file__).resolve().parent
 DATABASE = ROOT / 'data' / 'market.sqlite'
+_catalog_lock = threading.Lock()
+_catalog_cache = None
+
+
+def catalog_revision():
+    """Include the WAL: committed quotes need not change the database file yet."""
+    revision = []
+    for path in (DATABASE, Path(str(DATABASE) + '-wal'), ROOT / 'config.json',
+                 ROOT / 'data' / 'constituents.csv'):
+        try:
+            stat = path.stat()
+            revision.append((str(path), stat.st_mtime_ns, stat.st_size))
+        except FileNotFoundError:
+            revision.append((str(path), None, None))
+    return tuple(revision)
+
+
+def catalog_response():
+    """Share a serialized catalog across concurrent page loads for at most 30s."""
+    global _catalog_cache
+    with _catalog_lock:
+        revision = catalog_revision()
+        if (_catalog_cache is not None and _catalog_cache[0] == revision
+                and time.monotonic() < _catalog_cache[1]):
+            return _catalog_cache[2]
+        # Never leave an old response eligible if rebuilding fails.
+        _catalog_cache = None
+        content = json.dumps(catalog(), allow_nan=False).encode()
+        if catalog_revision() == revision:
+            _catalog_cache = (revision, time.monotonic() + 30, content)
+        return content
 
 
 @contextmanager
@@ -619,7 +652,8 @@ class Handler(BaseHTTPRequestHandler):
                     from pull_queue import status
                 value = status()
             elif url.path == '/api/symbols':
-                value = catalog()
+                self.send(200, catalog_response(), 'application/json')
+                return
             elif url.path == '/api/screener':
                 from screener import snapshot
                 value = dict(snapshot(DATABASE))
