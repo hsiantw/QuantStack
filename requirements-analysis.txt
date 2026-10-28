@@ -1,0 +1,6 @@
+# Optional research environment; keep separate from the chart server/collectors.
+vectorbt==1.2.0
+quantstats==0.0.86
+alphalens-reloaded==0.5.0
+ccxt==4.5.90
+PyYAML>=6,<7  # Custom skill validation

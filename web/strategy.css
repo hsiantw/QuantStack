@@ -1,0 +1,80 @@
+/* Shared presentation for the chart dock and dedicated strategy page. */
+#workspaceStrategyPanel{container-type:inline-size;min-width:0;color:var(--atlas-text);background:var(--atlas-surface)}
+#workspaceStrategyPanel [hidden]{display:none!important}
+#workspaceStrategyPanel :is(h2,h3,label,button,input,select,summary,th,td){color:var(--atlas-text)}
+#workspaceStrategyPanel :is(input,select){width:100%;min-width:0;padding:9px 10px;border:1px solid var(--atlas-border);border-radius:6px;background:var(--atlas-surface);font:inherit}
+#workspaceStrategyPanel input[type=range]{padding:0;accent-color:var(--atlas-accent)}
+#workspaceStrategyPanel input[type=checkbox]{width:auto;accent-color:var(--atlas-accent)}
+#workspaceStrategyPanel button{font:inherit;font-size:12px;border:1px solid var(--atlas-border);border-radius:6px;padding:8px 11px;background:var(--atlas-surface)}
+#workspaceStrategyPanel button:hover:not(:disabled){background:var(--atlas-hover)}
+#workspaceStrategyPanel :is(button,input,select,summary,canvas,tr[tabindex]):focus-visible{outline:2px solid var(--atlas-accent);outline-offset:2px}
+#workspaceStrategyPanel .strategy-header{padding:20px 22px;gap:18px;align-items:flex-start;border-bottom:1px solid var(--atlas-border)}
+#workspaceStrategyPanel .strategy-header h2{font-size:21px;margin:5px 0 9px}
+#workspaceStrategyPanel .strategy-header p{margin:0;font-size:12px;line-height:1.6;color:var(--atlas-muted)}
+.strategy-header-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+#workspaceStrategyPanel #strategyRun{background:var(--atlas-accent);color:var(--on-accent,#fff);border-color:var(--atlas-accent);font-weight:650;white-space:nowrap}
+#workspaceStrategyPanel #strategyRun:hover:not(:disabled){filter:brightness(1.08)}
+#workspaceStrategyPanel .strategy-badge{display:inline-block;font-size:10px;vertical-align:middle;padding:4px 7px;background:var(--atlas-hover);color:var(--atlas-accent)}
+.strategy-lab{display:grid;grid-template-columns:minmax(275px,330px) minmax(0,1fr);align-items:start;min-width:0}
+.strategy-setup{min-width:0;background:var(--atlas-raised);border-right:1px solid var(--atlas-border);align-self:stretch}
+.strategy-section-heading,.strategy-output-heading{padding:20px 20px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.strategy-section-heading{display:grid;gap:7px}.strategy-section-heading span,.strategy-output-heading>div>span{font-size:10px;letter-spacing:1.2px;color:var(--atlas-muted)}
+.strategy-section-heading strong,.strategy-output-heading h3{font-size:15px;margin:6px 0 0}
+.strategy-state{font-size:11px;white-space:nowrap;color:var(--atlas-muted);border:1px solid var(--atlas-border);border-radius:20px;padding:5px 9px}
+.strategy-setup-tabs{display:flex;padding:0 14px;gap:4px;border-bottom:1px solid var(--atlas-border)}
+#workspaceStrategyPanel .strategy-setup-tabs button{flex:1;padding:10px 5px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;font-size:11px;color:var(--atlas-muted)}
+#workspaceStrategyPanel .strategy-setup-tabs button[aria-selected=true]{color:var(--atlas-accent);border-bottom-color:var(--atlas-accent);font-weight:650}
+#workspaceStrategyPanel #strategyForm{padding:18px}
+#workspaceStrategyPanel #strategyForm>section{margin:0;padding:0;border:0;background:transparent}
+#workspaceStrategyPanel #strategyForm h3{margin:3px 0 14px;font-size:13px}
+#workspaceStrategyPanel #strategyForm label{display:grid;gap:6px;font-size:11px;line-height:1.5;font-weight:600;min-width:0}
+.strategy-families{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px}
+#workspaceStrategyPanel .strategy-families button{font-size:10px;padding:6px 8px;background:transparent}
+#workspaceStrategyPanel :is(.strategy-families button,.strategy-allocation button)[aria-pressed=true]{border-color:var(--atlas-accent);color:var(--atlas-accent);background:var(--atlas-hover)}
+.strategy-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 10px}
+.strategy-field-grid label:has(#st-kind),.strategy-field-grid label:has(#st-adjusted){grid-column:1/-1}
+#workspaceStrategyPanel #strategyDescription{margin:14px 0;font-size:12px;line-height:1.7;color:var(--atlas-muted)}
+.strategy-rule-preview{display:grid;gap:8px;margin:14px 0}.strategy-rule-preview>div{display:grid;gap:5px;border:1px solid var(--atlas-border);border-radius:7px;padding:10px;background:var(--atlas-surface)}
+.strategy-rule-preview strong{font-size:10px;color:var(--atlas-accent)}.strategy-rule-preview span{font-size:11px;line-height:1.7;overflow-wrap:anywhere}.strategy-rule-preview b{font-weight:600;color:var(--atlas-muted)}
+.strategy-builder-actions{margin-top:12px}.strategy-builder-actions button{width:100%}
+.strategy-allocation{margin:18px 0 24px}.strategy-allocation label{display:flex!important;justify-content:space-between}.strategy-allocation output{color:var(--atlas-accent)}
+.strategy-allocation input{margin:12px 0}.strategy-allocation>div{display:flex;gap:6px}.strategy-allocation button{flex:1}
+.strategy-rule-help,.strategy-risk-summary{font-size:11px;line-height:1.7;color:var(--atlas-muted);margin:12px 0 0}
+.strategy-risk-summary{padding:10px;border:1px solid var(--atlas-border);border-radius:6px}
+.strategy-rule-builder{margin-top:16px}.strategy-condition-group{margin:16px 0;padding:14px 0;border:0;border-top:1px solid var(--atlas-border)}
+.strategy-condition-heading{display:grid;gap:10px}.strategy-condition-heading h3{margin:0!important}
+.strategy-condition{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;border:1px solid var(--atlas-border);border-radius:7px;padding:12px;margin-top:10px;background:var(--atlas-surface)}
+.strategy-condition>label:has([data-property=operator]){grid-column:1/-1}.strategy-condition>button{align-self:end}.strategy-rule-spacer{min-height:0}
+.strategy-saved{display:grid;gap:14px}#strategySetupNotice{font-size:12px;line-height:1.7;color:var(--atlas-muted);margin:14px 0 0}
+.strategy-output{min-width:0;padding-bottom:8px}
+#workspaceStrategyPanel #strategyStatus{margin:0 20px 14px;padding:10px 12px;border:1px solid var(--atlas-border);border-radius:7px;font-size:12px;color:var(--atlas-muted);line-height:1.7}
+#workspaceStrategyPanel #strategyError{margin:0 20px 14px;padding:12px;font-size:12px;color:var(--negative);line-height:1.7}
+.strategy-empty{margin:15px 20px 24px;display:grid;justify-items:center;text-align:center;gap:12px;padding:32px 20px;border:1px dashed var(--atlas-border);border-radius:9px;min-height:260px;align-content:center}
+.strategy-empty svg{width:96px;height:64px;stroke:var(--atlas-accent);stroke-width:2;fill:none}.strategy-empty svg path:first-child{stroke:var(--atlas-border);stroke-width:1}
+.strategy-empty h3{font-size:17px;margin:0}.strategy-empty p{font-size:12px;line-height:1.8;color:var(--atlas-muted);max-width:360px;margin:0}.strategy-empty>div{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;font-size:10px;color:var(--atlas-muted)}
+#workspaceStrategyPanel .strategy-metrics{margin:0 20px 18px;gap:9px;background:transparent;border:0;grid-template-columns:repeat(3,minmax(0,1fr))}
+#workspaceStrategyPanel .strategy-metrics>div{padding:12px;border:1px solid var(--atlas-border);border-radius:7px;background:var(--atlas-surface);min-width:0}
+#workspaceStrategyPanel .strategy-metrics strong{font-size:18px;line-height:1.4;overflow-wrap:anywhere}#workspaceStrategyPanel .strategy-metrics span{color:var(--atlas-muted)}
+#workspaceStrategyPanel .strategy-result-tabs{padding:0 20px;gap:14px;flex-wrap:wrap;border-color:var(--atlas-border)}
+#workspaceStrategyPanel .strategy-result-tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;padding:10px 0;color:var(--atlas-muted)}
+#workspaceStrategyPanel .strategy-result-tabs button[aria-selected=true]{border-color:var(--atlas-accent);color:var(--atlas-accent)}
+.strategy-chart-toolbar,.strategy-trade-tools{display:flex;gap:13px;flex-wrap:wrap;align-items:center;padding:18px 20px 8px}
+.strategy-chart-toolbar>div,.strategy-trade-tools>div{flex:1;min-width:150px}.strategy-chart-toolbar h3,.strategy-trade-tools h3{font-size:13px;margin:0 0 5px}.strategy-chart-toolbar span,.strategy-trade-tools span{font-size:11px;color:var(--atlas-muted)}
+.strategy-chart-toolbar label,.strategy-trade-tools label{display:flex;align-items:center;gap:7px;font-size:11px}
+#workspaceStrategyPanel .strategy-chart-toolbar select,#workspaceStrategyPanel .strategy-trade-tools select{width:auto;font-size:11px;padding:6px}
+#workspaceStrategyPanel .strategy-legend{padding:8px 20px;gap:12px}#workspaceStrategyPanel .strategy-legend span:last-child{margin-left:0}
+#workspaceStrategyPanel #strategyCurve{width:100%;height:240px;touch-action:pan-y}
+#workspaceStrategyPanel #strategyCurveValue{margin:6px 0 0;padding:0 20px;min-height:38px;line-height:1.8;color:var(--atlas-muted)}
+.strategy-inspect{display:grid;grid-template-columns:auto minmax(80px,1fr);gap:8px 12px;align-items:center;margin:8px 20px 20px;font-size:11px}.strategy-inspect span{grid-column:1/-1;color:var(--atlas-muted)}
+.strategy-table-scroll{max-width:100%;overflow:auto}#workspaceStrategyPanel .strategy-table-scroll table{margin:0;font-size:11px}#workspaceStrategyPanel .strategy-table-scroll :is(th,td){padding:11px 13px;border-color:var(--atlas-border)}
+#workspaceStrategyPanel .strategy-table-scroll th{background:var(--atlas-raised);color:var(--atlas-muted);font-size:10px;position:sticky;top:0}#strategyTradeRows tr{cursor:pointer}#strategyTradeRows tr:hover{background:var(--atlas-hover)}
+#workspaceStrategyPanel #strategyTradeRows button{padding:5px 8px;font-size:11px;color:var(--atlas-accent)}
+.strategy-pagination{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:14px 20px}.strategy-pagination>span{margin-right:auto;color:var(--atlas-muted);font-size:11px}
+.strategy-trade-detail{margin:10px 20px 18px;padding:14px;border:1px solid var(--atlas-border);border-radius:8px;background:var(--atlas-raised)}
+.strategy-trade-detail>div{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px}.strategy-trade-detail strong{font-size:18px}.strategy-trade-detail small{font-size:11px;margin-left:8px}
+.strategy-trade-detail dl{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}.strategy-trade-detail dt{font-size:10px;color:var(--atlas-muted)}.strategy-trade-detail dd{margin:5px 0 0;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+#workspaceStrategyPanel .strategy-performance{padding:18px 20px}#workspaceStrategyPanel .strategy-performance h3{font-size:13px;margin:6px 0 14px}.strategy-performance p{font-size:11px;line-height:1.7;color:var(--atlas-muted)}.strategy-performance .strategy-table-scroll{margin-bottom:22px}
+#workspaceStrategyPanel .strategy-method{padding:16px 20px;border-top:1px solid var(--atlas-border);margin-top:18px}
+.strategy-method summary{font-size:12px;cursor:pointer;font-weight:600}.strategy-method p{font-size:11px;line-height:1.8;color:var(--atlas-muted)}
+@container (max-width:850px){.strategy-lab{grid-template-columns:1fr}.strategy-setup{border-right:0;border-bottom:1px solid var(--atlas-border)}#workspaceStrategyPanel .strategy-field-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.strategy-rule-preview{grid-template-columns:1fr 1fr}.strategy-condition{grid-template-columns:repeat(2,minmax(0,1fr))}.strategy-saved{grid-template-columns:1fr auto;align-items:end}}
+@container (max-width:500px){#workspaceStrategyPanel .strategy-header{display:grid;padding:16px;gap:14px}.strategy-header-actions{justify-content:flex-start;width:100%}#workspaceStrategyPanel .strategy-header-actions button{flex:1;white-space:normal;font-size:11px}#workspaceStrategyPanel #strategyForm{padding:16px}.strategy-section-heading,.strategy-output-heading{padding:16px}.strategy-output-heading{flex-wrap:wrap}.strategy-rule-preview{grid-template-columns:1fr}#workspaceStrategyPanel .strategy-field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.strategy-empty{min-height:230px;padding:24px 14px}#workspaceStrategyPanel .strategy-metrics{margin-inline:16px;grid-template-columns:repeat(2,minmax(0,1fr))}.strategy-chart-toolbar,.strategy-trade-tools{padding-inline:16px}.strategy-trade-detail dl{grid-template-columns:1fr}.strategy-saved{grid-template-columns:1fr}.strategy-pagination{padding-inline:16px;flex-wrap:wrap}.strategy-pagination>span{width:100%}.strategy-condition-heading>label{width:100%}}
