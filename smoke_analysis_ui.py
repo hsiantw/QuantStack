@@ -41,6 +41,7 @@ async def main(live_exchange=False, database_only=False):
                     page.on('pageerror',lambda e:errors.append(str(e)))
                     await page.goto(str(server.make_url('/workspace/')))
                     await page.wait_for_function("typeof rows !== 'undefined' && rows.length > 100")
+                    await page.locator('#workspaceChartOptions > summary').click()
                     await page.locator('#databaseOpen').click()
                     await expect(page.locator('#databaseTable')).to_have_value('prices')
                     await page.locator('#databaseClear').click()

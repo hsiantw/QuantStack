@@ -51,10 +51,14 @@
   };
   window.atlasTheme.bind(el('toolTheme'));
   const universal = new Set(['screener', 'markets', 'rotation', 'ideas']);
+  const contextLinks = [...shell.querySelectorAll('a[href]')].map(link => [link, link.getAttribute('href')]);
   function updateContext() {
     el('toolContextStatus').textContent = selected ? `${selected.symbol} · ${rows.length.toLocaleString()} stored bars · ${interval}` : 'No stored price history. Load data from the chart workspace.';
     const params = new URLSearchParams({symbol: selected?.symbol || '', interval, period, start: el('start').value, end: el('end').value});
     el('toolOpenChart').href = '/workspace/?' + params + '#tool=' + key;
+    for (const [link, path] of contextLinks) {
+      if (link.id !== 'toolOpenChart') link.href = window.chartContextUrl?.(path) || path;
+    }
   }
   const originalLoad = loadHistory;
   loadHistory = async function() { try { return await originalLoad(); } finally { updateContext(); } };

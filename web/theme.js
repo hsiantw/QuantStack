@@ -106,6 +106,17 @@
 
 // Shared destination search: local navigation only, no extra market-data requests.
 document.addEventListener('DOMContentLoaded', () => {
+  const contextualPaths = new Set(['/workspace/', '/strategy', '/compare', '/portfolio', '/risk', '/options', '/pairs', '/forecast', '/markov', '/brownian', '/liquidity', '/fundamentals', '/data', '/journal']);
+  window.chartContextUrl = path => {
+    const url = new URL(path, location.origin);
+    if (url.origin !== location.origin || !contextualPaths.has(url.pathname)) return path;
+    if (typeof selected === 'undefined' || !selected?.symbol) return path;
+    for (const [key, value] of Object.entries({symbol:selected.symbol, interval, period,
+      start:document.getElementById('start')?.value, end:document.getElementById('end')?.value})) {
+      if (value) url.searchParams.set(key, value);
+    }
+    return url.pathname + url.search + url.hash;
+  };
   const destinations = [
     ['Home','/','Start and explore'],['Dashboard','/dashboard','Your saved work and interview progress'],['Charts','/workspace/','Symbols, drawings and indicators'],
     ['Stock screener','/screener','Filters and saved screens'],['Market overview','/markets','Market movers and watchlists'],
@@ -127,17 +138,30 @@ document.addEventListener('DOMContentLoaded', () => {
   dialog.innerHTML = '<div class="navigator-heading"><h2 id="siteNavigatorTitle">Go to</h2><button type="button" id="navigatorClose" aria-label="Close navigation">Esc</button></div><label class="navigator-search">Find a page or tool<input id="navigatorQuery" type="search" autocomplete="off" placeholder="Search charts, screener, research…"></label><div id="navigatorResults" class="navigator-results"></div><p id="navigatorCount" role="status"></p><footer>↑ ↓ to browse · Enter to open · Esc to close</footer>';
   document.body.append(dialog);
   const query=dialog.querySelector('input'), results=dialog.querySelector('#navigatorResults');
+  const groups = [
+    ['Start', ['/', '/dashboard', '/workspace/']],
+    ['Markets', ['/screener', '/markets', '/rotation', '/fundamentals', '/crypto-scanner']],
+    ['Research', ['/strategy', '/compare', '/workspace/?research=strategy', '/portfolio', '/risk', '/options', '/pairs', '/forecast', '/markov', '/brownian', '/liquidity']],
+    ['Your work', ['/ideas', '/journal', '/workspace/interview-prep.html']],
+    ['Data & settings', ['/data', '/workspace/?database=1', '/workspace/architecture.html', '/account']]
+  ];
   let opener;
   function render() {
     results.replaceChildren();
     const matches=destinations.filter(row=>row.join(' ').toLowerCase().includes(query.value.trim().toLowerCase()));
-    for (const [name,path,description] of matches) {
-      const link=document.createElement('a');link.href=path;
-      const label=document.createElement('strong');label.textContent=name;
-      const detail=document.createElement('span');detail.textContent=description;
-      link.append(label,detail);
-      if(location.pathname.replace(/\/$/,'')===path.replace(/\/$/,'')){link.setAttribute('aria-current','page');}
-      results.append(link);
+    for (const [group, paths] of groups) {
+      const entries = matches.filter(row => paths.includes(row[1]));
+      if (!entries.length) continue;
+      const heading = document.createElement('h3'); heading.textContent = group;
+      results.append(heading);
+      for (const [name,path,description] of entries) {
+        const link=document.createElement('a');link.href=window.chartContextUrl(path);
+        const label=document.createElement('strong');label.textContent=name;
+        const detail=document.createElement('span');detail.textContent=description;
+        link.append(label,detail);
+        if(!path.includes('?') && location.pathname.replace(/\/$/,'')===path.replace(/\/$/,'')){link.setAttribute('aria-current','page');}
+        results.append(link);
+      }
     }
     dialog.querySelector('#navigatorCount').textContent=matches.length?`${matches.length} destinations`:'No matching tools. Try “charts” or “research”.';
   }
@@ -150,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
   dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
   query.oninput=render;
   dialog.addEventListener('keydown',event=>{
-    if(event.key==='Escape'){event.stopPropagation();return;}
+    if(event.key==='Escape'){event.preventDefault();event.stopPropagation();dialog.close();return;}
     const links=[...results.querySelectorAll('a')], index=links.indexOf(document.activeElement);
     if(event.key==='ArrowDown'||event.key==='ArrowUp'){
       event.preventDefault();if(!links.length)return;
@@ -169,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const button=document.createElement('button');button.type='button';button.className='site-navigator-trigger';button.setAttribute('aria-label','Search pages and tools');button.setAttribute('aria-haspopup','dialog');button.innerHTML=chartWorkspace?'<span>Tools</span><kbd>Alt K</kbd>':'<span>Go to</span><kbd>Ctrl K</kbd>';button.title=chartWorkspace?'Search pages and tools (Alt+K)':'Search pages and tools (Ctrl+K)';button.onclick=open;
   // Tool headers are built by their page script; defer insertion until that exists.
   const mount=()=>{
+    if (document.body.dataset.toolPage) return; // These pages already have searchable tool navigation.
     const header=chartWorkspace?document.querySelector('.header-actions'):document.querySelector('.dashboard-header-actions') || document.querySelector('.tool-header-actions,.site-header,.topbar .header-tools,body > header nav,body > header,.prep-toolbar');
     if(header)header.prepend(button);else{button.classList.add('navigator-floating');document.body.append(button);}
   };

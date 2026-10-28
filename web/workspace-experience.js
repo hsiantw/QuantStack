@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   el('chartTitle').after(quoteLine);
   function syncQuote() {
     quoteLine.querySelector('strong').textContent = `${el('price').textContent} ${el('currency').textContent}`.trim();
-    const change = quoteLine.lastElementChild;
+    const change = quoteLine.children[2];
     change.textContent = el('change').textContent;
     change.className = el('change').classList.contains('negative') ? 'negative' : el('change').classList.contains('positive') ? 'positive' : '';
     quoteLine.title = el('asof').textContent || 'Latest stored quote in the dataset';
@@ -132,15 +132,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Keep the chart's frequent actions visible and group occasional controls.
   const options = document.createElement('details');
   options.id = 'workspaceChartOptions'; options.className = 'workspace-chart-options';
-  options.innerHTML = '<summary aria-label="Chart options">Chart options <span aria-hidden="true">⌄</span></summary><div class="workspace-chart-options-body"></div>';
+  options.innerHTML = '<summary aria-label="Chart options"><span class="workspace-options-label">Chart options</span><span class="workspace-options-short">Options</span><span aria-hidden="true">⌄</span></summary><div class="workspace-chart-options-body"></div>';
   const optionsBody = options.querySelector('div');
   const source = actions.querySelector('.analysis-source');
   if (source) optionsBody.append(source);
-  for (const [id, label] of [['terminalGo','Go to date'],['terminalSnapshot','Save chart image'],['terminalFullscreen','Full screen'],['usageButton','Collection activity']]) {
+  for (const [id, label] of [['terminalGo','Go to date'],['terminalSnapshot','Save chart image'],['terminalFullscreen','Full screen'],['pullData','Pull market data'],['databaseOpen','Browse stored data'],['usageButton','Collection activity']]) {
     const button = el(id); if (!button) continue;
     button.classList.remove('workspace-icon-action');
     button.setAttribute('aria-label', label);
-    if (id === 'usageButton') button.textContent = label;
+    button.textContent = label;
     optionsBody.append(button);
   }
   actions.append(options);
@@ -156,6 +156,76 @@ document.addEventListener('DOMContentLoaded', () => {
   sourceButton.onclick=()=>{options.open=true;el('analysisChartSource')?.focus();};
   el('analysisChartSource')?.addEventListener('change', updateSource);updateSource();
   window.addEventListener('chart-history-loaded',updateSource);
+
+  // Reuse the existing controls on phones, keeping the selected interval in view.
+  const compact = matchMedia('(max-width: 600px)');
+  const mobileControls = document.createElement('div');
+  mobileControls.className = 'workspace-mobile-options';
+  optionsBody.prepend(mobileControls);
+  const movable = [el('chartTypes'), el('indicatorTools'), el('terminalCompare')].filter(Boolean).map(node => {
+    const marker = document.createComment('toolbar control');
+    node.before(marker);
+    return {node, marker};
+  });
+  function arrangeControls() {
+    for (const {node, marker} of movable) {
+      if (compact.matches) mobileControls.append(node);
+      else marker.after(node);
+    }
+    el('studySettingsButton').textContent = compact.matches ? 'Study settings' : '⚙';
+    el('analysisOpen').textContent = compact.matches ? 'Research' : 'Research tools';
+    el('analysisOpen').setAttribute('aria-label', 'Research tools');
+    body.classList.remove('workspace-mobile-drawings');
+    drawToggle.setAttribute('aria-expanded', 'false');
+  }
+  const drawToggle = document.createElement('button');
+  drawToggle.id = 'workspaceMobileDraw'; drawToggle.type = 'button';
+  drawToggle.textContent = 'Draw';
+  drawToggle.setAttribute('aria-controls', 'drawingTools');
+  drawToggle.setAttribute('aria-expanded', 'false');
+  actions.prepend(drawToggle);
+  function closeDrawingTools(restoreFocus = false) {
+    body.classList.remove('workspace-mobile-drawings');
+    drawToggle.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) drawToggle.focus();
+  }
+  drawToggle.onclick = () => {
+    const open = body.classList.toggle('workspace-mobile-drawings');
+    drawToggle.setAttribute('aria-expanded', String(open));
+    if (open) el('drawingTools').querySelector('button.active')?.focus();
+  };
+  document.querySelector('.workspace-drawing-rail').addEventListener('click', event => {
+    if (compact.matches && event.target.closest('[data-tool]')) closeDrawingTools(true);
+  });
+  document.addEventListener('pointerdown', event => {
+    if (!event.target.closest('.workspace-drawing-rail, #workspaceMobileDraw')) closeDrawingTools();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && body.classList.contains('workspace-mobile-drawings')) {
+      event.preventDefault(); event.stopImmediatePropagation(); closeDrawingTools(true);
+    }
+  }, true);
+  compact.addEventListener('change', arrangeControls);
+  arrangeControls();
+
+  const panelPicker = document.createElement('select');
+  panelPicker.id = 'workspacePanelPicker';
+  panelPicker.setAttribute('aria-label', 'Analysis panel');
+  panelPicker.add(new Option('Chart only', ''));
+  const tabs = [...document.querySelectorAll('.workspace-tab-list > button')];
+  tabs.forEach(tab => panelPicker.add(new Option(tab.textContent, tab.id)));
+  panelPicker.value = tabs.find(tab => tab.getAttribute('aria-selected') === 'true')?.id || '';
+  document.querySelector('.workspace-bottom-tabs').prepend(panelPicker);
+  panelPicker.onchange = () => {
+    if (panelPicker.value) el(panelPicker.value).click();
+    else el('workspaceCloseDock').click();
+    panelPicker.focus();
+  };
+  el('workspaceCloseDock').addEventListener('click', () => { if (compact.matches) panelPicker.focus(); });
+  window.addEventListener('workspace:dock', () => {
+    panelPicker.value = tabs.find(tab => tab.getAttribute('aria-selected') === 'true')?.id || '';
+    if (compact.matches && !panelPicker.value && tabs.includes(document.activeElement)) panelPicker.focus();
+  });
 
   // Empty charts give the next useful action, rather than a dead end.
   const empty = el('chartEmpty');

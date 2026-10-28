@@ -145,3 +145,42 @@
   .workspace-enhanced .watchlist-row-menu { opacity:1; }
 }
 @media (prefers-reduced-motion:reduce) { .workspace-enhanced button { transition:none; } }
+
+/* Phone controls use the same handlers and preferences as the desktop toolbar. */
+#workspaceMobileDraw, #workspacePanelPicker, .workspace-mobile-options, .workspace-options-short { display:none; }
+.workspace-chart-options-body { max-height:calc(100dvh - 190px); overflow-y:auto; overscroll-behavior:contain; }
+@media (max-width:600px) {
+  .workspace.workspace-enhanced main { grid-template-columns:0 minmax(0,1fr); }
+  .workspace-enhanced .workspace-drawing-rail { display:none; }
+  .workspace-enhanced.workspace-mobile-drawings:not(.workspace-focus) .workspace-drawing-rail {
+    display:flex; position:fixed; top:46px; left:0; bottom:36px; width:48px;
+    z-index:40; background:var(--atlas-surface); border-right:1px solid var(--atlas-border); box-shadow:8px 0 24px #0002;
+  }
+  .workspace-enhanced.workspace-mobile-drawings.workspace-tools-expanded .workspace-drawing-rail { width:178px; }
+  .workspace-enhanced #workspaceMobileDraw { display:flex; min-height:36px; padding-inline:12px; color:var(--atlas-text); border:1px solid var(--atlas-border); border-radius:5px; }
+  .workspace-enhanced #workspaceMobileDraw[aria-expanded=true] { color:var(--atlas-accent); background:var(--atlas-hover); }
+  .workspace-enhanced .workspace-toolbar { overflow:visible; flex:1; }
+  .workspace-enhanced #intervals > [data-interval]:not(.active) { display:none; }
+  .workspace-enhanced #intervals > button { min-height:36px; min-width:36px; }
+  .workspace-enhanced .header-actions :is(#accountButton, .workspace-dashboard-link) { display:none; }
+  .workspace-options-label { display:none; }
+  .workspace-options-short { display:inline; }
+  .workspace-enhanced .header-actions .site-navigator-trigger { min-height:36px; padding-inline:10px; }
+  .workspace-enhanced .chart-top { min-height:0; gap:7px; padding:9px 10px; }
+  .workspace-enhanced .chart-top .terminal-actions { justify-content:flex-start; gap:6px; flex-wrap:nowrap; }
+  .workspace-enhanced .terminal-actions #analysisOpen { flex:1; min-width:0; font-size:11px; }
+  .workspace-enhanced .workspace-chart-options > summary { min-height:36px; padding-inline:8px; }
+  .workspace-enhanced .workspace-mobile-options { display:grid; gap:8px; padding-bottom:8px; margin-bottom:4px; border-bottom:1px solid var(--atlas-border); }
+  .workspace-enhanced .workspace-mobile-options :is(#chartTypes, #indicatorTools) { border:0; display:flex; flex-wrap:wrap; gap:5px; padding:0; }
+  .workspace-enhanced .workspace-mobile-options #terminalStyle { width:100%; min-height:36px; max-width:none; }
+  .workspace-enhanced .workspace-mobile-options #indicatorLibrary { width:auto; flex:1; }
+  .workspace-enhanced #workspaceChartOptions #studySettingsButton { font-size:12px!important; }
+  .workspace-enhanced .workspace-mobile-options .workspace-quick-studies { width:100%; }
+  .workspace-enhanced .workspace-mobile-options .workspace-quick-studies > summary { width:auto; font-size:12px; padding:8px; }
+  .workspace-enhanced .workspace-mobile-options .workspace-quick-studies > div { position:static; width:auto; box-shadow:none; border:0; }
+  .workspace-enhanced #workspacePanelPicker { display:block; min-width:0; flex:1; width:100%; min-height:34px; padding:5px 10px; border:0; border-radius:0; background:var(--atlas-surface); color:var(--atlas-text); font:12px system-ui; }
+  .workspace-enhanced .workspace-tab-list { display:none; }
+  .workspace-enhanced .workspace-bottom-tabs { gap:4px; }
+  .workspace-enhanced .workspace-dock-actions > button { width:32px; min-height:34px; }
+  .workspace-enhanced .workspace-drawing-settings .drawing-editor { left:50px; max-width:calc(100vw - 58px); }
+}
