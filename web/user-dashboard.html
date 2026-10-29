@@ -62,40 +62,40 @@
       <p id="dashboardSourceHint" class="dashboard-source-hint">Showing the workspace saved in this browser.</p>
       <p id="dashboardStatus" class="dashboard-status" role="status" aria-live="polite"></p>
 
-      <div class="dashboard-metrics" aria-label="Your workspace at a glance">
-        <a class="dashboard-metric" href="#dashboardRecentSection"><span class="dashboard-metric-label">Saved symbols<svg aria-hidden="true"><use href="#dashboard-icon-star"/></svg></span><strong id="dashboardSavedCount">&mdash;</strong><span class="dashboard-metric-description">Your chart collection</span></a>
-        <a class="dashboard-metric" href="#dashboardWatchlistSection"><span class="dashboard-metric-label">Watchlists<svg aria-hidden="true"><use href="#dashboard-icon-folder"/></svg></span><strong id="dashboardWatchlistCount">&mdash;</strong><span class="dashboard-metric-description">Markets you follow</span></a>
-        <a class="dashboard-metric" href="#dashboardNotesSection"><span class="dashboard-metric-label">Active notes<svg aria-hidden="true"><use href="#dashboard-icon-notes"/></svg></span><strong id="dashboardNotesCount">&mdash;</strong><span class="dashboard-metric-description">Ideas worth keeping</span></a>
-        <a class="dashboard-metric" href="#dashboardPrepSection"><span class="dashboard-metric-label">Prep progress<svg aria-hidden="true"><use href="#dashboard-icon-prep"/></svg></span><strong id="dashboardPrepCount">&mdash;</strong><span class="dashboard-metric-description">Interview readiness checklist</span></a>
-      </div>
-
       <div class="dashboard-feature-grid">
         <section class="dashboard-continue-card" aria-labelledby="dashboardContinueHeading">
           <div class="dashboard-continue-copy"><p class="dashboard-eyebrow">BACK TO YOUR WORKSPACE</p><h2 id="dashboardContinueHeading">Pick up where you left off.</h2><p id="dashboardContinueMeta">Your most recent chart is one click away.</p><a id="dashboardContinue" class="dashboard-primary" href="/workspace/"><svg aria-hidden="true"><use href="#dashboard-icon-chart"/></svg><span id="dashboardContinueSymbol">Open charts</span><svg aria-hidden="true"><use href="#dashboard-icon-arrow"/></svg></a></div>
           <div class="dashboard-chart-decoration" aria-hidden="true"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
         </section>
-        <section class="dashboard-card dashboard-account-card" aria-labelledby="dashboardAccountHeading">
-          <span class="dashboard-card-icon"><svg aria-hidden="true"><use href="#dashboard-icon-person"/></svg></span>
-          <div><h2 id="dashboardAccountHeading">Your saved account</h2><p id="dashboardAccountSummary">Sign in to view your saved workspace and account preferences.</p></div>
+        <details class="dashboard-card dashboard-account-card">
+          <summary id="dashboardAccountHeading">Account &amp; saved workspace</summary>
+          <p id="dashboardAccountSummary">Sign in to view your saved workspace and account preferences.</p>
           <a class="dashboard-text-link" href="/account">Manage account <svg aria-hidden="true"><use href="#dashboard-icon-arrow"/></svg></a>
-        </section>
+        </details>
       </div>
 
+      <div class="dashboard-work-tabs" role="tablist" aria-label="Your saved work">
+        <button id="dashboardChartsTab" type="button" role="tab" aria-controls="dashboardRecentSection" aria-selected="true">Charts <span id="dashboardSavedCount" title="Saved symbols">&mdash;</span></button>
+        <button id="dashboardWatchlistsTab" type="button" role="tab" aria-controls="dashboardWatchlistSection" aria-selected="false" tabindex="-1">Watchlists <span id="dashboardWatchlistCount">&mdash;</span></button>
+        <button id="dashboardNotesTab" type="button" role="tab" aria-controls="dashboardNotesSection" aria-selected="false" tabindex="-1">Notes <span id="dashboardNotesCount">&mdash;</span></button>
+        <button id="dashboardPrepTab" type="button" role="tab" aria-label="Interview preparation" aria-controls="dashboardPrepSection" aria-selected="false" tabindex="-1">Prep <span id="dashboardPrepCount">&mdash;</span></button>
+      </div>
       <div class="dashboard-content-grid">
-        <section id="dashboardRecentSection" class="dashboard-card" aria-labelledby="dashboardRecentHeading">
+        <section id="dashboardRecentSection" class="dashboard-card" role="tabpanel" aria-labelledby="dashboardChartsTab" tabindex="0">
           <div class="dashboard-section-head"><div><h2 id="dashboardRecentHeading">Recent charts</h2><p>Return to the symbols you explored.</p></div><a href="/workspace/" class="dashboard-text-link">Open charts <svg aria-hidden="true"><use href="#dashboard-icon-arrow"/></svg></a></div>
           <div id="dashboardRecentCharts" class="dashboard-list"><p class="dashboard-empty">Loading recent charts&hellip;</p></div>
         </section>
-        <section id="dashboardWatchlistSection" class="dashboard-card" aria-labelledby="dashboardWatchlistHeading">
+        <section id="dashboardWatchlistSection" class="dashboard-card" role="tabpanel" aria-labelledby="dashboardWatchlistsTab" tabindex="0" hidden>
           <div class="dashboard-section-head"><div><h2 id="dashboardWatchlistHeading">Your watchlists</h2><p>Keep your next move in view.</p></div><a href="/workspace/" class="dashboard-text-link">Manage <svg aria-hidden="true"><use href="#dashboard-icon-arrow"/></svg></a></div>
           <div id="dashboardWatchlists" class="dashboard-list"><p class="dashboard-empty">Loading watchlists&hellip;</p></div>
         </section>
-        <section id="dashboardNotesSection" class="dashboard-card dashboard-notes-card" aria-labelledby="dashboardNotesHeading">
+        <section id="dashboardNotesSection" class="dashboard-card dashboard-notes-card" role="tabpanel" aria-labelledby="dashboardNotesTab" tabindex="0" hidden>
           <div class="dashboard-section-head"><div><h2 id="dashboardNotesHeading">Your research</h2><p>A place to keep your thinking moving.</p></div><a href="/ideas" class="dashboard-text-link">Notebook <svg aria-hidden="true"><use href="#dashboard-icon-arrow"/></svg></a></div>
           <label class="dashboard-note-search"><svg aria-hidden="true"><use href="#dashboard-icon-search"/></svg><input id="dashboardNoteSearch" type="search" placeholder="Find a note, idea or symbol" aria-label="Find your notes" maxlength="200" autocomplete="off"></label>
           <div id="dashboardNotes" class="dashboard-list"><p class="dashboard-empty">Loading notes&hellip;</p></div>
+          <div class="dashboard-list-footer"><span id="dashboardNoteCount" role="status"></span><button id="dashboardMoreNotes" type="button" hidden>Show more notes</button></div>
         </section>
-        <section id="dashboardPrepSection" class="dashboard-card dashboard-prep-card" aria-labelledby="dashboardPrepHeading">
+        <section id="dashboardPrepSection" class="dashboard-card dashboard-prep-card" role="tabpanel" aria-labelledby="dashboardPrepTab" tabindex="0" hidden>
           <div class="dashboard-section-head"><div><p class="dashboard-eyebrow">KEEP YOUR MOMENTUM</p><h2 id="dashboardPrepHeading">Interview preparation</h2></div><span class="dashboard-card-icon"><svg aria-hidden="true"><use href="#dashboard-icon-prep"/></svg></span></div>
           <p class="dashboard-prep-description">Get ready for buyer fraud interviews with concise answer cues and practice questions.</p>
           <div class="dashboard-prep-progress"><label for="dashboardPrepProgress">Your readiness checklist</label><progress id="dashboardPrepProgress" value="0" max="13">0 of 13</progress><p id="dashboardPrepSummary">Loading your progress&hellip;</p></div>

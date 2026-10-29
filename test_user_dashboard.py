@@ -47,9 +47,9 @@ class UserDashboardTests(unittest.IsolatedAsyncioTestCase):
         }""", entries)
 
     async def storage(self):
-        # The backup journal drains asynchronously; it is not saved user work.
+        # View selection is intentional UI state; the backup journal drains asynchronously.
         return await self.page.evaluate('''Object.fromEntries(Object.entries(localStorage)
-            .filter(([key]) => !key.startsWith('quantstack.localPreferences.pending.')))''')
+            .filter(([key]) => key !== 'atlas.dashboard.tab.v1' && !key.startsWith('quantstack.localPreferences.pending.')))''')
 
     async def account(self, action, payload):
         result = await self.page.evaluate("""async ({action, payload}) => {
@@ -119,6 +119,7 @@ class UserDashboardTests(unittest.IsolatedAsyncioTestCase):
             'start': ['2026-01-01'], 'end': ['2026-10-01']})
         await expect(page.locator('#dashboardWatchlists')).to_contain_text('Red signals')
         await expect(page.locator('#dashboardWatchlists')).not_to_contain_text('STALE')
+        await page.locator('#dashboardNotesTab').click()
         await page.locator('#dashboardNoteSearch').fill('Second active')
         await expect(page.locator('#dashboardNotes')).to_contain_text('Second active note')
         await expect(page.locator('#dashboardNotes')).not_to_contain_text(literal_title)
@@ -211,8 +212,49 @@ class UserDashboardTests(unittest.IsolatedAsyncioTestCase):
             dict(note('newer', 'Newest idea'), updatedAt='2026-10-13T12:00:00Z')
         ]})
         await self.page.reload()
+        await self.page.locator('#dashboardNotesTab').click()
         await self.page.locator('#dashboardNotes a').filter(has_text='Older idea to resume').click()
         await expect(self.page.locator('#ideaTitle')).to_have_value('Older idea to resume')
+        self.assertFalse(self.errors, self.errors)
+
+    async def test_saved_work_tabs_pagination_and_restoration(self):
+        page = self.page
+        await self.seed({
+            'atlas.saved': ['SYM' + str(i) for i in range(15)],
+            'atlas.ideaNotes.v1': [note(str(i), 'Idea ' + str(i)) for i in range(14)],
+            'atlas.watchlists.v1': {'lists': [{'id':str(i), 'name':'List ' + str(i), 'symbols':['AAPL']} for i in range(11)]}
+        })
+        await page.reload()
+        await page.set_viewport_size({'width':390,'height':844})
+        await expect(page.locator('[role=tabpanel]:visible')).to_have_count(1)
+        await expect(page.locator('#dashboardRecentCharts .dashboard-chips a')).to_have_count(12)
+        await page.get_by_role('button', name='Show all 15 saved symbols').click()
+        await expect(page.locator('#dashboardRecentCharts .dashboard-chips a')).to_have_count(15)
+        await page.locator('#dashboardChartsTab').focus()
+        await page.keyboard.press('ArrowRight')
+        await expect(page.locator('#dashboardWatchlistsTab')).to_be_focused()
+        await expect(page.locator('#dashboardWatchlists article')).to_have_count(8)
+        await page.get_by_role('button', name='Show more watchlists (8 of 11)', exact=True).click()
+        await expect(page.locator('#dashboardWatchlists article')).to_have_count(11)
+        await page.locator('#dashboardNotesTab').click()
+        await expect(page.locator('#dashboardNoteCount')).to_have_text('6 of 14 notes')
+        await page.locator('#dashboardMoreNotes').click()
+        await expect(page.locator('#dashboardNotes a')).to_have_count(12)
+        await page.locator('#dashboardMoreNotes').click()
+        await expect(page.locator('#dashboardNotes a')).to_have_count(14)
+        await expect(page.locator('#dashboardMoreNotes')).to_have_text('Show fewer notes')
+        await page.locator('#dashboardNoteSearch').fill('Idea 13')
+        await expect(page.locator('#dashboardNotes a')).to_have_count(1)
+        await expect(page.locator('#dashboardMoreNotes')).to_be_hidden()
+        await page.reload()
+        await expect(page.locator('#dashboardNotesTab')).to_have_attribute('aria-selected', 'true')
+        await expect(page.locator('#dashboardNotesSection')).to_be_visible()
+        self.assertEqual(await page.evaluate("localStorage.getItem('atlas.dashboard.tab.v1')"), 'dashboardNotesTab')
+        for width in (320,390,768,1440):
+            await page.set_viewport_size({'width':width,'height':900})
+            self.assertTrue(await page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
+        await page.goto(str(self.server.make_url('/dashboard#dashboardPrepSection')))
+        await expect(page.locator('#dashboardPrepSection')).to_be_visible()
         self.assertFalse(self.errors, self.errors)
 
 

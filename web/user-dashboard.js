@@ -8,7 +8,38 @@
   const object = value => value && typeof value === 'object' && !Array.isArray(value);
   const symbol = value => typeof value === 'string' && /^[A-Z0-9^][A-Z0-9.^=-]{0,29}$/.test(value);
   const symbols = value => [...new Set(Array.isArray(value) ? value.filter(symbol) : [])];
-  let user = null, notes = [], epoch = 0, controller;
+  let user = null, notes = [], epoch = 0, controller, noteLimit = 6, watchlistLimit = 8, allSaved = false;
+  let currentEntries = {}, workspaceUnavailable = false, noteMatches = 0;
+  const tabKey = 'atlas.dashboard.tab.v1';
+  const tabs = [...document.querySelectorAll('.dashboard-work-tabs [role="tab"]')];
+  function chooseTab(tab, persist = false) {
+    for (const button of tabs) {
+      const active = button === tab;
+      button.setAttribute('aria-selected', String(active)); button.tabIndex = active ? 0 : -1;
+      document.getElementById(button.getAttribute('aria-controls')).hidden = !active;
+    }
+    if (persist) {
+      try { localStorage.setItem(tabKey, tab.id); }
+      catch { el('Status').textContent = 'This view could not be saved. Your workspace data has not changed.'; }
+    }
+  }
+  function restoreTab() {
+    let saved;
+    try { saved = localStorage.getItem(tabKey); } catch {}
+    chooseTab(tabs.find(tab => '#' + tab.getAttribute('aria-controls') === location.hash)
+      || tabs.find(tab => tab.id === saved) || tabs[0]);
+  }
+  tabs.forEach(tab => tab.addEventListener('click', () => chooseTab(tab, true)));
+  document.querySelector('.dashboard-work-tabs').addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const index = tabs.indexOf(document.activeElement);
+    if (index < 0) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+    chooseTab(tabs[next], true); tabs[next].focus();
+  });
+  window.addEventListener('hashchange', restoreTab);
+  restoreTab();
   function node(tag, className, text) {
     const result = document.createElement(tag); result.className = className;
     if (text !== undefined) result.textContent = text;
@@ -49,7 +80,11 @@
     const query = el('NoteSearch').value.trim().toLowerCase();
     const found = notes.filter(n => [n.title,n.body,n.symbol].join(' ').toLowerCase().includes(query));
     el('Notes').replaceChildren();
-    for (const note of found.slice(0,6)) {
+    noteMatches = found.length;
+    el('NoteCount').textContent = found.length ? `${Math.min(noteLimit, found.length)} of ${found.length} notes` : '';
+    el('MoreNotes').hidden = found.length <= 6;
+    el('MoreNotes').textContent = noteLimit >= found.length ? 'Show fewer notes' : 'Show more notes';
+    for (const note of found.slice(0,noteLimit)) {
       const date = Number.isFinite(Date.parse(note.updatedAt)) ? new Date(note.updatedAt).toLocaleDateString(undefined, {month:'short',day:'numeric'}) : '';
       const remaining = Array.isArray(note.items) ? note.items.filter(i => object(i) && !i.done).length : 0;
       const meta = [note.symbol, date, remaining ? `${remaining} tasks remaining` : '', typeof note.body === 'string' ? note.body.slice(0,100) : ''].filter(Boolean).join(' · ');
@@ -58,7 +93,8 @@
     }
     if (!found.length) empty('Notes', query ? 'No notes match your search.' : 'Save an idea in your notebook to see it here.', query ? {label:'Clear search',run:()=>{el('NoteSearch').value='';renderNotes();el('NoteSearch').focus();}} : {label:'Write your first idea',href:'/ideas'});
   }
-  function render(entries, unavailable = false) {
+  function render(entries, unavailable = false, loading = false) {
+    currentEntries = entries; workspaceUnavailable = unavailable;
     const errors = [];
     const favorites = symbols(parse(entries, keys[0], [], Array.isArray, errors));
     const watch = parse(entries, keys[1], {lists:[]}, v => object(v) && Array.isArray(v.lists), errors);
@@ -81,17 +117,28 @@
     if (favorites.length) {
       const group = item('Saved symbols', `${favorites.length} saved`);
       const chips = node('div', 'dashboard-chips');
-      for (const ticker of favorites.slice(0,12)) { const a = node('a', '', ticker); a.href = chartURL(ticker); chips.append(a); }
-      group.firstElementChild.append(chips); el('RecentCharts').append(group);
+      for (const ticker of favorites.slice(0,allSaved ? favorites.length : 12)) { const a = node('a', '', ticker); a.href = chartURL(ticker); chips.append(a); }
+      group.firstElementChild.append(chips);
+      if (favorites.length > 12) {
+        const more = node('button', 'dashboard-list-action', allSaved ? 'Show fewer symbols' : `Show all ${favorites.length} saved symbols`);
+        more.type = 'button'; more.onclick = () => { allSaved = !allSaved; render(currentEntries, workspaceUnavailable); el('RecentCharts').querySelector('button')?.focus(); };
+        group.firstElementChild.append(more);
+      }
+      el('RecentCharts').append(group);
     }
     el('Watchlists').replaceChildren();
-    for (const list of lists.slice(0,8)) {
+    for (const list of lists.slice(0,watchlistLimit)) {
       const members = colors.includes(list.color) ? symbols(Object.entries(object(watch.labels) ? watch.labels : {}).filter(([,color]) => color === list.color).map(([ticker]) => ticker)) : symbols(list.symbols);
       const row = item(list.name, `${members.length} symbols${list.color ? ' · ' + list.color + ' labels' : ''}`);
       const chips = node('div', 'dashboard-chips');
       for (const ticker of members.slice(0,6)) { const a = node('a', '', ticker); a.href = chartURL(ticker); chips.append(a); }
       if (members.length > 6) chips.append(node('span', '', '+' + (members.length-6)));
       row.firstElementChild.append(chips); el('Watchlists').append(row);
+    }
+    if (lists.length > 8) {
+      const more = node('button', 'dashboard-list-action', watchlistLimit >= lists.length ? 'Show fewer watchlists' : `Show more watchlists (${Math.min(watchlistLimit,lists.length)} of ${lists.length})`);
+      more.type = 'button'; more.onclick = () => { watchlistLimit = watchlistLimit >= lists.length ? 8 : watchlistLimit + 8; render(currentEntries, workspaceUnavailable); el('Watchlists').querySelector('button')?.focus(); };
+      el('Watchlists').append(more);
     }
     if (!lists.length) empty('Watchlists', 'Create a watchlist in Charts to organize your symbols.', {label:'Open chart watchlists',href:'/workspace/'});
     renderNotes();
@@ -100,8 +147,8 @@
     el('PrepSummary').textContent = `${reviewed.size} of 13 sections reviewed. ${reviewed.size === 13 ? 'Ready for another practice round.' : 'Continue with your next unreviewed section.'}`;
     el('PrepLink').href = '/workspace/interview-prep.html' + (reviewed.size < 13 ? '#' + sections.find(s => !reviewed.has(s)) : '');
     if (unavailable) {
-      for (const id of ['RecentCharts','Watchlists','Notes']) empty(id, 'Workspace unavailable. Your saved work has not been changed.', {label:'Try again',run:refresh});
-      el('PrepSummary').textContent = 'Progress unavailable.';
+      for (const id of ['RecentCharts','Watchlists','Notes']) empty(id, loading ? 'Loading your saved workspace…' : 'Workspace unavailable. Your saved work has not been changed.', loading ? null : {label:'Try again',run:refresh});
+      el('PrepSummary').textContent = loading ? 'Loading your progress…' : 'Progress unavailable.';
     } else {
       for (const [key, id] of [[keys[1],'Watchlists'],[keys[2],'Notes']]) if (errors.includes(key)) empty(id, 'Saved data could not be read. Your original data has been preserved.');
       if (errors.includes(keys[5])) el('PrepSummary').textContent = 'Saved progress could not be read.';
@@ -127,7 +174,7 @@
     controller?.abort(); controller = new AbortController();
     const signal = controller.signal, requested = el('Source').value, previousId = user?.id;
     let message = '';
-    if (requested === 'browser') message = browserWorkspace(); else render({}, true);
+    if (requested === 'browser') message = browserWorkspace(); else render({}, true, true);
     el('SourceHint').textContent = requested === 'browser' ? 'Showing the workspace saved in this browser.' : 'Previewing your saved account. To edit this copy, load it from Account in Charts first.';
     el('Status').textContent = requested === 'account' ? 'Loading saved account…' : message;
     el('Refresh').setAttribute('aria-busy', 'true');
@@ -165,9 +212,10 @@
   function resetAccount() {
     identity(null); el('Source').value = 'browser'; el('NoteSearch').value = ''; refresh();
   }
-  el('Source').addEventListener('change', () => { el('NoteSearch').value = ''; refresh(); });
+  el('Source').addEventListener('change', () => { el('NoteSearch').value = ''; noteLimit = 6; watchlistLimit = 8; allSaved = false; refresh(); });
   el('Refresh').addEventListener('click', refresh);
-  el('NoteSearch').addEventListener('input', renderNotes);
+  el('NoteSearch').addEventListener('input', () => { noteLimit = 6; renderNotes(); });
+  el('MoreNotes').addEventListener('click', () => { noteLimit = noteLimit >= noteMatches ? 6 : noteLimit + 6; renderNotes(); });
   window.addEventListener('storage', event => {
     if (event.key === 'quantstack.accountChanged' || event.key === null) resetAccount();
     else if ((keys.includes(event.key) && el('Source').value === 'browser') || event.key === 'quantstack.accountWorkspaceChanged') refresh();

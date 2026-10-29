@@ -137,3 +137,43 @@ a.dashboard-item:hover{background:var(--atlas-raised);border-radius:5px}
 @media print{.dashboard-header,.dashboard-sidebar,.dashboard-source-actions,.dashboard-quick-links,.dashboard-footer,.dashboard-note-search{display:none}.dashboard-shell{display:block}.dashboard-main{padding:0;max-width:none}.dashboard-card,.dashboard-metric,.dashboard-continue-card{break-inside:avoid}.dashboard-content-grid{grid-template-columns:1fr 1fr}.dashboard-chart-decoration{display:none}}
 /* Empty lists lead directly to the action that creates their first item. */
 .dashboard-empty p{margin:0 0 12px}.dashboard-empty-action{display:inline-flex;align-items:center;min-height:36px;padding:7px 12px;border:1px solid var(--atlas-border);border-radius:6px;background:var(--atlas-raised);color:var(--atlas-accent);font:inherit;text-decoration:none;cursor:pointer}.dashboard-empty-action:focus-visible{outline:2px solid var(--atlas-accent);outline-offset:3px}
+
+/* Resume first; keep one saved-work collection in view at a time. */
+.dashboard-feature-grid{grid-template-columns:minmax(0,1fr);gap:10px;margin-bottom:22px}
+.dashboard-continue-card{min-height:130px;padding:20px 24px}
+.dashboard-continue-copy{max-width:100%;width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 20px;align-items:center}
+.dashboard-continue-copy .dashboard-eyebrow{grid-column:1;margin:0}
+.dashboard-continue-card h2{grid-column:1;font-size:21px;margin:0}
+#dashboardContinueMeta{grid-column:1;margin:0}
+#dashboardContinue{grid-column:2;grid-row:1/4;min-height:42px}
+.dashboard-account-card{display:block;padding:10px 18px}
+.dashboard-account-card summary{cursor:pointer;font-size:12px;font-weight:600;padding:6px 0}
+.dashboard-account-card[open] summary{margin-bottom:8px}
+.dashboard-account-card .dashboard-text-link{margin-top:6px}
+.dashboard-work-tabs{display:flex;gap:4px;padding:5px;background:var(--atlas-surface);border:1px solid var(--atlas-border);border-radius:9px;margin-bottom:12px}
+.dashboard-work-tabs button{flex:1;min-width:0;display:flex;justify-content:center;align-items:center;gap:8px;min-height:42px;border:0;border-radius:6px;background:transparent;color:var(--atlas-muted);font-size:12px;font-weight:600;cursor:pointer}
+.dashboard-work-tabs button:hover{background:var(--atlas-raised);color:var(--atlas-text)}
+.dashboard-work-tabs button[aria-selected=true]{background:var(--atlas-hover);color:var(--atlas-accent)}
+.dashboard-work-tabs span{font-size:10px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dashboard-content-grid{display:block}
+.dashboard-content-grid>[role=tabpanel]{min-height:220px}
+.dashboard-list-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;font-size:11px;color:var(--atlas-muted)}
+.dashboard-list-footer:has(button[hidden]):has(span:empty){display:none}
+.dashboard-list-action,.dashboard-list-footer button{min-height:38px;padding:7px 12px;border:1px solid var(--atlas-border);border-radius:6px;color:var(--atlas-accent);background:var(--atlas-surface);font-size:11px;cursor:pointer}
+.dashboard-list-action{margin-top:12px;justify-self:start}
+.dashboard-list-action:hover,.dashboard-list-footer button:hover{background:var(--atlas-hover)}
+@media(max-width:700px){
+ .dashboard-main{padding-top:20px}
+ .dashboard-page-heading h1{font-size:25px}
+ .dashboard-source-hint{margin-bottom:14px}
+ .dashboard-continue-card{padding:18px;min-height:0}
+ .dashboard-continue-copy{display:block}
+ .dashboard-continue-copy .dashboard-eyebrow{display:none}
+ .dashboard-continue-card h2{font-size:19px;margin-bottom:6px}
+ #dashboardContinueMeta{margin-bottom:14px}
+ .dashboard-account-card{padding:8px 14px}
+ .dashboard-work-tabs{gap:0;padding:4px}
+ .dashboard-work-tabs button{flex-direction:column;gap:2px;font-size:11px;padding:6px 3px;min-height:48px}
+ .dashboard-content-grid>.dashboard-card{padding:18px 14px}
+ .dashboard-tools{margin-top:22px}
+}

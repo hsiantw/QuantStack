@@ -11,7 +11,7 @@ from local_scheduler import local_request
 
 KEYS = frozenset({
     'atlas.saved', 'atlas.watchlists.v1', 'atlas.timeframeFavorites.v1',
-    'atlas.home.shortcuts.v1',
+    'atlas.home.shortcuts.v1', 'atlas.dashboard.tab.v1',
     'atlas.strategy.v1', 'atlas.strategy.setups.v1',
     'atlas.theme', 'atlas.chart.session', 'atlas.chartScale', 'atlas.terminal',
     'atlas.appearance.presets.v1', 'atlas.studies.v1',
